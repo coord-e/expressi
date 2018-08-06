@@ -1,0 +1,8 @@
+[package]
+name = "expressi"
+version = "0.1.0"
+authors = ["coord.e <me@coord-e.com>"]
+build = "build.rs"
+
+[build-dependencies]
+peg = "0.5"

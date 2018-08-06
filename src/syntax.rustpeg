@@ -1,0 +1,1 @@
+pub word -> String = s:$([a-zA-Z_]+) { s.to_owned() }
