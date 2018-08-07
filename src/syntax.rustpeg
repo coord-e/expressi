@@ -1,5 +1,5 @@
-use expressi::expression::Expression;
-use expressi::expression::Operator;
+use expression::Expression;
+use expression::Operator;
 
 #[pub]
 expression -> Expression
