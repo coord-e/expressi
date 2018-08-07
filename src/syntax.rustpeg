@@ -19,7 +19,7 @@ atom -> Expression
   / "(" v:sum ")" { v }
 
 identifier -> Expression
-  = n:$([a-zA-Z] [a-zA-Z0-9_]+) { Expression::Identifier(n.to_owned()) }
+  = n:$([a-zA-Z] [a-zA-Z0-9_]*) { Expression::Identifier(n.to_owned()) }
 
 number -> Expression
   = n:$([0-9]+) { Expression::Number(n.parse().unwrap()) }
