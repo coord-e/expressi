@@ -39,7 +39,7 @@ mod tests {
         assert!(parse("0a").is_err())
     }
 
-    macro_rules! BinOp {
+    macro_rules! test_binop {
         ($x:expr, $op:expr) => {
             assert_eq!(
                 parse($x),
@@ -54,22 +54,22 @@ mod tests {
 
     #[test]
     fn operator_add() {
-        BinOp!("0+0", Operator::Add)
+        test_binop!("0+0", Operator::Add)
     }
 
     #[test]
     fn operator_sub() {
-        BinOp!("0-0", Operator::Sub)
+        test_binop!("0-0", Operator::Sub)
     }
 
     #[test]
     fn operator_mul() {
-        BinOp!("0*0", Operator::Mul)
+        test_binop!("0*0", Operator::Mul)
     }
 
     #[test]
     fn operator_div() {
-        BinOp!("0/0", Operator::Div)
+        test_binop!("0/0", Operator::Div)
     }
 
     #[test]
