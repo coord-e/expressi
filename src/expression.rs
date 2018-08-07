@@ -18,5 +18,6 @@ impl Operator {
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Expression {
     Number(i64),
+    Identifier(String),
     BinOp(Operator, Box<Expression>, Box<Expression>),
 }
