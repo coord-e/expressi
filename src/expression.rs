@@ -1,6 +1,10 @@
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Operator {
-    Add, Sub, Mul, Div, Unknown
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Unknown,
 }
 
 impl Operator {
@@ -10,7 +14,7 @@ impl Operator {
             "-" => Operator::Sub,
             "*" => Operator::Mul,
             "/" => Operator::Div,
-            _   => Operator::Unknown
+            _ => Operator::Unknown,
         }
     }
 }

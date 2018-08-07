@@ -10,8 +10,8 @@ pub fn parse(x: &str) -> Result<Expression, syntax::ParseError> {
 
 #[cfg(test)]
 mod tests {
-    use expression::Operator;
     use super::*;
+    use expression::Operator;
 
     #[test]
     fn number() {
@@ -41,8 +41,15 @@ mod tests {
 
     macro_rules! BinOp {
         ($x:expr, $op:expr) => {
-            assert_eq!(parse($x), Ok(Expression::BinOp($op, Box::new(Expression::Number(0)), Box::new(Expression::Number(0)))))
-        }
+            assert_eq!(
+                parse($x),
+                Ok(Expression::BinOp(
+                    $op,
+                    Box::new(Expression::Number(0)),
+                    Box::new(Expression::Number(0))
+                ))
+            )
+        };
     }
 
     #[test]
@@ -67,6 +74,17 @@ mod tests {
 
     #[test]
     fn operator_precedence() {
-        assert_eq!(parse("0+0*0"), Ok(Expression::BinOp(Operator::Add, Box::new(Expression::Number(0)), Box::new(Expression::BinOp(Operator::Mul, Box::new(Expression::Number(0)), Box::new(Expression::Number(0)))))))
+        assert_eq!(
+            parse("0+0*0"),
+            Ok(Expression::BinOp(
+                Operator::Add,
+                Box::new(Expression::Number(0)),
+                Box::new(Expression::BinOp(
+                    Operator::Mul,
+                    Box::new(Expression::Number(0)),
+                    Box::new(Expression::Number(0))
+                ))
+            ))
+        )
     }
 }
