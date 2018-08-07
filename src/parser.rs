@@ -64,4 +64,9 @@ mod tests {
     fn operator_div() {
         BinOp!("0/0", Operator::Div)
     }
+
+    #[test]
+    fn operator_precedence() {
+        assert_eq!(parse("0+0*0"), Ok(Expression::BinOp(Operator::Add, Box::new(Expression::Number(0)), Box::new(Expression::BinOp(Operator::Mul, Box::new(Expression::Number(0)), Box::new(Expression::Number(0)))))))
+    }
 }
