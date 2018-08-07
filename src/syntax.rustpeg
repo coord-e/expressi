@@ -1,15 +1,16 @@
 use expressi::expression::Expression;
+use expressi::expression::Operator;
 
 #[pub]
 expression -> Expression
   = sum
 
 sum -> Expression
-  = l:product op:$("+" / "-") r:product { Expression::BinOp(op.to_owned(), Box::new(l), Box::new(r)) }
+  = l:product op:$("+" / "-") r:product { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
   / product
 
 product -> Expression
-  = l:atom op:$("*" / "/") r:atom { Expression::BinOp(op.to_owned(), Box::new(l), Box::new(r)) }
+  = l:atom op:$("*" / "/") r:atom { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
   / atom
 
 atom -> Expression
