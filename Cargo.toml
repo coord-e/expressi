@@ -8,6 +8,7 @@ build = "build.rs"
 cranelift = "0.18.1"
 cranelift-module = "0.18.1"
 cranelift-simplejit = "0.18.1"
+clap = "2.32.0"
 
 [build-dependencies]
 peg = "0.5"

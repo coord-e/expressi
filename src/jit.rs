@@ -122,6 +122,12 @@ impl<'a> FunctionTranslator<'a> {
                 }
             }
 
+            Expression::Follow(lhs, rhs) => {
+                self.translate_expr(*lhs);
+                let rhs = self.translate_expr(*rhs);
+                rhs
+            }
+
             Expression::Assign(lhs, rhs) => {
                 let new_value = self.translate_expr(*rhs);
                 let name = match *lhs {

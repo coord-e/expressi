@@ -24,5 +24,6 @@ pub enum Expression {
     Number(i64),
     Identifier(String),
     Assign(Box<Expression>, Box<Expression>),
+    Follow(Box<Expression>, Box<Expression>),
     BinOp(Operator, Box<Expression>, Box<Expression>),
 }
