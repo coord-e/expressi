@@ -6,19 +6,19 @@ expression -> Expression
   = follow
 
 follow -> Expression
-  = l:assign ";" r:assign { Expression::Follow(Box::new(l), Box::new(r)) }
+  = l:assign ";" r:follow { Expression::Follow(Box::new(l), Box::new(r)) }
   / assign
 
 assign -> Expression
-  = l:identifier "=" r:sum { Expression::Assign(Box::new(l), Box::new(r)) }
+  = l:identifier "=" r:assign { Expression::Assign(Box::new(l), Box::new(r)) }
   / sum
 
 sum -> Expression
-  = l:product op:$("+" / "-") r:product { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
+  = l:product op:$("+" / "-") r:sum { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
   / product
 
 product -> Expression
-  = l:atom op:$("*" / "/") r:atom { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
+  = l:atom op:$("*" / "/") r:product { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
   / atom
 
 atom -> Expression
