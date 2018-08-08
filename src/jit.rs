@@ -45,7 +45,7 @@ impl JIT {
     }
 
     /// Compile a string in the toy language into machine code.
-    pub fn compile(&mut self, input: &str) -> Result<*const u8, String> {
+    pub fn compile(&mut self, name: &str, input: &str) -> Result<*const u8, String> {
         // First, parse the string, producing AST nodes.
         let ast = parser::parse(&input)
             .map_err(|e| e.to_string())?;
@@ -61,7 +61,7 @@ impl JIT {
         // we have a version of `declare_function` that automatically declares
         // the function?
         let id = self.module
-            .declare_function("hello", Linkage::Export, &self.ctx.func.signature)
+            .declare_function(&name, Linkage::Export, &self.ctx.func.signature)
             .map_err(|e| e.to_string())?;
 
         // Define the function to simplejit. This finishes compilation, although
