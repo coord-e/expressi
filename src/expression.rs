@@ -4,6 +4,12 @@ pub enum Operator {
     Sub,
     Mul,
     Div,
+    Lt,
+    Gt,
+    Le,
+    Ge,
+    Eq,
+    Ne,
     Unknown,
 }
 
@@ -14,6 +20,12 @@ impl Operator {
             "-" => Operator::Sub,
             "*" => Operator::Mul,
             "/" => Operator::Div,
+            "<" => Operator::Lt,
+            ">" => Operator::Gt,
+            "<=" => Operator::Le,
+            ">=" => Operator::Ge,
+            "==" => Operator::Eq,
+            "!=" => Operator::Ne,
             _ => Operator::Unknown,
         }
     }

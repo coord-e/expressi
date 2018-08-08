@@ -118,6 +118,12 @@ impl<'a> FunctionTranslator<'a> {
                     Operator::Sub => self.builder.ins().isub(lhs, rhs),
                     Operator::Mul => self.builder.ins().imul(lhs, rhs),
                     Operator::Div => self.builder.ins().udiv(lhs, rhs),
+                    Operator::Lt => self.builder.ins().icmp(IntCC::SignedLessThan, lhs, rhs),
+                    Operator::Gt => self.builder.ins().icmp(IntCC::SignedGreaterThan, lhs, rhs),
+                    Operator::Le => self.builder.ins().icmp(IntCC::SignedLessThanOrEqual, lhs, rhs),
+                    Operator::Ge => self.builder.ins().icmp(IntCC::SignedGreaterThanOrEqual, lhs, rhs),
+                    Operator::Eq => self.builder.ins().icmp(IntCC::Equal, lhs, rhs),
+                    Operator::Ne => self.builder.ins().icmp(IntCC::NotEqual, lhs, rhs),
                     Operator::Unknown => lhs,
                 }
             }

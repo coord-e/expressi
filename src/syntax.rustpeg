@@ -14,7 +14,11 @@ assign -> Expression
   / sum
 
 sum -> Expression
-  = l:product _ op:$("+" / "-") _ r:sum { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
+  = l:comparison _ op:$("+" / "-") _ r:sum { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
+  / comparison
+
+comparison -> Expression
+  = l:product _ op:$("<" / ">" / "<=" / ">=" / "==" / "!=") _ r:comparison { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
   / product
 
 product -> Expression
