@@ -3,7 +3,11 @@ use expression::Operator;
 
 #[pub]
 expression -> Expression
-  = assign
+  = follow
+
+follow -> Expression
+  = l:assign ";" r:assign { Expression::Follow(Box::new(l), Box::new(r)) }
+  / assign
 
 assign -> Expression
   = l:identifier "=" r:sum { Expression::Assign(Box::new(l), Box::new(r)) }
