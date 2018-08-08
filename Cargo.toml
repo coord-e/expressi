@@ -4,5 +4,10 @@ version = "0.1.0"
 authors = ["coord.e <me@coord-e.com>"]
 build = "build.rs"
 
+[dependencies]
+cranelift = "0.18.1"
+cranelift-module = "0.18.1"
+cranelift-simplejit = "0.18.1"
+
 [build-dependencies]
 peg = "0.5"
