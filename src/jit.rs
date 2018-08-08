@@ -122,7 +122,7 @@ impl<'a> FunctionTranslator<'a> {
                 }
             }
 
-            Expression::Assignment(lhs, rhs) => {
+            Expression::Assign(lhs, rhs) => {
                 let new_value = self.translate_expr(*rhs);
                 let name = match *lhs {
                     Expression::Identifier(name) => name,

@@ -23,6 +23,6 @@ impl Operator {
 pub enum Expression {
     Number(i64),
     Identifier(String),
-    Assignment(Box<Expression>, Box<Expression>),
+    Assign(Box<Expression>, Box<Expression>),
     BinOp(Operator, Box<Expression>, Box<Expression>),
 }

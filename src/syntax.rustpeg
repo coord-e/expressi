@@ -6,7 +6,7 @@ expression -> Expression
   = assign
 
 assign -> Expression
-  = l:identifier "=" r:sum { Expression::Assignment(Box::new(l), Box::new(r)) }
+  = l:identifier "=" r:sum { Expression::Assign(Box::new(l), Box::new(r)) }
   / sum
 
 sum -> Expression
