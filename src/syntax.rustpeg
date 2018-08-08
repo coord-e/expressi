@@ -6,28 +6,30 @@ expression -> Expression
   = follow
 
 follow -> Expression
-  = l:assign ";" r:follow { Expression::Follow(Box::new(l), Box::new(r)) }
+  = l:assign _ ";" _ r:follow { Expression::Follow(Box::new(l), Box::new(r)) }
   / assign
 
 assign -> Expression
-  = l:identifier "=" r:assign { Expression::Assign(Box::new(l), Box::new(r)) }
+  = l:identifier _ "=" _ r:assign { Expression::Assign(Box::new(l), Box::new(r)) }
   / sum
 
 sum -> Expression
-  = l:product op:$("+" / "-") r:sum { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
+  = l:product _ op:$("+" / "-") _ r:sum { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
   / product
 
 product -> Expression
-  = l:atom op:$("*" / "/") r:product { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
+  = l:atom _ op:$("*" / "/") _ r:product { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
   / atom
 
 atom -> Expression
   = number
   / identifier
-  / "(" v:expression ")" { v }
+  / "(" _ v:expression _ ")" { v }
 
 identifier -> Expression
   = n:$([a-zA-Z] [a-zA-Z0-9_]*) { Expression::Identifier(n.to_owned()) }
 
 number -> Expression
   = n:$([0-9]+) { Expression::Number(n.parse().unwrap()) }
+
+_ = [ \t\n]*
