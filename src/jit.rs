@@ -122,6 +122,26 @@ impl<'a> FunctionTranslator<'a> {
                 }
             }
 
+            Expression::Assignment(lhs, rhs) => {
+                let new_value = self.translate_expr(*rhs);
+                let name = match *lhs {
+                    Expression::Identifier(name) => name,
+                    _ => {
+                        panic!("Non-identifier identifier")
+                    }
+                };
+                let variable = if self.variables.contains_key(&name) {
+                    *self.variables.get(&name).unwrap()
+                } else {
+                    let variable = Variable::new(self.variables.len());
+                    self.variables.insert(name.into(), variable);
+                    self.builder.declare_var(variable, self.module.pointer_type());
+                    variable
+                };
+                self.builder.def_var(variable, new_value);
+                new_value
+            }
+
             Expression::Identifier(name) => {
                 let variable = self.variables.get(&name).expect("variable not defined");
                 self.builder.use_var(*variable)
