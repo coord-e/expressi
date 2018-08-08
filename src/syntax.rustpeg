@@ -3,7 +3,11 @@ use expression::Operator;
 
 #[pub]
 expression -> Expression
-  = sum
+  = assign
+
+assign -> Expression
+  = l:identifier "=" r:sum { Expression::Assign(Box::new(l), Box::new(r)) }
+  / sum
 
 sum -> Expression
   = l:product op:$("+" / "-") r:product { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
