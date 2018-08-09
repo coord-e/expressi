@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Operator {
     Add,
@@ -16,9 +18,14 @@ pub enum Operator {
     Unknown,
 }
 
-impl Operator {
-    pub fn from_str(x: &str) -> Operator {
-        match x {
+#[derive(Debug, Clone, PartialEq)]
+pub struct OperatorParseError;
+
+impl FromStr for Operator {
+    type Err = OperatorParseError;
+
+    fn from_str(x: &str) -> Result<Self, Self::Err> {
+        Ok(match x {
             "+" => Operator::Add,
             "-" => Operator::Sub,
             "*" => Operator::Mul,
@@ -32,8 +39,8 @@ impl Operator {
             ">=" => Operator::Ge,
             "==" => Operator::Eq,
             "!=" => Operator::Ne,
-            _ => Operator::Unknown,
-        }
+            _ => return Err(OperatorParseError),
+        })
     }
 }
 
