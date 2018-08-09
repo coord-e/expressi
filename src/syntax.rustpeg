@@ -3,31 +3,26 @@ use expression::Operator;
 
 #[pub]
 expression -> Expression
-  = follow
+  = bin_op
 
-follow -> Expression
-  = l:assign _ ";" _ r:follow { Expression::Follow(Box::new(l), Box::new(r)) }
-  / assign
-
-assign -> Expression
-  = l:identifier _ "=" _ r:assign { Expression::Assign(Box::new(l), Box::new(r)) }
-  / bitwise
-
-bitwise -> Expression
-  = l:comparison _ op:$("&" / "^" / "|") _ r:bitwise { Expression::BinOp(op.parse().unwrap(), Box::new(l), Box::new(r)) }
-  / comparison
-
-comparison -> Expression
-  = l:sum _ op:$("<" / ">" / "<=" / ">=" / "==" / "!=") _ r:comparison { Expression::BinOp(op.parse().unwrap(), Box::new(l), Box::new(r)) }
-  / sum
-
-sum -> Expression
-  = l:product _ op:$("+" / "-") _ r:sum { Expression::BinOp(op.parse().unwrap(), Box::new(l), Box::new(r)) }
-  / product
-
-product -> Expression
-  = l:atom _ op:$("*" / "/") _ r:product { Expression::BinOp(op.parse().unwrap(), Box::new(l), Box::new(r)) }
-  / atom
+bin_op -> Expression
+  = #infix<atom> {
+  #L x "+" y { Expression::BinOp(Operator::Add, Box::new(x), Box::new(y)) }
+     x "-" y { Expression::BinOp(Operator::Sub, Box::new(x), Box::new(y)) }
+  #L x "*" y { Expression::BinOp(Operator::Mul, Box::new(x), Box::new(y)) }
+     x "/" y { Expression::BinOp(Operator::Div, Box::new(x), Box::new(y)) }
+  #L x "<" y { Expression::BinOp(Operator::Lt, Box::new(x), Box::new(y)) }
+     x ">" y { Expression::BinOp(Operator::Gt, Box::new(x), Box::new(y)) }
+     x "<=" y { Expression::BinOp(Operator::Le, Box::new(x), Box::new(y)) }
+     x ">=" y { Expression::BinOp(Operator::Ge, Box::new(x), Box::new(y)) }
+     x "==" y { Expression::BinOp(Operator::Eq, Box::new(x), Box::new(y)) }
+     x "!=" y { Expression::BinOp(Operator::Ne, Box::new(x), Box::new(y)) }
+  #L x "&" y { Expression::BinOp(Operator::BitAnd, Box::new(x), Box::new(y)) }
+     x "^" y { Expression::BinOp(Operator::BitXor, Box::new(x), Box::new(y)) }
+     x "|" y { Expression::BinOp(Operator::BitOr, Box::new(x), Box::new(y)) }
+  #R x "=" y { Expression::Assign(Box::new(x), Box::new(y)) }
+  #L x ";" y { Expression::Follow(Box::new(x), Box::new(y)) }
+}
 
 atom -> Expression
   = number
