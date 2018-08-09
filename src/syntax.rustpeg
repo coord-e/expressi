@@ -6,7 +6,7 @@ expression -> Expression
   = bin_op
 
 bin_op -> Expression
-  = #infix<infix_atom> {
+  = #infix<spaced_atom> {
   #L x ";" y { Expression::Follow(Box::new(x), Box::new(y)) }
   #R x "=" y { Expression::Assign(Box::new(x), Box::new(y)) }
   #L x "|" y { Expression::BinOp(Operator::BitOr, Box::new(x), Box::new(y)) }
@@ -24,8 +24,11 @@ bin_op -> Expression
      x "/" y { Expression::BinOp(Operator::Div, Box::new(x), Box::new(y)) }
 }
 
-infix_atom -> Expression
-  = _ v:atom _ { v }
+if_else -> Expression
+  = "if" cond:expression then_expr:expression "else" else_expr:spaced_atom { Expression::IfElse(Box::new(cond), Box::new(then_expr), Box::new(else_expr)) }
+
+spaced_atom -> Expression
+  = _ v:(if_else / atom) _ { v }
 
 atom -> Expression
   = number
