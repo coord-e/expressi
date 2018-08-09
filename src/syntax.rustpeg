@@ -31,6 +31,7 @@ product -> Expression
 
 atom -> Expression
   = number
+  / boolean
   / identifier
   / "(" _ v:expression _ ")" { v }
 
@@ -39,5 +40,8 @@ identifier -> Expression
 
 number -> Expression
   = n:$([0-9]+) { Expression::Number(n.parse().unwrap()) }
+
+boolean -> Expression
+  = n:$("true" / "false") { Expression::Boolean(n.parse().unwrap()) }
 
 _ = [ \t\n]*

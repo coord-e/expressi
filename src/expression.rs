@@ -40,6 +40,7 @@ impl Operator {
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Expression {
     Number(i64),
+    Boolean(bool),
     Identifier(String),
     Assign(Box<Expression>, Box<Expression>),
     Follow(Box<Expression>, Box<Expression>),

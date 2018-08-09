@@ -121,6 +121,10 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.ins().iconst(self.int, i64::from(number))
             }
 
+            Expression::Boolean(tf) => {
+                self.builder.ins().bconst(types::B1, tf)
+            }
+
             Expression::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs);
                 let rhs = self.translate_expr(*rhs);
