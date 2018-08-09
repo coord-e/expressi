@@ -19,6 +19,12 @@ mod tests {
     }
 
     #[test]
+    fn boolean() {
+        assert_eq!(parse("true"), Ok(Expression::Boolean(true)));
+        assert_eq!(parse("false"), Ok(Expression::Boolean(false)));
+    }
+
+    #[test]
     fn multidigit_number() {
         assert_eq!(parse("10"), Ok(Expression::Number(10)))
     }
