@@ -4,6 +4,7 @@ use expression::{Expression, Operator};
 use std::collections::HashMap;
 
 use cranelift::prelude::*;
+use cranelift::prelude::codegen::ir::InstBuilderBase;
 use cranelift_module::{DataContext, Linkage, Module};
 use cranelift_simplejit::{SimpleJITBackend, SimpleJITBuilder};
 
@@ -141,7 +142,8 @@ impl<'a> FunctionTranslator<'a> {
                 } else {
                     let variable = Variable::new(self.variables.len());
                     self.variables.insert(name.into(), variable);
-                    self.builder.declare_var(variable, self.module.pointer_type());
+                    let new_type = self.builder.ins().data_flow_graph().value_type(new_value);
+                    self.builder.declare_var(variable, new_type);
                     variable
                 };
                 self.builder.def_var(variable, new_value);
