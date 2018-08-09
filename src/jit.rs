@@ -1,10 +1,10 @@
-use parser;
 use expression::{Expression, Operator};
+use parser;
 
 use std::collections::HashMap;
 
-use cranelift::prelude::*;
 use cranelift::codegen::ir::InstBuilderBase;
+use cranelift::prelude::*;
 use cranelift_module::{DataContext, Linkage, Module};
 use cranelift_simplejit::{SimpleJITBackend, SimpleJITBuilder};
 
@@ -35,14 +35,13 @@ impl JIT {
     /// Compile a string in the toy language into machine code.
     pub fn compile(&mut self, name: &str, input: &str) -> Result<*const u8, String> {
         // Parse the string, producing AST nodes.
-        let ast = parser::parse(&input)
-            .map_err(|e| e.to_string())?;
+        let ast = parser::parse(&input).map_err(|e| e.to_string())?;
 
         // Translate the AST nodes into Cranelift IR.
-        self.translate(ast)
-            .map_err(|e| e.to_string())?;
+        self.translate(ast).map_err(|e| e.to_string())?;
 
-        let id = self.module
+        let id = self
+            .module
             .declare_function(&name, Linkage::Export, &self.ctx.func.signature)
             .map_err(|e| e.to_string())?;
 
@@ -60,10 +59,7 @@ impl JIT {
     }
 
     // Translate from toy-language AST nodes into Cranelift IR.
-    fn translate(
-        &mut self,
-        expr: Expression,
-    ) -> Result<(), String> {
+    fn translate(&mut self, expr: Expression) -> Result<(), String> {
         let int = self.module.pointer_type();
         self.ctx.func.signature.returns.push(AbiParam::new(int));
 
@@ -117,13 +113,9 @@ impl<'a> FunctionTranslator<'a> {
     /// can then use these references in other instructions.
     fn translate_expr(&mut self, expr: Expression) -> Value {
         match expr {
-            Expression::Number(number) => {
-                self.builder.ins().iconst(self.int, i64::from(number))
-            }
+            Expression::Number(number) => self.builder.ins().iconst(self.int, i64::from(number)),
 
-            Expression::Boolean(tf) => {
-                self.builder.ins().bconst(types::B1, tf)
-            }
+            Expression::Boolean(tf) => self.builder.ins().bconst(types::B1, tf),
 
             Expression::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs);
@@ -138,8 +130,15 @@ impl<'a> FunctionTranslator<'a> {
                     Operator::BitOr => self.builder.ins().bor(lhs, rhs),
                     Operator::Lt => self.builder.ins().icmp(IntCC::SignedLessThan, lhs, rhs),
                     Operator::Gt => self.builder.ins().icmp(IntCC::SignedGreaterThan, lhs, rhs),
-                    Operator::Le => self.builder.ins().icmp(IntCC::SignedLessThanOrEqual, lhs, rhs),
-                    Operator::Ge => self.builder.ins().icmp(IntCC::SignedGreaterThanOrEqual, lhs, rhs),
+                    Operator::Le => self
+                        .builder
+                        .ins()
+                        .icmp(IntCC::SignedLessThanOrEqual, lhs, rhs),
+                    Operator::Ge => {
+                        self.builder
+                            .ins()
+                            .icmp(IntCC::SignedGreaterThanOrEqual, lhs, rhs)
+                    }
                     Operator::Eq => self.builder.ins().icmp(IntCC::Equal, lhs, rhs),
                     Operator::Ne => self.builder.ins().icmp(IntCC::NotEqual, lhs, rhs),
                     Operator::Unknown => lhs,
@@ -156,9 +155,7 @@ impl<'a> FunctionTranslator<'a> {
                 let new_value = self.translate_expr(*rhs);
                 let name = match *lhs {
                     Expression::Identifier(name) => name,
-                    _ => {
-                        panic!("Non-identifier identifier")
-                    }
+                    _ => panic!("Non-identifier identifier"),
                 };
                 let variable = if self.variables.contains_key(&name) {
                     *self.variables.get(&name).unwrap()
@@ -180,4 +177,3 @@ impl<'a> FunctionTranslator<'a> {
         }
     }
 }
-
