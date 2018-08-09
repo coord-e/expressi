@@ -178,12 +178,13 @@ impl<'a> FunctionTranslator<'a> {
                 let else_block = self.builder.create_ebb();
                 let merge_block = self.builder.create_ebb();
 
-                self.builder.append_ebb_param(merge_block, types::I64);
-
                 // Test the confition
                 self.builder.ins().brz(condition_value, else_block, &[]);
 
                 let then_return = self.translate_expr(*then_expr);
+
+                let then_return_type = self.builder.ins().data_flow_graph().value_type(then_return);
+                self.builder.append_ebb_param(merge_block, then_return_type);
 
                 // Jump to merge block after translation of the 'then' block
                 self.builder.ins().jump(merge_block, &[then_return]);
@@ -193,6 +194,8 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.seal_block(else_block);
 
                 let else_return = self.translate_expr(*else_expr);
+                let else_return_type = self.builder.ins().data_flow_graph().value_type(else_return);
+                if then_return_type != else_return_type { panic!("Using different type value in if-else") }
 
                 // Jump to merge block after translation of the 'then' block
                 self.builder.ins().jump(merge_block, &[else_return]);
