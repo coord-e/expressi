@@ -60,7 +60,11 @@ impl JIT {
 
     // Translate from toy-language AST nodes into Cranelift IR.
     fn translate(&mut self, expr: Expression) -> Result<(), String> {
-        self.ctx.func.signature.returns.push(AbiParam::new(self.module.pointer_type()));
+        self.ctx
+            .func
+            .signature
+            .returns
+            .push(AbiParam::new(self.module.pointer_type()));
 
         let mut builder =
             FunctionBuilder::<Variable>::new(&mut self.ctx.func, &mut self.builder_context);
@@ -170,7 +174,6 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.use_var(*variable)
             }
 
-
             Expression::IfElse(cond, then_expr, else_expr) => {
                 let condition_value = self.translate_expr(*cond);
 
@@ -194,7 +197,9 @@ impl<'a> FunctionTranslator<'a> {
 
                 let else_return = self.translate_expr(*else_expr);
                 let else_return_type = self.builder.ins().data_flow_graph().value_type(else_return);
-                if then_return_type != else_return_type { panic!("Using different type value in if-else") }
+                if then_return_type != else_return_type {
+                    panic!("Using different type value in if-else")
+                }
 
                 // Jump to merge block after translation of the 'then' block
                 self.builder.ins().jump(merge_block, &[else_return]);
