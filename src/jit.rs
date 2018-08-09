@@ -65,7 +65,7 @@ impl JIT {
             .func
             .signature
             .returns
-            .push(AbiParam::new(self.module.pointer_type()));
+            .push(AbiParam::new(types::I64));
 
         let mut builder =
             FunctionBuilder::<Variable>::new(&mut self.ctx.func, &mut self.builder_context);
