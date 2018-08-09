@@ -60,7 +60,11 @@ impl JIT {
 
     // Translate from toy-language AST nodes into Cranelift IR.
     fn translate(&mut self, expr: Expression) -> Result<(), String> {
-        self.ctx.func.signature.returns.push(AbiParam::new(self.module.pointer_type()));
+        self.ctx
+            .func
+            .signature
+            .returns
+            .push(AbiParam::new(self.module.pointer_type()));
 
         let mut builder =
             FunctionBuilder::<Variable>::new(&mut self.ctx.func, &mut self.builder_context);
@@ -144,8 +148,7 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Follow(lhs, rhs) => {
                 self.translate_expr(*lhs);
-                let rhs = self.translate_expr(*rhs);
-                rhs
+                self.translate_expr(*rhs)
             }
 
             Expression::Assign(lhs, rhs) => {
