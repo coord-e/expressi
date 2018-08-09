@@ -53,38 +53,22 @@ mod tests {
     }
 
     #[test]
-    fn operator_add() {
-        test_binop!("0+0", Operator::Add)
-    }
-
-    #[test]
-    fn operator_sub() {
-        test_binop!("0-0", Operator::Sub)
+    fn operator_sum() {
+        test_binop!("0+0", Operator::Add);
+        test_binop!("0-0", Operator::Sub);
     }
 
     #[test]
     fn operator_mul() {
-        test_binop!("0*0", Operator::Mul)
+        test_binop!("0*0", Operator::Mul);
+        test_binop!("0/0", Operator::Div);
     }
 
     #[test]
-    fn operator_div() {
-        test_binop!("0/0", Operator::Div)
-    }
-
-    #[test]
-    fn operator_bitand() {
-        test_binop!("0&0", Operator::BitAnd)
-    }
-
-    #[test]
-    fn operator_bitxor() {
-        test_binop!("0^0", Operator::BitXor)
-    }
-
-    #[test]
-    fn operator_bitor() {
-        test_binop!("0|0", Operator::BitOr)
+    fn operator_bit() {
+        test_binop!("0&0", Operator::BitAnd);
+        test_binop!("0^0", Operator::BitXor);
+        test_binop!("0|0", Operator::BitOr);
     }
 
     #[test]
@@ -94,7 +78,7 @@ mod tests {
         test_binop!("0<=0", Operator::Le);
         test_binop!("0>=0", Operator::Ge);
         test_binop!("0==0", Operator::Eq);
-        test_binop!("0!=0", Operator::Ne)
+        test_binop!("0!=0", Operator::Ne);
     }
 
     #[test]
