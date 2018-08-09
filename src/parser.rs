@@ -104,7 +104,19 @@ mod tests {
     }
 
     #[test]
-    fn operator_precedence() {
+    fn ifelse() {
+        assert_eq!(
+            parse("if true 0 else 0"),
+            Ok(Expression::IfElse(
+                Box::new(Expression::Boolean(true)),
+                Box::new(Expression::Number(0)),
+                Box::new(Expression::Number(0))
+            ))
+        )
+    }
+
+    #[test]
+    fn operator_precedence_arith() {
         assert_eq!(
             parse("0+0*0"),
             Ok(Expression::BinOp(
@@ -115,6 +127,51 @@ mod tests {
                     Box::new(Expression::Number(0)),
                     Box::new(Expression::Number(0))
                 ))
+            ))
+        )
+    }
+
+    #[test]
+    fn operator_precedence_arith_bracket() {
+        assert_eq!(
+            parse("(0+0)*0"),
+            Ok(Expression::BinOp(
+                Operator::Mul,
+                Box::new(Expression::BinOp(
+                    Operator::Add,
+                    Box::new(Expression::Number(0)),
+                    Box::new(Expression::Number(0))
+                )),
+                Box::new(Expression::Number(0))
+            ))
+        )
+    }
+
+    #[test]
+    fn operator_precedence_assign_follow() {
+        assert_eq!(
+            parse("a=0;0"),
+            Ok(Expression::Follow(
+                Box::new(Expression::Assign(
+                    Box::new(Expression::Identifier("a".to_owned())),
+                    Box::new(Expression::Number(0))
+                )),
+                Box::new(Expression::Number(0))
+            ))
+        )
+    }
+
+    #[test]
+    fn operator_precedence_ifelse_follow() {
+        assert_eq!(
+            parse("if true 0 else 0;0"),
+            Ok(Expression::Follow(
+                Box::new(Expression::IfElse(
+                    Box::new(Expression::Boolean(true)),
+                    Box::new(Expression::Number(0)),
+                    Box::new(Expression::Number(0))
+                )),
+                Box::new(Expression::Number(0))
             ))
         )
     }
