@@ -11,6 +11,10 @@ follow -> Expression
 
 assign -> Expression
   = l:identifier _ "=" _ r:assign { Expression::Assign(Box::new(l), Box::new(r)) }
+  / bitwise
+
+bitwise -> Expression
+  = l:comparison _ op:$("&" / "^" / "|") _ r:bitwise { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
   / comparison
 
 comparison -> Expression
