@@ -4,6 +4,7 @@ use expression::{Expression, Operator};
 use std::collections::HashMap;
 
 use cranelift::prelude::*;
+use cranelift::codegen::ir::InstBuilderBase;
 use cranelift_module::{DataContext, Linkage, Module};
 use cranelift_simplejit::{SimpleJITBackend, SimpleJITBuilder};
 
@@ -82,7 +83,17 @@ impl JIT {
             variables: HashMap::new(),
             module: &mut self.module,
         };
-        let return_value = trans.translate_expr(expr);
+        let evaluated_value = trans.translate_expr(expr);
+        let evaluated_type = trans
+            .builder
+            .ins()
+            .data_flow_graph()
+            .value_type(evaluated_value);
+        let return_value = if evaluated_type != int {
+            trans.builder.ins().bint(int, evaluated_value)
+        } else {
+            evaluated_value
+        };
         // Emit the return instruction.
         trans.builder.ins().return_(&[return_value]);
 
