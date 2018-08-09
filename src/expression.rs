@@ -53,3 +53,18 @@ pub enum Expression {
     BinOp(Operator, Box<Expression>, Box<Expression>),
     IfElse(Box<Expression>, Box<Expression>, Box<Expression>),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn from_str() {
+        assert_eq!("+".parse::<Operator>().unwrap(), Operator::Add)
+    }
+
+    #[test]
+    fn from_str_err() {
+        assert!("a".parse::<Operator>().is_err())
+    }
+}
