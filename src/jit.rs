@@ -60,8 +60,7 @@ impl JIT {
 
     // Translate from toy-language AST nodes into Cranelift IR.
     fn translate(&mut self, expr: Expression) -> Result<(), String> {
-        let int = self.module.pointer_type();
-        self.ctx.func.signature.returns.push(AbiParam::new(int));
+        self.ctx.func.signature.returns.push(AbiParam::new(self.module.pointer_type()));
 
         let mut builder =
             FunctionBuilder::<Variable>::new(&mut self.ctx.func, &mut self.builder_context);
@@ -74,7 +73,6 @@ impl JIT {
         builder.seal_block(entry_ebb);
 
         let mut trans = FunctionTranslator {
-            int,
             builder,
             variables: HashMap::new(),
             module: &mut self.module,
@@ -85,8 +83,8 @@ impl JIT {
             .ins()
             .data_flow_graph()
             .value_type(evaluated_value);
-        let return_value = if evaluated_type != int {
-            trans.builder.ins().bint(int, evaluated_value)
+        let return_value = if evaluated_type != types::I64 {
+            trans.builder.ins().bint(types::I64, evaluated_value)
         } else {
             evaluated_value
         };
@@ -102,7 +100,6 @@ impl JIT {
 /// A collection of state used for translating from toy-language AST nodes
 /// into Cranelift IR.
 struct FunctionTranslator<'a> {
-    int: types::Type,
     builder: FunctionBuilder<'a, Variable>,
     variables: HashMap<String, Variable>,
     module: &'a mut Module<SimpleJITBackend>,
@@ -113,7 +110,7 @@ impl<'a> FunctionTranslator<'a> {
     /// can then use these references in other instructions.
     fn translate_expr(&mut self, expr: Expression) -> Value {
         match expr {
-            Expression::Number(number) => self.builder.ins().iconst(self.int, i64::from(number)),
+            Expression::Number(number) => self.builder.ins().iconst(types::I64, i64::from(number)),
 
             Expression::Boolean(tf) => self.builder.ins().bconst(types::B1, tf),
 
