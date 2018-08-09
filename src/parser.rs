@@ -10,6 +10,13 @@ pub fn parse(x: &str) -> Result<Expression, syntax::ParseError> {
 
 #[cfg(test)]
 mod tests {
+    use parser::parse;
+
+    #[test]
+    fn skip_space() {
+        assert_eq!(parse("1 +\n1 "), parse("1+1"))
+    }
+
     mod literal {
         use expression::{Expression, Operator};
         use parser::parse;
