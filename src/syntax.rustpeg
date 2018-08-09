@@ -7,21 +7,21 @@ expression -> Expression
 
 bin_op -> Expression
   = #infix<infix_atom> {
-  #L x "+" y { Expression::BinOp(Operator::Add, Box::new(x), Box::new(y)) }
-     x "-" y { Expression::BinOp(Operator::Sub, Box::new(x), Box::new(y)) }
-  #L x "*" y { Expression::BinOp(Operator::Mul, Box::new(x), Box::new(y)) }
-     x "/" y { Expression::BinOp(Operator::Div, Box::new(x), Box::new(y)) }
+  #L x ";" y { Expression::Follow(Box::new(x), Box::new(y)) }
+  #R x "=" y { Expression::Assign(Box::new(x), Box::new(y)) }
+  #L x "|" y { Expression::BinOp(Operator::BitOr, Box::new(x), Box::new(y)) }
+     x "^" y { Expression::BinOp(Operator::BitXor, Box::new(x), Box::new(y)) }
+     x "&" y { Expression::BinOp(Operator::BitAnd, Box::new(x), Box::new(y)) }
   #L x "<" y { Expression::BinOp(Operator::Lt, Box::new(x), Box::new(y)) }
      x ">" y { Expression::BinOp(Operator::Gt, Box::new(x), Box::new(y)) }
      x "<=" y { Expression::BinOp(Operator::Le, Box::new(x), Box::new(y)) }
      x ">=" y { Expression::BinOp(Operator::Ge, Box::new(x), Box::new(y)) }
      x "==" y { Expression::BinOp(Operator::Eq, Box::new(x), Box::new(y)) }
      x "!=" y { Expression::BinOp(Operator::Ne, Box::new(x), Box::new(y)) }
-  #L x "&" y { Expression::BinOp(Operator::BitAnd, Box::new(x), Box::new(y)) }
-     x "^" y { Expression::BinOp(Operator::BitXor, Box::new(x), Box::new(y)) }
-     x "|" y { Expression::BinOp(Operator::BitOr, Box::new(x), Box::new(y)) }
-  #R x "=" y { Expression::Assign(Box::new(x), Box::new(y)) }
-  #L x ";" y { Expression::Follow(Box::new(x), Box::new(y)) }
+  #L x "+" y { Expression::BinOp(Operator::Add, Box::new(x), Box::new(y)) }
+     x "-" y { Expression::BinOp(Operator::Sub, Box::new(x), Box::new(y)) }
+  #L x "*" y { Expression::BinOp(Operator::Mul, Box::new(x), Box::new(y)) }
+     x "/" y { Expression::BinOp(Operator::Div, Box::new(x), Box::new(y)) }
 }
 
 infix_atom -> Expression
