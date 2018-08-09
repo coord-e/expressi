@@ -73,6 +73,53 @@ mod tests {
     }
 
     #[test]
+    fn operator_bitand() {
+        test_binop!("0&0", Operator::BitAnd)
+    }
+
+    #[test]
+    fn operator_bitxor() {
+        test_binop!("0^0", Operator::BitXor)
+    }
+
+    #[test]
+    fn operator_bitor() {
+        test_binop!("0|0", Operator::BitOr)
+    }
+
+    #[test]
+    fn operator_comp() {
+        test_binop!("0<0", Operator::Lt);
+        test_binop!("0>0", Operator::Gt);
+        test_binop!("0<=0", Operator::Le);
+        test_binop!("0>=0", Operator::Ge);
+        test_binop!("0==0", Operator::Eq);
+        test_binop!("0!=0", Operator::Ne)
+    }
+
+    #[test]
+    fn assign() {
+        assert_eq!(
+            parse("a=0"),
+            Ok(Expression::Assign(
+                Box::new(Expression::Identifier("a".to_owned())),
+                Box::new(Expression::Number(0))
+            ))
+        )
+    }
+
+    #[test]
+    fn follow() {
+        assert_eq!(
+            parse("0;0"),
+            Ok(Expression::Follow(
+                Box::new(Expression::Number(0)),
+                Box::new(Expression::Number(0))
+            ))
+        )
+    }
+
+    #[test]
     fn operator_precedence() {
         assert_eq!(
             parse("0+0*0"),
