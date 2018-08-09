@@ -11,6 +11,14 @@ follow -> Expression
 
 assign -> Expression
   = l:identifier _ "=" _ r:assign { Expression::Assign(Box::new(l), Box::new(r)) }
+  / bitwise
+
+bitwise -> Expression
+  = l:comparison _ op:$("&" / "^" / "|") _ r:bitwise { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
+  / comparison
+
+comparison -> Expression
+  = l:sum _ op:$("<" / ">" / "<=" / ">=" / "==" / "!=") _ r:comparison { Expression::BinOp(Operator::from_str(op), Box::new(l), Box::new(r)) }
   / sum
 
 sum -> Expression
@@ -23,6 +31,7 @@ product -> Expression
 
 atom -> Expression
   = number
+  / boolean
   / identifier
   / "(" _ v:expression _ ")" { v }
 
@@ -31,5 +40,8 @@ identifier -> Expression
 
 number -> Expression
   = n:$([0-9]+) { Expression::Number(n.parse().unwrap()) }
+
+boolean -> Expression
+  = n:$("true" / "false") { Expression::Boolean(n.parse().unwrap()) }
 
 _ = [ \t\n]*

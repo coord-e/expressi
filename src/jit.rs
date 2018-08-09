@@ -4,7 +4,7 @@ use expression::{Expression, Operator};
 use std::collections::HashMap;
 
 use cranelift::prelude::*;
-use cranelift::prelude::codegen::ir::InstBuilderBase;
+use cranelift::codegen::ir::InstBuilderBase;
 use cranelift_module::{DataContext, Linkage, Module};
 use cranelift_simplejit::{SimpleJITBackend, SimpleJITBuilder};
 
@@ -83,7 +83,17 @@ impl JIT {
             variables: HashMap::new(),
             module: &mut self.module,
         };
-        let return_value = trans.translate_expr(expr);
+        let evaluated_value = trans.translate_expr(expr);
+        let evaluated_type = trans
+            .builder
+            .ins()
+            .data_flow_graph()
+            .value_type(evaluated_value);
+        let return_value = if evaluated_type != int {
+            trans.builder.ins().bint(int, evaluated_value)
+        } else {
+            evaluated_value
+        };
         // Emit the return instruction.
         trans.builder.ins().return_(&[return_value]);
 
@@ -111,6 +121,10 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.ins().iconst(self.int, i64::from(number))
             }
 
+            Expression::Boolean(tf) => {
+                self.builder.ins().bconst(types::B1, tf)
+            }
+
             Expression::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs);
                 let rhs = self.translate_expr(*rhs);
@@ -119,6 +133,15 @@ impl<'a> FunctionTranslator<'a> {
                     Operator::Sub => self.builder.ins().isub(lhs, rhs),
                     Operator::Mul => self.builder.ins().imul(lhs, rhs),
                     Operator::Div => self.builder.ins().udiv(lhs, rhs),
+                    Operator::BitAnd => self.builder.ins().iadd(lhs, rhs),
+                    Operator::BitXor => self.builder.ins().bxor(lhs, rhs),
+                    Operator::BitOr => self.builder.ins().bor(lhs, rhs),
+                    Operator::Lt => self.builder.ins().icmp(IntCC::SignedLessThan, lhs, rhs),
+                    Operator::Gt => self.builder.ins().icmp(IntCC::SignedGreaterThan, lhs, rhs),
+                    Operator::Le => self.builder.ins().icmp(IntCC::SignedLessThanOrEqual, lhs, rhs),
+                    Operator::Ge => self.builder.ins().icmp(IntCC::SignedGreaterThanOrEqual, lhs, rhs),
+                    Operator::Eq => self.builder.ins().icmp(IntCC::Equal, lhs, rhs),
+                    Operator::Ne => self.builder.ins().icmp(IntCC::NotEqual, lhs, rhs),
                     Operator::Unknown => lhs,
                 }
             }
