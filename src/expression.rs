@@ -52,4 +52,5 @@ pub enum Expression {
     Assign(Box<Expression>, Box<Expression>),
     Follow(Box<Expression>, Box<Expression>),
     BinOp(Operator, Box<Expression>, Box<Expression>),
+    IfElse(Box<Expression>, Box<Expression>, Box<Expression>),
 }

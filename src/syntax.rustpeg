@@ -3,7 +3,10 @@ use expression::Operator;
 
 #[pub]
 expression -> Expression
-  = bin_op
+  = if_else / bin_op
+
+if_else -> Expression
+  = "if" cond:expression then_expr:expression "else" else_expr:expression { Expression::IfElse(Box::new(cond), Box::new(then_expr), Box::new(else_expr)) }
 
 bin_op -> Expression
   = #infix<infix_atom> {

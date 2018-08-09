@@ -60,11 +60,7 @@ impl JIT {
 
     // Translate from toy-language AST nodes into Cranelift IR.
     fn translate(&mut self, expr: Expression) -> Result<(), String> {
-        self.ctx
-            .func
-            .signature
-            .returns
-            .push(AbiParam::new(self.module.pointer_type()));
+        self.ctx.func.signature.returns.push(AbiParam::new(self.module.pointer_type()));
 
         let mut builder =
             FunctionBuilder::<Variable>::new(&mut self.ctx.func, &mut self.builder_context);
@@ -173,6 +169,39 @@ impl<'a> FunctionTranslator<'a> {
             Expression::Identifier(name) => {
                 let variable = self.variables.get(&name).expect("variable not defined");
                 self.builder.use_var(*variable)
+            }
+
+
+            Expression::IfElse(cond, then_expr, else_expr) => {
+                let condition_value = self.translate_expr(*cond);
+
+                let else_block = self.builder.create_ebb();
+                let merge_block = self.builder.create_ebb();
+
+                self.builder.append_ebb_param(merge_block, types::I64);
+
+                // Test the confition
+                self.builder.ins().brz(condition_value, else_block, &[]);
+
+                let then_return = self.translate_expr(*then_expr);
+
+                // Jump to merge block after translation of the 'then' block
+                self.builder.ins().jump(merge_block, &[then_return]);
+
+                // Start writing 'else' block
+                self.builder.switch_to_block(else_block);
+                self.builder.seal_block(else_block);
+
+                let else_return = self.translate_expr(*else_expr);
+
+                // Jump to merge block after translation of the 'then' block
+                self.builder.ins().jump(merge_block, &[else_return]);
+
+                self.builder.switch_to_block(merge_block);
+                self.builder.seal_block(merge_block);
+
+                // Get returned value and return it
+                self.builder.ebb_params(merge_block)[0]
             }
         }
     }
