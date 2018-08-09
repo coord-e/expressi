@@ -138,7 +138,6 @@ impl<'a> FunctionTranslator<'a> {
                     }
                     Operator::Eq => self.builder.ins().icmp(IntCC::Equal, lhs, rhs),
                     Operator::Ne => self.builder.ins().icmp(IntCC::NotEqual, lhs, rhs),
-                    Operator::Unknown => lhs,
                 }
             }
 
