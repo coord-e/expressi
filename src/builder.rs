@@ -35,7 +35,7 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    pub fn inst_builder(&'a mut self) -> &'a mut FunctionBuilder<'a, Variable> {
+    pub fn inst_builder<'short>(&'short mut self) -> &'short mut FunctionBuilder<'a, Variable> {
         self.inst_builder
     }
 
