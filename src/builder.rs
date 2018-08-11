@@ -123,7 +123,7 @@ impl<'a> Builder<'a> {
             *self.variable_map.get(name).unwrap()
         } else {
             let variable = Variable::new(self.variable_map.len());
-            self.variable_map.insert(name, variable);
+            self.variable_map.insert(name.to_owned(), variable);
             self.inst_builder.declare_var(variable, val.get_type().cl_type());
             variable
         };
@@ -135,7 +135,7 @@ impl<'a> Builder<'a> {
     pub fn get_var(&self, name: &str) -> Option<Value> {
         if let Some(Variable{idx}) = self.variable_map.get(name) {
             let value = self.variable_value_map.get(idx).unwrap();
-            self.variable_map.get(name).map(|var| Value { cranelift_value: self.inst_builder.use_var(*var), .. value })
+            self.variable_map.get(&name).map(|var| Value { cranelift_value: self.inst_builder.use_var(*var), .. value })
         } else {
             None
         }
@@ -167,7 +167,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn block_params(&self, block: Block) -> &[Value] {
-        let signature = self.block_table.get(block).unwrap();
+        let signature = self.block_table.get(&block).unwrap();
         self.inst_builder.ebb_params(block.cl_ebb()).into_iter().zip(signature.iter()).map(|(v, t)| Value::new(v, t)).collect()
     }
 }
