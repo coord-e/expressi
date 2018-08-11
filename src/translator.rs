@@ -19,7 +19,7 @@ impl<'a> FunctionTranslator<'a> {
     /// can then use these references in other instructions.
     pub fn translate_expr(&mut self, expr: Expression) -> Value {
         match expr {
-            Expression::Number(number) => self.builder.constant(types::I64, number).unwrap(),
+            Expression::Number(number) => self.builder.constant(types::I64, i64::from(number)).unwrap(),
 
             Expression::Boolean(tf) => self.builder.constant(types::B1, tf).unwrap(),
 
