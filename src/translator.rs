@@ -3,13 +3,14 @@ use expression::{Expression, Operator};
 use builder::Builder;
 use value::Value;
 
+use cranelift::prelude::{FunctionBuilder, types, Variable};
 use cranelift_module::Module;
 use cranelift_simplejit::SimpleJITBackend;
 
 /// A collection of state used for translating from toy-language AST nodes
 /// into Cranelift IR.
 pub struct FunctionTranslator<'a> {
-    pub builder: Builder,
+    pub builder: Builder<FunctionBuilder<'a, Variable>>,
     pub module: &'a mut Module<SimpleJITBackend>,
 }
 

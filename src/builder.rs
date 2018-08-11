@@ -1,4 +1,7 @@
+use value::{Value, Type};
+
 use cranelift::codegen::ir::{InstBuilder, types, condcodes, entities};
+use cranelift::prelude::Variable;
 
 use std::collections::HashMap;
 
@@ -11,7 +14,7 @@ pub enum CondCode {
     LessThanOrEqual
 }
 
-struct Block {
+pub struct Block {
     ebb: entities::Ebb
 }
 
@@ -21,12 +24,12 @@ impl Block {
     }
 }
 
-struct Builder<T: InstBuilder> {
+pub struct Builder<T: InstBuilder> {
     inst_builder: T,
     variable_map: HashMap<String, Variable>,
     variable_value_map: HashMap<Variable, Value>,
     block_table: HashMap<Block, &[Type]>
-};
+}
 
 impl<T> Builder<T> {
     pub fn inst_builder(&self) -> T {
@@ -96,12 +99,12 @@ impl<T> Builder<T> {
 
     pub fn cmp(&self, cmp_type: CondCode, lhs: Value, rhs: Value) -> Value {
         let cc = match cmp_type {
-            CondCode::Equal => IntCC::Equal,
-            CondCode::NotEqual => IntCC::NotEqual,
-            CondCode::LessThan => IntCC::SignedLessThan,
-            CondCode::GreaterThanOrEqual => IntCC::SignedGreaterThanOrEqual,
-            CondCode::GreaterThan => IntCC::SignedGreaterThan,
-            CondCode::LessThanOrEqual => IntCC::SignedLessThanOrEqual
+            CondCode::Equal => condcodes::IntCC::Equal,
+            CondCode::NotEqual => condcodes::IntCC::NotEqual,
+            CondCode::LessThan => condcodes::IntCC::SignedLessThan,
+            CondCode::GreaterThanOrEqual => condcodes::IntCC::SignedGreaterThanOrEqual,
+            CondCode::GreaterThan => condcodes::IntCC::SignedGreaterThan,
+            CondCode::LessThanOrEqual => condcodes::IntCC::SignedLessThanOrEqual
         };
 
         let res = self.inst_builder.ins().icmp(cc, lhs.cl_value(), rhs.cl_value());
