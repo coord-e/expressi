@@ -16,7 +16,7 @@ pub enum CondCode {
     LessThanOrEqual
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Copy)]
 pub struct Block {
     ebb: entities::Ebb
 }

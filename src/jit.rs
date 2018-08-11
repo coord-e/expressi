@@ -72,13 +72,6 @@ impl JIT {
         let mut function_builder =
             FunctionBuilder::<Variable>::new(&mut self.ctx.func, &mut self.builder_context);
 
-        let mut builder = Builder {
-            inst_builder: function_builder,
-            variable_map: HashMap::new(),
-            variable_value_map: HashMap::new(),
-            block_table: HashMap::new()
-        };
-
         // TODO: Replace FunctionBuilder with Builder
         let entry_ebb = function_builder.create_ebb();
 
@@ -86,6 +79,13 @@ impl JIT {
 
         function_builder.switch_to_block(entry_ebb);
         function_builder.seal_block(entry_ebb);
+
+        let mut builder = Builder {
+            inst_builder: &mut function_builder,
+            variable_map: HashMap::new(),
+            variable_value_map: HashMap::new(),
+            block_table: HashMap::new()
+        };
 
         let mut trans = FunctionTranslator {
             builder,

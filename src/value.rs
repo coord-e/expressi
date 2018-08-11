@@ -1,7 +1,7 @@
 use cranelift::prelude;
 use cranelift::prelude::codegen::ir::dfg::DataFlowGraph;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Type {
     Number,
     Boolean
@@ -24,7 +24,7 @@ impl Type {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Value {
     pub cranelift_value: prelude::Value,
     pub value_type: Type,
@@ -39,10 +39,10 @@ impl Value {
     }
 
     pub fn cl_value(&self) -> prelude::Value {
-        self.cranelift_value
+        self.cranelift_value.clone()
     }
 
     pub fn get_type(&self) -> Type {
-        self.value_type
+        self.value_type.clone()
     }
 }
