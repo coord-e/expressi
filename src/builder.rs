@@ -25,14 +25,14 @@ impl Block {
     }
 }
 
-pub struct Builder<'a, T: InstBuilderBase<'a>> {
+pub struct Builder<'a, T> {
     inst_builder: T,
     variable_map: HashMap<String, Variable>,
     variable_value_map: HashMap<Variable, Value>,
     block_table: HashMap<Block, &'a [Type]>
 }
 
-impl<'a, T> Builder<'a, T> {
+impl<'a, T: InstBuilderBase<'a>> Builder<'a, T> {
     pub fn inst_builder(&self) -> T {
         self.inst_builder
     }
