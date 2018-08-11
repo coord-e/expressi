@@ -130,13 +130,12 @@ impl<'a> Builder<'a> {
             variable
         };
         self.inst_builder.def_var(variable, val.cl_value());
-        let Variable(idx) = variable;
-        self.variable_value_map.insert(idx, val);
+        self.variable_value_map.insert(variable.index(), val);
     }
 
     pub fn get_var(&self, name: &str) -> Option<Value> {
-        if let Some(&Variable(idx)) = self.variable_map.get(name) {
-            let value = self.variable_value_map.get(idx).unwrap();
+        if let Some(variable) = self.variable_map.get(name) {
+            let value = self.variable_value_map.get(&variable.index()).unwrap();
             self.variable_map.get(&name.to_owned()).map(|var| Value { cranelift_value: self.inst_builder.use_var(*var), .. *value })
         } else {
             None
