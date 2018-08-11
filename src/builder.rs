@@ -11,7 +11,8 @@ pub enum CondCode {
 
 struct Builder<T: InstBuilder> {
     inst_builder: T,
-    variable_map: HashMap<String, u32>
+    variable_map: HashMap<String, Variable>,
+    variable_value_map: HashMap<Variable, Value>
 };
 
 impl<T> Builder<T> {
@@ -92,5 +93,26 @@ impl<T> Builder<T> {
 
         let res = self.inst_builder.ins().icmp(cc, lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
+    }
+
+    pub fn set_var(&self, name: &str, val: Value) {
+        let variable = if self.variable_map.contains_key(name) {
+            *self.variable_map.get(name).unwrap()
+        } else {
+            let variable = Variable::new(self.variable_map.len());
+            self.variable_map.insert(name, variable);
+            self.inst_builder.declare_var(variable, val.get_type().cl_type());
+            variable
+        };
+        self.inst_builder.def_var(variable, val.cl_value());
+        self.variable_value_map.insert(variable, val);
+    }
+
+    pub fn get_var(&self, name: &str) -> Option<Value> {
+        if let Some(value) = self.variable_value_map.get(name) {
+            self.variable_map.get(name).map(|var| Value { cranelift_value: self.inst_builder.use_var(*var), .. value })
+        } else {
+            None
+        }
     }
 }
