@@ -10,7 +10,7 @@ use cranelift_simplejit::SimpleJITBackend;
 /// A collection of state used for translating from toy-language AST nodes
 /// into Cranelift IR.
 pub struct FunctionTranslator<'a> {
-    pub builder: Builder<FunctionBuilder<'a, Variable>>,
+    pub builder: Builder<'a, FunctionBuilder<'a, Variable>>,
     pub module: &'a mut Module<SimpleJITBackend>,
 }
 

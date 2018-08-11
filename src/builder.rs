@@ -1,6 +1,7 @@
 use value::{Value, Type};
+use expression::Operator;
 
-use cranelift::codegen::ir::{InstBuilder, types, condcodes, entities};
+use cranelift::codegen::ir::{InstBuilder, InstBuilderBase, types, condcodes, entities};
 use cranelift::prelude::Variable;
 
 use std::collections::HashMap;
@@ -24,14 +25,14 @@ impl Block {
     }
 }
 
-pub struct Builder<T: InstBuilder> {
+pub struct Builder<'a, T: InstBuilderBase<'a>> {
     inst_builder: T,
     variable_map: HashMap<String, Variable>,
     variable_value_map: HashMap<Variable, Value>,
-    block_table: HashMap<Block, &[Type]>
+    block_table: HashMap<Block, &'a [Type]>
 }
 
-impl<T> Builder<T> {
+impl<'a, T> Builder<'a, T> {
     pub fn inst_builder(&self) -> T {
         self.inst_builder
     }
@@ -44,7 +45,7 @@ impl<T> Builder<T> {
         }, t))
     }
 
-    pub fn apply_op(&self, op: Operator, lhs: Value, rhs: Value) => Value {
+    pub fn apply_op(&self, op: Operator, lhs: Value, rhs: Value) -> Value {
         match op {
             Operator::Add => self.add(lhs, rhs),
             Operator::Sub => self.sub(lhs, rhs),

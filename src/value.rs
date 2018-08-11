@@ -25,7 +25,7 @@ impl Type {
 }
 
 #[derive(Clone)]
-pub struct Value<'a> {
+pub struct Value {
     cranelift_value: prelude::Value,
     value_type: Type,
 }
