@@ -28,10 +28,10 @@ impl Block {
 }
 
 pub struct Builder<'a> {
-    inst_builder: FunctionBuilder<'a, Variable>,
-    variable_map: HashMap<String, Variable>,
-    variable_value_map: HashMap<u32, Value>,
-    block_table: HashMap<Block, &'a [Type]>
+    pub inst_builder: FunctionBuilder<'a, Variable>,
+    pub variable_map: HashMap<String, Variable>,
+    pub variable_value_map: HashMap<usize, Value>,
+    pub block_table: HashMap<Block, &'a [Type]>
 }
 
 impl<'a> Builder<'a> {
