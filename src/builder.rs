@@ -115,4 +115,29 @@ impl<T> Builder<T> {
             None
         }
     }
+
+    pub fn create_ebb(&self) -> Ebb {
+        self.inst_builder.create_ebb()
+    }
+
+    pub fn brz(&self, condition: Value, block: Ebb) {
+        self.inst_builder.ins().brz(condition.cl_value(), block);
+    }
+
+    pub fn append_ebb_param(&self, block: Ebb, t: Type) {
+        self.inst_builder.append_ebb_param(block, t.cl_type());
+    }
+
+    pub fn jump(&self, block: Ebb, args: &[Value]) {
+        self.inst_builder.ins().jump(block, args.into_iter().map(|v| v.cl_value()).collect());
+    }
+
+    pub fn switch_to_block(&self, block: Ebb) {
+        self.inst_builder.switch_to_block(block);
+        self.inst_builder.seal_block(block);
+    }
+
+    pub fn ebb_params(&self, block: Ebb) -> &[Value] {
+        self.inst_builder.ebb_params(block).into_iter().map(|v| Value::new(v, a)).collect()
+    }
 }
