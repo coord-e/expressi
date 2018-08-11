@@ -19,9 +19,9 @@ impl<'a> FunctionTranslator<'a> {
     /// can then use these references in other instructions.
     pub fn translate_expr(&mut self, expr: Expression) -> Value {
         match expr {
-            Expression::Number(number) => self.builder.constant(types::I64, number),
+            Expression::Number(number) => self.builder.constant(types::I64, number).unwrap(),
 
-            Expression::Boolean(tf) => self.builder.constant(types::B1, tf),
+            Expression::Boolean(tf) => self.builder.constant(types::B1, tf).unwrap(),
 
             Expression::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs);
@@ -40,12 +40,12 @@ impl<'a> FunctionTranslator<'a> {
                     Expression::Identifier(name) => name,
                     _ => panic!("Non-identifier identifier"),
                 };
-                self.builder.set_var(name, new_value);
+                self.builder.set_var(&name, new_value);
                 new_value
             }
 
             Expression::Identifier(name) => {
-                self.builder.get_var(&name).expect("variable not defined");
+                self.builder.get_var(&name).expect("variable not defined")
             }
 
             Expression::IfElse(cond, then_expr, else_expr) => {
@@ -55,7 +55,7 @@ impl<'a> FunctionTranslator<'a> {
                 let merge_block = self.builder.create_block();
 
                 // Test the confition
-                self.builder.brz(condition_value, else_block, &[]);
+                self.builder.brz(condition_value, else_block);
 
                 let then_return = self.translate_expr(*then_expr);
 

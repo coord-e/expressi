@@ -145,7 +145,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn brz(&self, condition: Value, block: Block) {
-        self.inst_builder.ins().brz(condition.cl_value(), block.cl_ebb());
+        self.inst_builder.ins().brz(condition.cl_value(), block.cl_ebb(), &[]);
     }
 
     pub fn set_block_signature(&self, block: Block, types: &[Type]) {
@@ -165,7 +165,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn block_params(&self, block: Block) -> &[Value] {
-        let signature = self.block_table[block];
+        let signature = self.block_table.get(block).unwrap();
         self.inst_builder.ebb_params(block.cl_ebb()).into_iter().zip(signature.iter()).map(|(v, t)| Value::new(v, t)).collect()
     }
 }
