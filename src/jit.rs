@@ -1,10 +1,10 @@
 use expression::Expression;
 use parser;
+use builder::Builder;
 use translator::FunctionTranslator;
 
 use std::collections::HashMap;
 
-use cranelift::codegen::ir::InstBuilderBase;
 use cranelift::prelude::*;
 use cranelift_module::{DataContext, Linkage, Module};
 use cranelift_simplejit::{SimpleJITBackend, SimpleJITBuilder};
@@ -67,34 +67,36 @@ impl JIT {
             .returns
             .push(AbiParam::new(types::I64));
 
-        let mut builder =
+        let mut function_builder =
             FunctionBuilder::<Variable>::new(&mut self.ctx.func, &mut self.builder_context);
 
-        let entry_ebb = builder.create_ebb();
+        // TODO: Replace FunctionBuilder with Builder
+        let entry_ebb = function_builder.create_ebb();
 
-        builder.append_ebb_params_for_function_params(entry_ebb);
+        function_builder.append_ebb_params_for_function_params(entry_ebb);
 
-        builder.switch_to_block(entry_ebb);
-        builder.seal_block(entry_ebb);
+        function_builder.switch_to_block(entry_ebb);
+        function_builder.seal_block(entry_ebb);
+
+        let builder = Builder {
+            inst_builder: &mut function_builder,
+            variable_map: HashMap::new(),
+            variable_value_map: HashMap::new(),
+            block_table: HashMap::new()
+        };
 
         let mut trans = FunctionTranslator {
             builder,
-            variables: HashMap::new(),
             module: &mut self.module,
         };
         let evaluated_value = trans.translate_expr(expr);
-        let evaluated_type = trans
-            .builder
-            .ins()
-            .data_flow_graph()
-            .value_type(evaluated_value);
-        let return_value = if evaluated_type != types::I64 {
-            trans.builder.ins().bint(types::I64, evaluated_value)
+        let return_value = if evaluated_value.get_type().cl_type().unwrap() != types::I64 {
+            trans.builder.inst_builder().ins().bint(types::I64, evaluated_value.cl_value())
         } else {
-            evaluated_value
+            evaluated_value.cl_value()
         };
         // Emit the return instruction.
-        trans.builder.ins().return_(&[return_value]);
+        trans.builder.inst_builder().ins().return_(&[return_value]);
 
         // Tell the builder we're done with this function.
         trans.builder.finalize();
