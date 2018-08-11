@@ -150,7 +150,7 @@ impl<'a> Builder<'a> {
         self.inst_builder.ins().brz(condition.cl_value(), block.cl_ebb(), &[]);
     }
 
-    pub fn set_block_signature(&self, block: Block, types: &[Type]) {
+    pub fn set_block_signature(&self, block: Block, types: &'a [Type]) {
         for t in types {
             self.inst_builder.append_ebb_param(block.cl_ebb(), t.cl_type().unwrap());
         }
@@ -158,7 +158,8 @@ impl<'a> Builder<'a> {
     }
 
     pub fn jump(&self, block: Block, args: &[Value]) {
-        self.inst_builder.ins().jump(block.cl_ebb(), args.into_iter().map(|v| v.cl_value()).collect());
+        let cl_args: Vec<_> = args.into_iter().map(|v| v.cl_value()).collect();
+        self.inst_builder.ins().jump(block.cl_ebb(), &cl_args);
     }
 
     pub fn switch_to_block(&self, block: Block) {
@@ -166,8 +167,9 @@ impl<'a> Builder<'a> {
         self.inst_builder.seal_block(block.cl_ebb());
     }
 
-    pub fn block_params(&self, block: Block) -> &[Value] {
+    pub fn block_params(&self, block: Block) -> Box<Vec<Value>> {
         let signature = self.block_table.get(&block).unwrap();
-        self.inst_builder.ebb_params(block.cl_ebb()).into_iter().zip(signature.iter()).map(|(v, t)| Value::new(v, t)).collect()
+        let params: Vec<_> = self.inst_builder.ebb_params(block.cl_ebb()).into_iter().zip(signature.into_iter()).map(|(v, t)| Value {cranelift_value: *v, value_type: *t}).collect();
+        Box::new(params)
     }
 }
