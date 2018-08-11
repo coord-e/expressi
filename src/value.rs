@@ -3,15 +3,15 @@ use cranelift::prelude;
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Type {
     Number,
-    Boolean
+    Boolean,
 }
 
 impl Type {
     pub fn from(t: prelude::Type) -> Result<Self, String> {
         Ok(match t {
             prelude::types::I64 => Type::Number,
-            prelude::types::B1  => Type::Boolean,
-            _ => return Err("There is no representation of this cranelift IR type".to_owned())
+            prelude::types::B1 => Type::Boolean,
+            _ => return Err("There is no representation of this cranelift IR type".to_owned()),
         })
     }
 
@@ -33,7 +33,7 @@ impl Value {
     pub fn new(v: prelude::Value, t: prelude::Type) -> Self {
         Value {
             cranelift_value: v,
-            value_type: Type::from(t).unwrap()
+            value_type: Type::from(t).unwrap(),
         }
     }
 

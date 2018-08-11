@@ -1,7 +1,7 @@
-use value::{Value, Type};
 use expression::Operator;
+use value::{Type, Value};
 
-use cranelift::codegen::ir::{InstBuilder, types, condcodes, entities};
+use cranelift::codegen::ir::{condcodes, entities, types, InstBuilder};
 use cranelift::prelude::{EntityRef, FunctionBuilder, Variable};
 
 use std::collections::HashMap;
@@ -13,12 +13,12 @@ pub enum CondCode {
     LessThan,
     GreaterThanOrEqual,
     GreaterThan,
-    LessThanOrEqual
+    LessThanOrEqual,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Copy)]
 pub struct Block {
-    ebb: entities::Ebb
+    ebb: entities::Ebb,
 }
 
 impl Block {
@@ -31,7 +31,7 @@ pub struct Builder<'a> {
     pub inst_builder: &'a mut FunctionBuilder<'a, Variable>,
     pub variable_map: HashMap<String, Variable>,
     pub variable_value_map: HashMap<usize, Value>,
-    pub block_table: HashMap<Block, Vec<Type>>
+    pub block_table: HashMap<Block, Vec<Type>>,
 }
 
 impl<'a> Builder<'a> {
@@ -113,10 +113,13 @@ impl<'a> Builder<'a> {
             CondCode::LessThan => condcodes::IntCC::SignedLessThan,
             CondCode::GreaterThanOrEqual => condcodes::IntCC::SignedGreaterThanOrEqual,
             CondCode::GreaterThan => condcodes::IntCC::SignedGreaterThan,
-            CondCode::LessThanOrEqual => condcodes::IntCC::SignedLessThanOrEqual
+            CondCode::LessThanOrEqual => condcodes::IntCC::SignedLessThanOrEqual,
         };
 
-        let res = self.inst_builder.ins().icmp(cc, lhs.cl_value(), rhs.cl_value());
+        let res = self
+            .inst_builder
+            .ins()
+            .icmp(cc, lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
@@ -126,7 +129,8 @@ impl<'a> Builder<'a> {
         } else {
             let variable = Variable::new(self.variable_map.len());
             self.variable_map.insert(name.to_owned(), variable);
-            self.inst_builder.declare_var(variable, val.get_type().cl_type().unwrap());
+            self.inst_builder
+                .declare_var(variable, val.get_type().cl_type().unwrap());
             variable
         };
         self.inst_builder.def_var(variable, val.cl_value());
@@ -136,7 +140,10 @@ impl<'a> Builder<'a> {
     pub fn get_var(&mut self, name: &str) -> Option<Value> {
         if let Some(variable) = self.variable_map.get(name) {
             let value = self.variable_value_map.get(&variable.index()).unwrap();
-            Some(Value { cranelift_value: self.inst_builder.use_var(*variable), .. *value })
+            Some(Value {
+                cranelift_value: self.inst_builder.use_var(*variable),
+                ..*value
+            })
         } else {
             None
         }
@@ -148,12 +155,15 @@ impl<'a> Builder<'a> {
     }
 
     pub fn brz(&mut self, condition: Value, block: Block) {
-        self.inst_builder.ins().brz(condition.cl_value(), block.cl_ebb(), &[]);
+        self.inst_builder
+            .ins()
+            .brz(condition.cl_value(), block.cl_ebb(), &[]);
     }
 
     pub fn set_block_signature(&mut self, block: Block, types: &[Type]) {
         for t in types {
-            self.inst_builder.append_ebb_param(block.cl_ebb(), t.cl_type().unwrap());
+            self.inst_builder
+                .append_ebb_param(block.cl_ebb(), t.cl_type().unwrap());
         }
         self.block_table.insert(block, types.to_vec());
     }
@@ -170,7 +180,16 @@ impl<'a> Builder<'a> {
 
     pub fn block_params(&self, block: Block) -> Box<Vec<Value>> {
         let signature = self.block_table.get(&block).unwrap();
-        let params: Vec<_> = self.inst_builder.ebb_params(block.cl_ebb()).into_iter().zip(signature.into_iter()).map(|(v, t)| Value {cranelift_value: *v, value_type: *t}).collect();
+        let params: Vec<_> = self
+            .inst_builder
+            .ebb_params(block.cl_ebb())
+            .into_iter()
+            .zip(signature.into_iter())
+            .map(|(v, t)| Value {
+                cranelift_value: *v,
+                value_type: *t,
+            })
+            .collect();
         Box::new(params)
     }
 }

@@ -1,6 +1,6 @@
+use builder::Builder;
 use expression::Expression;
 use parser;
-use builder::Builder;
 use translator::FunctionTranslator;
 
 use std::collections::HashMap;
@@ -82,7 +82,7 @@ impl JIT {
             inst_builder: &mut function_builder,
             variable_map: HashMap::new(),
             variable_value_map: HashMap::new(),
-            block_table: HashMap::new()
+            block_table: HashMap::new(),
         };
 
         let mut trans = FunctionTranslator {
@@ -91,7 +91,11 @@ impl JIT {
         };
         let evaluated_value = trans.translate_expr(expr);
         let return_value = if evaluated_value.get_type().cl_type().unwrap() != types::I64 {
-            trans.builder.inst_builder().ins().bint(types::I64, evaluated_value.cl_value())
+            trans
+                .builder
+                .inst_builder()
+                .ins()
+                .bint(types::I64, evaluated_value.cl_value())
         } else {
             evaluated_value.cl_value()
         };

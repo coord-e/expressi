@@ -1,9 +1,9 @@
+pub mod builder;
 pub mod expression;
-pub mod value;
 pub mod jit;
 pub mod parser;
-pub mod builder;
 pub mod translator;
+pub mod value;
 
 extern crate cranelift;
 extern crate cranelift_module;
