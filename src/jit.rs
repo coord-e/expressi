@@ -1,12 +1,10 @@
 use expression::Expression;
 use parser;
-use value::Value;
 use builder::Builder;
 use translator::FunctionTranslator;
 
 use std::collections::HashMap;
 
-use cranelift::codegen::ir::InstBuilderBase;
 use cranelift::prelude::*;
 use cranelift_module::{DataContext, Linkage, Module};
 use cranelift_simplejit::{SimpleJITBackend, SimpleJITBuilder};

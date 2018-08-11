@@ -1,5 +1,4 @@
 use cranelift::prelude;
-use cranelift::prelude::codegen::ir::dfg::DataFlowGraph;
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Type {

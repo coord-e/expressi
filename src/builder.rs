@@ -1,7 +1,7 @@
 use value::{Value, Type};
 use expression::Operator;
 
-use cranelift::codegen::ir::{InstBuilder, InstBuilderBase, types, condcodes, entities};
+use cranelift::codegen::ir::{InstBuilder, types, condcodes, entities};
 use cranelift::prelude::{EntityRef, FunctionBuilder, Variable};
 
 use std::collections::HashMap;

@@ -1,9 +1,8 @@
-use expression::{Expression, Operator};
+use expression::Expression;
 
 use builder::Builder;
 use value::Value;
 
-use cranelift::prelude::{FunctionBuilder, types, Variable};
 use cranelift_module::Module;
 use cranelift_simplejit::SimpleJITBackend;
 
