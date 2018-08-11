@@ -30,7 +30,7 @@ impl Block {
 pub struct Builder<'a> {
     inst_builder: FunctionBuilder<'a, Variable>,
     variable_map: HashMap<String, Variable>,
-    variable_value_map: HashMap<Variable, Value>,
+    variable_value_map: HashMap<u32, Value>,
     block_table: HashMap<Block, &'a [Type]>
 }
 
@@ -128,11 +128,13 @@ impl<'a> Builder<'a> {
             variable
         };
         self.inst_builder.def_var(variable, val.cl_value());
-        self.variable_value_map.insert(variable, val);
+        let Variable{idx} = variable;
+        self.variable_value_map.insert(idx, val);
     }
 
     pub fn get_var(&self, name: &str) -> Option<Value> {
-        if let Some(value) = self.variable_value_map.get(name) {
+        if let Some(Variable{idx}) = self.variable_map.get(name) {
+            let value = self.variable_value_map.get(idx).unwrap();
             self.variable_map.get(name).map(|var| Value { cranelift_value: self.inst_builder.use_var(*var), .. value })
         } else {
             None
