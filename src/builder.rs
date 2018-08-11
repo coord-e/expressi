@@ -136,7 +136,7 @@ impl<'a> Builder<'a> {
     pub fn get_var(&mut self, name: &str) -> Option<Value> {
         if let Some(variable) = self.variable_map.get(name) {
             let value = self.variable_value_map.get(&variable.index()).unwrap();
-            self.variable_map.get(&name.to_owned()).map(|var| Value { cranelift_value: self.inst_builder.use_var(*var), .. *value })
+            Some(Value { cranelift_value: self.inst_builder.use_var(*variable), .. *value })
         } else {
             None
         }
