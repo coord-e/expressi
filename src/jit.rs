@@ -78,7 +78,7 @@ impl JIT {
         function_builder.switch_to_block(entry_ebb);
         function_builder.seal_block(entry_ebb);
 
-        let mut builder = Builder {
+        let builder = Builder {
             inst_builder: &mut function_builder,
             variable_map: HashMap::new(),
             variable_value_map: HashMap::new(),
