@@ -1,4 +1,4 @@
-use cranelift::codegen::ir::{InstBuilder, types};
+use cranelift::codegen::ir::{InstBuilder, types, condcodes};
 
 pub enum CondCode {
     Equal,
@@ -25,6 +25,24 @@ impl<T> Builder<T> {
             types::B1  => self.inst_builder.ins().bconst(t, v),
             _ => return None
         }, t))
+    }
+
+    pub fn apply_op(&self, op: Operator, lhs: Value, rhs: Value) => Value {
+        match op {
+            Operator::Add => self.add(lhs, rhs),
+            Operator::Sub => self.sub(lhs, rhs),
+            Operator::Mul => self.mul(lhs, rhs),
+            Operator::Div => self.div(lhs, rhs),
+            Operator::BitAnd => self.bit_and(lhs, rhs),
+            Operator::BitXor => self.bit_xor(lhs, rhs),
+            Operator::BitOr => self.bit_or(lhs, rhs),
+            Operator::Lt => self.cmp(CondCode::LessThan, lhs, rhs),
+            Operator::Gt => self.cmp(CondCode::GreaterThan, lhs, rhs),
+            Operator::Le => self.cmp(CondCode::LessThanOrEqual, lhs, rhs),
+            Operator::Ge => self.cmp(CondCode::GreaterThanOrEqual, lhs, rhs),
+            Operator::Eq => self.cmp(CondCode::Equal, lhs, rhs),
+            Operator::Ne => self.cmp(CondCode::NotEqual, lhs, rhs),
+        }
     }
 
     pub fn add(&self, lhs: Value, rhs: Value) -> Value {
