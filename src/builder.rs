@@ -2,7 +2,7 @@ use value::{Value, Type};
 use expression::Operator;
 
 use cranelift::codegen::ir::{InstBuilder, InstBuilderBase, types, condcodes, entities};
-use cranelift::prelude::Variable;
+use cranelift::prelude::{EntityRef, FunctionBuilder, Variable};
 
 use std::collections::HashMap;
 
@@ -35,12 +35,12 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    pub fn inst_builder(&self) -> FunctionBuilder<'a> {
+    pub fn inst_builder(&self) -> FunctionBuilder<'a, Variable> {
         self.inst_builder
     }
 
-    pub fn finallize(&self) {
-        self.inst_builder.finallize()
+    pub fn finalize(&self) {
+        self.inst_builder.finalize()
     }
 
     pub fn constant<U>(&self, t: types::Type, v: U) -> Option<Value> {
@@ -124,18 +124,18 @@ impl<'a> Builder<'a> {
         } else {
             let variable = Variable::new(self.variable_map.len());
             self.variable_map.insert(name.to_owned(), variable);
-            self.inst_builder.declare_var(variable, val.get_type().cl_type());
+            self.inst_builder.declare_var(variable, val.get_type().cl_type().unwrap());
             variable
         };
         self.inst_builder.def_var(variable, val.cl_value());
-        let Variable{idx} = variable;
+        let Variable(idx) = variable;
         self.variable_value_map.insert(idx, val);
     }
 
     pub fn get_var(&self, name: &str) -> Option<Value> {
-        if let Some(Variable{idx}) = self.variable_map.get(name) {
+        if let Some(&Variable(idx)) = self.variable_map.get(name) {
             let value = self.variable_value_map.get(idx).unwrap();
-            self.variable_map.get(&name).map(|var| Value { cranelift_value: self.inst_builder.use_var(*var), .. value })
+            self.variable_map.get(&name.to_owned()).map(|var| Value { cranelift_value: self.inst_builder.use_var(*var), .. *value })
         } else {
             None
         }
@@ -152,7 +152,7 @@ impl<'a> Builder<'a> {
 
     pub fn set_block_signature(&self, block: Block, types: &[Type]) {
         for t in types {
-            self.inst_builder.append_ebb_param(block.cl_ebb(), t.cl_type());
+            self.inst_builder.append_ebb_param(block.cl_ebb(), t.cl_type().unwrap());
         }
         self.block_table.insert(block, types);
     }
