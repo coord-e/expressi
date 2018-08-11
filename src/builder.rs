@@ -1,4 +1,6 @@
-use cranelift::codegen::ir::{InstBuilder, types, condcodes};
+use cranelift::codegen::ir::{InstBuilder, types, condcodes, entities};
+
+use std::collections::HashMap;
 
 pub enum CondCode {
     Equal,
@@ -9,10 +11,21 @@ pub enum CondCode {
     LessThanOrEqual
 }
 
+struct Block {
+    ebb: entities::Ebb
+}
+
+impl Block {
+    pub fn cl_ebb(&self) -> entities::Ebb {
+        self.ebb
+    }
+}
+
 struct Builder<T: InstBuilder> {
     inst_builder: T,
     variable_map: HashMap<String, Variable>,
-    variable_value_map: HashMap<Variable, Value>
+    variable_value_map: HashMap<Variable, Value>,
+    block_table: HashMap<Block, &[Type]>
 };
 
 impl<T> Builder<T> {
@@ -116,28 +129,33 @@ impl<T> Builder<T> {
         }
     }
 
-    pub fn create_ebb(&self) -> Ebb {
-        self.inst_builder.create_ebb()
+    pub fn create_block(&self) -> Block {
+        let ebb = self.inst_builder.create_ebb();
+        Block { ebb }
     }
 
-    pub fn brz(&self, condition: Value, block: Ebb) {
-        self.inst_builder.ins().brz(condition.cl_value(), block);
+    pub fn brz(&self, condition: Value, block: Block) {
+        self.inst_builder.ins().brz(condition.cl_value(), block.cl_ebb());
     }
 
-    pub fn append_ebb_param(&self, block: Ebb, t: Type) {
-        self.inst_builder.append_ebb_param(block, t.cl_type());
+    pub fn set_block_signature(&self, block: Block, types: &[Type]) {
+        for t in types {
+            self.inst_builder.append_ebb_param(block.cl_ebb(), t.cl_type());
+        }
+        self.block_table.insert(block, types);
     }
 
-    pub fn jump(&self, block: Ebb, args: &[Value]) {
-        self.inst_builder.ins().jump(block, args.into_iter().map(|v| v.cl_value()).collect());
+    pub fn jump(&self, block: Block, args: &[Value]) {
+        self.inst_builder.ins().jump(block.cl_ebb(), args.into_iter().map(|v| v.cl_value()).collect());
     }
 
-    pub fn switch_to_block(&self, block: Ebb) {
-        self.inst_builder.switch_to_block(block);
-        self.inst_builder.seal_block(block);
+    pub fn switch_to_block(&self, block: Block) {
+        self.inst_builder.switch_to_block(block.cl_ebb());
+        self.inst_builder.seal_block(block.cl_ebb());
     }
 
-    pub fn ebb_params(&self, block: Ebb) -> &[Value] {
-        self.inst_builder.ebb_params(block).into_iter().map(|v| Value::new(v, a)).collect()
+    pub fn block_params(&self, block: Block) -> &[Value] {
+        let signature = self.block_table[block];
+        self.inst_builder.ebb_params(block.cl_ebb()).into_iter().zip(signature.iter()).map(|(v, t)| Value::new(v, t)).collect()
     }
 }
