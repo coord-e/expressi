@@ -28,32 +28,32 @@ impl Block {
 }
 
 pub struct Builder<'a> {
-    pub inst_builder: FunctionBuilder<'a, Variable>,
+    pub inst_builder: &'a mut FunctionBuilder<'a, Variable>,
     pub variable_map: HashMap<String, Variable>,
     pub variable_value_map: HashMap<usize, Value>,
     pub block_table: HashMap<Block, &'a [Type]>
 }
 
 impl<'a> Builder<'a> {
-    pub fn inst_builder(&self) -> FunctionBuilder<'a, Variable> {
+    pub fn inst_builder(&'a mut self) -> &'a mut FunctionBuilder<'a, Variable> {
         self.inst_builder
     }
 
-    pub fn finalize(&self) {
+    pub fn finalize(&mut self) {
         self.inst_builder.finalize()
     }
 
-    pub fn number_constant(&self, v: i64) -> Value {
+    pub fn number_constant(&mut self, v: i64) -> Value {
         let t = types::I64;
         Value::new(self.inst_builder.ins().iconst(t, v), t)
     }
 
-    pub fn boolean_constant(&self, v: bool) -> Value {
+    pub fn boolean_constant(&mut self, v: bool) -> Value {
         let t = types::B1;
         Value::new(self.inst_builder.ins().bconst(t, v), t)
     }
 
-    pub fn apply_op(&self, op: Operator, lhs: Value, rhs: Value) -> Value {
+    pub fn apply_op(&mut self, op: Operator, lhs: Value, rhs: Value) -> Value {
         match op {
             Operator::Add => self.add(lhs, rhs),
             Operator::Sub => self.sub(lhs, rhs),
@@ -71,42 +71,42 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn add(&self, lhs: Value, rhs: Value) -> Value {
+    pub fn add(&mut self, lhs: Value, rhs: Value) -> Value {
         let res = self.inst_builder.ins().iadd(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn sub(&self, lhs: Value, rhs: Value) -> Value {
+    pub fn sub(&mut self, lhs: Value, rhs: Value) -> Value {
         let res = self.inst_builder.ins().isub(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn mul(&self, lhs: Value, rhs: Value) -> Value {
+    pub fn mul(&mut self, lhs: Value, rhs: Value) -> Value {
         let res = self.inst_builder.ins().imul(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn div(&self, lhs: Value, rhs: Value) -> Value {
+    pub fn div(&mut self, lhs: Value, rhs: Value) -> Value {
         let res = self.inst_builder.ins().udiv(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn bit_and(&self, lhs: Value, rhs: Value) -> Value {
+    pub fn bit_and(&mut self, lhs: Value, rhs: Value) -> Value {
         let res = self.inst_builder.ins().band(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn bit_or(&self, lhs: Value, rhs: Value) -> Value {
+    pub fn bit_or(&mut self, lhs: Value, rhs: Value) -> Value {
         let res = self.inst_builder.ins().bor(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn bit_xor(&self, lhs: Value, rhs: Value) -> Value {
+    pub fn bit_xor(&mut self, lhs: Value, rhs: Value) -> Value {
         let res = self.inst_builder.ins().bxor(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn cmp(&self, cmp_type: CondCode, lhs: Value, rhs: Value) -> Value {
+    pub fn cmp(&mut self, cmp_type: CondCode, lhs: Value, rhs: Value) -> Value {
         let cc = match cmp_type {
             CondCode::Equal => condcodes::IntCC::Equal,
             CondCode::NotEqual => condcodes::IntCC::NotEqual,
@@ -120,7 +120,7 @@ impl<'a> Builder<'a> {
         Value::new(res, types::I64)
     }
 
-    pub fn set_var(&self, name: &str, val: Value) {
+    pub fn set_var(&mut self, name: &str, val: Value) {
         let variable = if self.variable_map.contains_key(name) {
             *self.variable_map.get(name).unwrap()
         } else {
@@ -133,7 +133,7 @@ impl<'a> Builder<'a> {
         self.variable_value_map.insert(variable.index(), val);
     }
 
-    pub fn get_var(&self, name: &str) -> Option<Value> {
+    pub fn get_var(&mut self, name: &str) -> Option<Value> {
         if let Some(variable) = self.variable_map.get(name) {
             let value = self.variable_value_map.get(&variable.index()).unwrap();
             self.variable_map.get(&name.to_owned()).map(|var| Value { cranelift_value: self.inst_builder.use_var(*var), .. *value })
@@ -142,28 +142,28 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn create_block(&self) -> Block {
+    pub fn create_block(&mut self) -> Block {
         let ebb = self.inst_builder.create_ebb();
         Block { ebb }
     }
 
-    pub fn brz(&self, condition: Value, block: Block) {
+    pub fn brz(&mut self, condition: Value, block: Block) {
         self.inst_builder.ins().brz(condition.cl_value(), block.cl_ebb(), &[]);
     }
 
-    pub fn set_block_signature(&self, block: Block, types: &'a [Type]) {
+    pub fn set_block_signature(&mut self, block: Block, types: &'a [Type]) {
         for t in types {
             self.inst_builder.append_ebb_param(block.cl_ebb(), t.cl_type().unwrap());
         }
         self.block_table.insert(block, types);
     }
 
-    pub fn jump(&self, block: Block, args: &[Value]) {
+    pub fn jump(&mut self, block: Block, args: &[Value]) {
         let cl_args: Vec<_> = args.into_iter().map(|v| v.cl_value()).collect();
         self.inst_builder.ins().jump(block.cl_ebb(), &cl_args);
     }
 
-    pub fn switch_to_block(&self, block: Block) {
+    pub fn switch_to_block(&mut self, block: Block) {
         self.inst_builder.switch_to_block(block.cl_ebb());
         self.inst_builder.seal_block(block.cl_ebb());
     }
