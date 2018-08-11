@@ -37,6 +37,10 @@ impl<'a, T: InstBuilderBase<'a>> Builder<'a, T> {
         self.inst_builder
     }
 
+    pub fn finallize(&self) {
+        self.inst_builder.finallize()
+    }
+
     pub fn constant<U>(&self, t: types::Type, v: U) -> Option<Value> {
         Some(Value::new(match t {
             types::I64 => self.inst_builder.ins().iconst(t, i64::from(v)),
