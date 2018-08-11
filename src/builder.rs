@@ -31,7 +31,7 @@ pub struct Builder<'a> {
     pub inst_builder: &'a mut FunctionBuilder<'a, Variable>,
     pub variable_map: HashMap<String, Variable>,
     pub variable_value_map: HashMap<usize, Value>,
-    pub block_table: HashMap<Block, &'a [Type]>
+    pub block_table: HashMap<Block, Vec<Type>>
 }
 
 impl<'a> Builder<'a> {
@@ -151,11 +151,11 @@ impl<'a> Builder<'a> {
         self.inst_builder.ins().brz(condition.cl_value(), block.cl_ebb(), &[]);
     }
 
-    pub fn set_block_signature(&mut self, block: Block, types: &'a [Type]) {
+    pub fn set_block_signature(&mut self, block: Block, types: &[Type]) {
         for t in types {
             self.inst_builder.append_ebb_param(block.cl_ebb(), t.cl_type().unwrap());
         }
-        self.block_table.insert(block, types);
+        self.block_table.insert(block, types.to_vec());
     }
 
     pub fn jump(&mut self, block: Block, args: &[Value]) {
