@@ -6,6 +6,7 @@ use cranelift::prelude::Variable;
 
 use std::collections::HashMap;
 
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum CondCode {
     Equal,
     NotEqual,
@@ -15,6 +16,7 @@ pub enum CondCode {
     LessThanOrEqual
 }
 
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Block {
     ebb: entities::Ebb
 }
