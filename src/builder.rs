@@ -43,12 +43,14 @@ impl<'a> Builder<'a> {
         self.inst_builder.finalize()
     }
 
-    pub fn constant<U>(&self, t: types::Type, v: U) -> Option<Value> {
-        Some(Value::new(match t {
-            types::I64 => self.inst_builder.ins().iconst(t, v),
-            types::B1  => self.inst_builder.ins().bconst(t, v),
-            _ => return None
-        }, t))
+    pub fn number_constant(&self, v: i64) -> Value {
+        let t = types::I64;
+        Value::new(self.inst_builder.ins().iconst(t, v), t)
+    }
+
+    pub fn boolean_constant(&self, v: bool) -> Value {
+        let t = types::B1;
+        Value::new(self.inst_builder.ins().bconst(t, v), t)
     }
 
     pub fn apply_op(&self, op: Operator, lhs: Value, rhs: Value) -> Value {

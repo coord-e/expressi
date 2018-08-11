@@ -46,4 +46,3 @@ impl Value {
         self.value_type
     }
 }
-
