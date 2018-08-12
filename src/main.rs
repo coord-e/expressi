@@ -1,7 +1,9 @@
 extern crate clap;
 extern crate expressi;
+extern crate ansi_term;
 
 use clap::{App, Arg};
+use ansi_term::Colour::{Red, Blue};
 
 use expressi::jit;
 
@@ -30,7 +32,7 @@ fn main() {
             .expect("something went wrong reading the file");
         let func_obj = jit
             .compile("file_input", &contents.trim())
-            .unwrap_or_else(|msg| panic!("error: {}", msg));
+            .unwrap_or_else(|msg| panic!("{}: {}", Red.paint("Error"), msg));
         let func = unsafe { mem::transmute::<_, fn() -> isize>(func_obj) };
         println!("{}", func());
     } else {
@@ -47,10 +49,10 @@ fn main() {
             match jit.compile(&format!("repl_{}", line_count), &buffer.trim()) {
                 Ok(func) => {
                     let func = unsafe { mem::transmute::<_, fn() -> isize>(func) };
-                    println!("-> {}", func());
+                    println!("{}{}", Blue.paint("-> "), Blue.paint(func().to_string()));
                 }
                 Err(msg) => {
-                    eprintln!("error: {}", msg);
+                    eprintln!("{}: {}", Red.paint("Error"), msg);
                 }
             }
             line_count += 1;
