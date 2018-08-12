@@ -51,8 +51,8 @@ impl<'a> FunctionTranslator<'a> {
             }
 
             Expression::Cast(lhs, ty) => {
-                // WIP: Cast
-                self.builder.number_constant(0)?
+                let lhs = self.translate_expr(*lhs)?;
+                self.builder.cast_to(lhs, ty)?
             }
 
             Expression::IfElse(cond, then_expr, else_expr) => {

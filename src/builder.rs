@@ -177,6 +177,18 @@ impl<'a> Builder<'a> {
         }
     }
 
+    pub fn cast_to(&mut self, v: Value, t: Type) -> Result<Value, Error> {
+        Ok(match (v.get_type(), t) {
+            (Type::Number, Type::Boolean) => {
+                let zero = self.number_constant(0)?;
+                self.cmp(CondCode::NotEqual, v, zero)?
+            }
+            (Type::Boolean, Type::Number) => Value { cranelift_value: self.inst_builder.ins().bint(t.cl_type()?, v.cl_value()), value_type: t, .. v },
+            (Type::Number, Type::Number) => v,
+            (Type::Boolean, Type::Boolean) => v
+        })
+    }
+
     pub fn create_block(&mut self) -> Block {
         let ebb = self.inst_builder.create_ebb();
         Block { ebb }
