@@ -2,6 +2,9 @@ use expression::Expression;
 
 use builder::Builder;
 use value::Value;
+use error::UndeclaredVariableError;
+
+use failure::Error;
 
 use cranelift_module::Module;
 use cranelift_simplejit::SimpleJITBackend;
@@ -16,25 +19,25 @@ pub struct FunctionTranslator<'a> {
 impl<'a> FunctionTranslator<'a> {
     /// When you write out instructions in Cranelift, you get back `Value`s. You
     /// can then use these references in other instructions.
-    pub fn translate_expr(&mut self, expr: Expression) -> Value {
-        match expr {
+    pub fn translate_expr(&mut self, expr: Expression) -> Result<Value, Error> {
+        Ok(match expr {
             Expression::Number(number) => self.builder.number_constant(i64::from(number)),
 
             Expression::Boolean(tf) => self.builder.boolean_constant(tf),
 
             Expression::BinOp(op, lhs, rhs) => {
-                let lhs = self.translate_expr(*lhs);
-                let rhs = self.translate_expr(*rhs);
+                let lhs = self.translate_expr(*lhs)?;
+                let rhs = self.translate_expr(*rhs)?;
                 self.builder.apply_op(op, lhs, rhs)
             }
 
             Expression::Follow(lhs, rhs) => {
-                self.translate_expr(*lhs);
-                self.translate_expr(*rhs)
+                self.translate_expr(*lhs)?;
+                self.translate_expr(*rhs)?
             }
 
             Expression::Assign(lhs, rhs) => {
-                let new_value = self.translate_expr(*rhs);
+                let new_value = self.translate_expr(*rhs)?;
                 let name = match *lhs {
                     Expression::Identifier(name) => name,
                     _ => panic!("Non-identifier identifier"),
@@ -44,11 +47,11 @@ impl<'a> FunctionTranslator<'a> {
             }
 
             Expression::Identifier(name) => {
-                self.builder.get_var(&name).expect("variable not defined")
+                self.builder.get_var(&name).ok_or(UndeclaredVariableError)?
             }
 
             Expression::IfElse(cond, then_expr, else_expr) => {
-                let condition_value = self.translate_expr(*cond);
+                let condition_value = self.translate_expr(*cond)?;
 
                 let else_block = self.builder.create_block();
                 let merge_block = self.builder.create_block();
@@ -56,7 +59,7 @@ impl<'a> FunctionTranslator<'a> {
                 // Test the confition
                 self.builder.brz(condition_value, else_block);
 
-                let then_return = self.translate_expr(*then_expr);
+                let then_return = self.translate_expr(*then_expr)?;
 
                 self.builder
                     .set_block_signature(merge_block, &[then_return.get_type()]);
@@ -67,7 +70,7 @@ impl<'a> FunctionTranslator<'a> {
                 // Start writing 'else' block
                 self.builder.switch_to_block(else_block);
 
-                let else_return = self.translate_expr(*else_expr);
+                let else_return = self.translate_expr(*else_expr)?;
                 if then_return.get_type() != else_return.get_type() {
                     panic!("Using different type value in if-else")
                 }
@@ -80,6 +83,6 @@ impl<'a> FunctionTranslator<'a> {
                 // Get returned value and return it
                 self.builder.block_params(merge_block)[0]
             }
-        }
+        })
     }
 }
