@@ -50,6 +50,11 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.get_var(&name).ok_or(UndeclaredVariableError)?
             }
 
+            Expression::Cast(lhs, ty) => {
+                let lhs = self.translate_expr(*lhs)?;
+                self.builder.cast_to(lhs, ty)?
+            }
+
             Expression::IfElse(cond, then_expr, else_expr) => {
                 let condition_value = self.translate_expr(*cond)?;
 

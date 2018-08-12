@@ -1,12 +1,13 @@
 use error::{CraneliftTypeConversionError, InternalTypeConversionError};
 
 use std::fmt;
+use std::str::FromStr;
 
 use failure::Error;
 
 use cranelift::prelude;
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum Type {
     Number,
     Boolean,
@@ -37,6 +38,21 @@ impl fmt::Display for Type {
         };
 
         write!(f, "{}", rep)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TypeParseError;
+
+impl FromStr for Type {
+    type Err = TypeParseError;
+
+    fn from_str(x: &str) -> Result<Self, Self::Err> {
+        Ok(match x {
+            "Number" => Type::Number,
+            "Boolean" => Type::Boolean,
+            _ => return Err(TypeParseError)
+        })
     }
 }
 

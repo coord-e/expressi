@@ -1,5 +1,6 @@
 use expression::Operator;
 use value::{Type, Value};
+use error::{InvalidCastError, TypeError};
 
 use failure::Error;
 
@@ -74,41 +75,65 @@ impl<'a> Builder<'a> {
     }
 
     pub fn add(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
+            return Err(TypeError.into());
+        }
         let res = self.inst_builder.ins().iadd(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
     pub fn sub(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
+            return Err(TypeError.into());
+        }
         let res = self.inst_builder.ins().isub(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
     pub fn mul(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
+            return Err(TypeError.into());
+        }
         let res = self.inst_builder.ins().imul(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
     pub fn div(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
+            return Err(TypeError.into());
+        }
         let res = self.inst_builder.ins().udiv(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
     pub fn bit_and(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
+            return Err(TypeError.into());
+        }
         let res = self.inst_builder.ins().band(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
     pub fn bit_or(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
+            return Err(TypeError.into());
+        }
         let res = self.inst_builder.ins().bor(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
     pub fn bit_xor(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
+            return Err(TypeError.into());
+        }
         let res = self.inst_builder.ins().bxor(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
     pub fn cmp(&mut self, cmp_type: CondCode, lhs: Value, rhs: Value) -> Result<Value, Error> {
+        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
+            return Err(TypeError.into());
+        }
         let cc = match cmp_type {
             CondCode::Equal => condcodes::IntCC::Equal,
             CondCode::NotEqual => condcodes::IntCC::NotEqual,
@@ -150,6 +175,20 @@ impl<'a> Builder<'a> {
         } else {
             None
         }
+    }
+
+    pub fn cast_to(&mut self, v: Value, t: Type) -> Result<Value, Error> {
+        if v.get_type() == t {
+            return Err(InvalidCastError{from: v.get_type(), to: t}.into());
+        }
+        Ok(match (v.get_type(), t) {
+            (Type::Number, Type::Boolean) => {
+                let zero = self.number_constant(0)?;
+                self.cmp(CondCode::NotEqual, v, zero)?
+            }
+            (Type::Boolean, Type::Number) => Value { cranelift_value: self.inst_builder.ins().bint(t.cl_type()?, v.cl_value()), value_type: t, .. v },
+            _ => return Err(InvalidCastError{from: v.get_type(), to: t}.into())
+        })
     }
 
     pub fn create_block(&mut self) -> Block {
