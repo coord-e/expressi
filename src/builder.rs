@@ -81,7 +81,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .ins()
-            .iadd(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+            .iadd(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -92,7 +92,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .ins()
-            .isub(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+            .isub(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -103,7 +103,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .ins()
-            .imul(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+            .imul(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -114,7 +114,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .ins()
-            .udiv(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+            .udiv(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -125,7 +125,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .ins()
-            .band(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+            .band(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -136,7 +136,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .ins()
-            .bor(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+            .bor(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -147,7 +147,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .ins()
-            .bxor(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+            .bxor(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -167,7 +167,7 @@ impl<'a> Builder<'a> {
         let res =
             self.inst_builder
                 .ins()
-                .icmp(cc, lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+                .icmp(cc, lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::B1)
     }
 
@@ -181,7 +181,7 @@ impl<'a> Builder<'a> {
                 .declare_var(variable, val.get_type().cl_type()?);
             variable
         };
-        if let Some(val) = val.cl_value() {
+        if let Ok(val) = val.cl_value() {
             self.inst_builder.def_var(variable, val);
         }
         self.variable_value_map.insert(variable.index(), val);
@@ -216,7 +216,7 @@ impl<'a> Builder<'a> {
                 cranelift_value: Some(
                     self.inst_builder
                         .ins()
-                        .bint(t.cl_type()?, v.cl_value().unwrap()),
+                        .bint(t.cl_type()?, v.cl_value()?),
                 ),
                 value_type: t,
                 ..v
@@ -241,7 +241,7 @@ impl<'a> Builder<'a> {
         }
         self.inst_builder
             .ins()
-            .brz(condition.cl_value().unwrap(), block.cl_ebb(), &[]);
+            .brz(condition.cl_value()?, block.cl_ebb(), &[]);
         Ok(())
     }
 
@@ -255,7 +255,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn jump(&mut self, block: Block, args: &[Value]) {
-        let cl_args: Vec<_> = args.into_iter().filter_map(|v| v.cl_value()).collect();
+        let cl_args: Vec<_> = args.into_iter().filter_map(|v| v.cl_value().ok()).collect();
         self.inst_builder.ins().jump(block.cl_ebb(), &cl_args);
     }
 

@@ -104,9 +104,9 @@ impl JIT {
                 .builder
                 .inst_builder()
                 .ins()
-                .bint(types::I64, evaluated_value.cl_value().unwrap())
+                .bint(types::I64, evaluated_value.cl_value()?)
         } else {
-            evaluated_value.cl_value().unwrap()
+            evaluated_value.cl_value()?
         };
         // Emit the return instruction.
         trans.builder.inst_builder().ins().return_(&[return_value]);

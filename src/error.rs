@@ -6,6 +6,10 @@ use value::Type;
 pub struct UndeclaredVariableError;
 
 #[derive(Fail, Debug)]
+#[fail(display = "Cranelift Value is not available for this value")]
+pub struct CraneValueNotAvailableError;
+
+#[derive(Fail, Debug)]
 #[fail(display = "Invalid Type")]
 pub struct TypeError;
 
