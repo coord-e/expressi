@@ -6,6 +6,10 @@ use value::Type;
 pub struct UndeclaredVariableError;
 
 #[derive(Fail, Debug)]
+#[fail(display = "Cranelift Value is not available for this value")]
+pub struct CraneValueNotAvailableError;
+
+#[derive(Fail, Debug)]
 #[fail(display = "Invalid Type")]
 pub struct TypeError;
 
@@ -13,7 +17,7 @@ pub struct TypeError;
 #[fail(display = "Invalid Cast from {} to {}", from, to)]
 pub struct InvalidCastError {
     pub from: Type,
-    pub to: Type
+    pub to: Type,
 }
 
 #[derive(Fail, Debug)]

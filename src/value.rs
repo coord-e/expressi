@@ -1,4 +1,4 @@
-use error::{CraneliftTypeConversionError, InternalTypeConversionError};
+use error::{CraneliftTypeConversionError, InternalTypeConversionError, CraneValueNotAvailableError};
 
 use std::fmt;
 use std::str::FromStr;
@@ -11,6 +11,7 @@ use cranelift::prelude;
 pub enum Type {
     Number,
     Boolean,
+    Empty,
 }
 
 impl Type {
@@ -26,6 +27,7 @@ impl Type {
         Ok(match self {
             Type::Number => prelude::types::I64,
             Type::Boolean => prelude::types::B1,
+            _ => return Err(InternalTypeConversionError { from: *self }),
         })
     }
 }
@@ -35,6 +37,7 @@ impl fmt::Display for Type {
         let rep = match self {
             Type::Number => "Number",
             Type::Boolean => "Boolean",
+            Type::Empty => "Empty",
         };
 
         write!(f, "{}", rep)
@@ -51,27 +54,28 @@ impl FromStr for Type {
         Ok(match x {
             "Number" => Type::Number,
             "Boolean" => Type::Boolean,
-            _ => return Err(TypeParseError)
+            "Empty" => Type::Empty,
+            _ => return Err(TypeParseError),
         })
     }
 }
 
 #[derive(Clone, Copy)]
 pub struct Value {
-    pub cranelift_value: prelude::Value,
+    pub cranelift_value: Option<prelude::Value>,
     pub value_type: Type,
 }
 
 impl Value {
     pub fn new(v: prelude::Value, t: prelude::Type) -> Result<Self, Error> {
         Ok(Value {
-            cranelift_value: v,
+            cranelift_value: Some(v),
             value_type: Type::from(t)?,
         })
     }
 
-    pub fn cl_value(&self) -> prelude::Value {
-        self.cranelift_value.clone()
+    pub fn cl_value(&self) -> Result<prelude::Value, Error> {
+        self.cranelift_value.map(|v| v.clone()).ok_or(CraneValueNotAvailableError.into())
     }
 
     pub fn get_type(&self) -> Type {

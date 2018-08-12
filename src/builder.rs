@@ -1,6 +1,6 @@
+use error::{InvalidCastError, TypeError};
 use expression::Operator;
 use value::{Type, Value};
-use error::{InvalidCastError, TypeError};
 
 use failure::Error;
 
@@ -78,7 +78,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().iadd(lhs.cl_value(), rhs.cl_value());
+        let res = self
+            .inst_builder
+            .ins()
+            .iadd(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -86,7 +89,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().isub(lhs.cl_value(), rhs.cl_value());
+        let res = self
+            .inst_builder
+            .ins()
+            .isub(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -94,7 +100,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().imul(lhs.cl_value(), rhs.cl_value());
+        let res = self
+            .inst_builder
+            .ins()
+            .imul(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -102,7 +111,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().udiv(lhs.cl_value(), rhs.cl_value());
+        let res = self
+            .inst_builder
+            .ins()
+            .udiv(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -110,7 +122,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().band(lhs.cl_value(), rhs.cl_value());
+        let res = self
+            .inst_builder
+            .ins()
+            .band(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -118,7 +133,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().bor(lhs.cl_value(), rhs.cl_value());
+        let res = self
+            .inst_builder
+            .ins()
+            .bor(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -126,7 +144,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().bxor(lhs.cl_value(), rhs.cl_value());
+        let res = self
+            .inst_builder
+            .ins()
+            .bxor(lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::I64)
     }
 
@@ -143,10 +164,10 @@ impl<'a> Builder<'a> {
             CondCode::LessThanOrEqual => condcodes::IntCC::SignedLessThanOrEqual,
         };
 
-        let res = self
-            .inst_builder
-            .ins()
-            .icmp(cc, lhs.cl_value(), rhs.cl_value());
+        let res =
+            self.inst_builder
+                .ins()
+                .icmp(cc, lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::B1)
     }
 
@@ -160,7 +181,9 @@ impl<'a> Builder<'a> {
                 .declare_var(variable, val.get_type().cl_type()?);
             variable
         };
-        self.inst_builder.def_var(variable, val.cl_value());
+        if let Ok(val) = val.cl_value() {
+            self.inst_builder.def_var(variable, val);
+        }
         self.variable_value_map.insert(variable.index(), val);
         Ok(val)
     }
@@ -169,7 +192,7 @@ impl<'a> Builder<'a> {
         if let Some(variable) = self.variable_map.get(name) {
             let value = self.variable_value_map.get(&variable.index()).unwrap();
             Some(Value {
-                cranelift_value: self.inst_builder.use_var(*variable),
+                cranelift_value: Some(self.inst_builder.use_var(*variable)),
                 ..*value
             })
         } else {
@@ -179,15 +202,31 @@ impl<'a> Builder<'a> {
 
     pub fn cast_to(&mut self, v: Value, t: Type) -> Result<Value, Error> {
         if v.get_type() == t {
-            return Err(InvalidCastError{from: v.get_type(), to: t}.into());
+            return Err(InvalidCastError {
+                from: v.get_type(),
+                to: t,
+            }.into());
         }
         Ok(match (v.get_type(), t) {
             (Type::Number, Type::Boolean) => {
                 let zero = self.number_constant(0)?;
                 self.cmp(CondCode::NotEqual, v, zero)?
             }
-            (Type::Boolean, Type::Number) => Value { cranelift_value: self.inst_builder.ins().bint(t.cl_type()?, v.cl_value()), value_type: t, .. v },
-            _ => return Err(InvalidCastError{from: v.get_type(), to: t}.into())
+            (Type::Boolean, Type::Number) => Value {
+                cranelift_value: Some(
+                    self.inst_builder
+                        .ins()
+                        .bint(t.cl_type()?, v.cl_value()?),
+                ),
+                value_type: t,
+                ..v
+            },
+            _ => {
+                return Err(InvalidCastError {
+                    from: v.get_type(),
+                    to: t,
+                }.into())
+            }
         })
     }
 
@@ -196,10 +235,14 @@ impl<'a> Builder<'a> {
         Block { ebb }
     }
 
-    pub fn brz(&mut self, condition: Value, block: Block) {
+    pub fn brz(&mut self, condition: Value, block: Block) -> Result<(), Error> {
+        if condition.get_type() != Type::Boolean {
+            return Err(TypeError.into());
+        }
         self.inst_builder
             .ins()
-            .brz(condition.cl_value(), block.cl_ebb(), &[]);
+            .brz(condition.cl_value()?, block.cl_ebb(), &[]);
+        Ok(())
     }
 
     pub fn set_block_signature(&mut self, block: Block, types: &[Type]) -> Result<(), Error> {
@@ -212,7 +255,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn jump(&mut self, block: Block, args: &[Value]) {
-        let cl_args: Vec<_> = args.into_iter().map(|v| v.cl_value()).collect();
+        let cl_args: Vec<_> = args.into_iter().filter_map(|v| v.cl_value().ok()).collect();
         self.inst_builder.ins().jump(block.cl_ebb(), &cl_args);
     }
 
@@ -229,7 +272,7 @@ impl<'a> Builder<'a> {
             .into_iter()
             .zip(signature.into_iter())
             .map(|(v, t)| Value {
-                cranelift_value: *v,
+                cranelift_value: Some(*v),
                 value_type: *t,
             })
             .collect();
