@@ -1,14 +1,14 @@
+extern crate ansi_term;
 extern crate clap;
 extern crate expressi;
-extern crate ansi_term;
 extern crate failure;
 
+use ansi_term::Colour::{Blue, Red};
 use clap::{App, Arg};
-use ansi_term::Colour::{Red, Blue};
 use failure::Error;
 
-use expressi::jit;
 use expressi::error::{IOError, NotFoundError};
+use expressi::jit;
 
 use std::fs::File;
 use std::io;
@@ -16,12 +16,14 @@ use std::io::prelude::*;
 use std::mem;
 
 fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
-    let mut f = File::open(path).map_err(|_| NotFoundError{ path: path.to_owned() })?;
+    let mut f = File::open(path).map_err(|_| NotFoundError {
+        path: path.to_owned(),
+    })?;
     let mut contents = String::new();
-    f.read_to_string(&mut contents)
-        .map_err(|_| IOError{ message: "Failed to read file".to_owned() })?;
-    let func_obj = jit
-        .compile("file_input", &contents.trim())?;
+    f.read_to_string(&mut contents).map_err(|_| IOError {
+        message: "Failed to read file".to_owned(),
+    })?;
+    let func_obj = jit.compile("file_input", &contents.trim())?;
     let func = unsafe { mem::transmute::<_, fn() -> isize>(func_obj) };
     println!("{}", func());
     Ok(())
@@ -29,12 +31,14 @@ fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
 
 fn repl(jit: &mut jit::JIT, line_count: u32) -> Result<(), Error> {
     print!("{}: > ", line_count);
-    io::stdout().flush().map_err(|_| IOError { message: "Failed to flush stdin".to_owned() })?;
+    io::stdout().flush().map_err(|_| IOError {
+        message: "Failed to flush stdin".to_owned(),
+    })?;
 
     let mut buffer = String::new();
-    io::stdin()
-        .read_line(&mut buffer)
-        .map_err(|_| IOError { message: "Failed to read stdin".to_owned() })?;
+    io::stdin().read_line(&mut buffer).map_err(|_| IOError {
+        message: "Failed to read stdin".to_owned(),
+    })?;
 
     let func_obj = jit.compile(&format!("repl_{}", line_count), &buffer.trim())?;
     let func = unsafe { mem::transmute::<_, fn() -> isize>(func_obj) };

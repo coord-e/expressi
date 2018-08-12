@@ -55,7 +55,7 @@ impl<'a> Builder<'a> {
         Value::new(self.inst_builder.ins().bconst(t, v), t)
     }
 
-    pub fn apply_op(&mut self, op: Operator, lhs: Value, rhs: Value) -> Result<Value, Error>{
+    pub fn apply_op(&mut self, op: Operator, lhs: Value, rhs: Value) -> Result<Value, Error> {
         match op {
             Operator::Add => self.add(lhs, rhs),
             Operator::Sub => self.sub(lhs, rhs),

@@ -1,8 +1,8 @@
 use builder::Builder;
+use error::{FinalizationError, ParseError};
 use expression::Expression;
 use parser;
 use translator::FunctionTranslator;
-use error::{ParseError, FinalizationError};
 
 use std::collections::HashMap;
 
@@ -39,7 +39,9 @@ impl JIT {
     /// Compile a string in the toy language into machine code.
     pub fn compile(&mut self, name: &str, input: &str) -> Result<*const u8, Error> {
         // Parse the string, producing AST nodes.
-        let ast = parser::parse(&input).map_err(|e| ParseError{ message: e.to_string()})?;
+        let ast = parser::parse(&input).map_err(|e| ParseError {
+            message: e.to_string(),
+        })?;
 
         // Translate the AST nodes into Cranelift IR.
         self.translate(ast)?;
@@ -47,11 +49,15 @@ impl JIT {
         let id = self
             .module
             .declare_function(&name, Linkage::Export, &self.ctx.func.signature)
-            .map_err(|e| FinalizationError{ message: e.to_string()})?;
+            .map_err(|e| FinalizationError {
+                message: e.to_string(),
+            })?;
 
         self.module
             .define_function(id, &mut self.ctx)
-            .map_err(|e| FinalizationError{ message: e.to_string()})?;
+            .map_err(|e| FinalizationError {
+                message: e.to_string(),
+            })?;
 
         // Now that compilation is finished, we can clear out the context state.
         self.module.clear_context(&mut self.ctx);

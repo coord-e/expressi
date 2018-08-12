@@ -1,8 +1,8 @@
 use expression::Expression;
 
 use builder::Builder;
-use value::Value;
 use error::UndeclaredVariableError;
+use value::Value;
 
 use failure::Error;
 
