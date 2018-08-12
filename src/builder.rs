@@ -122,7 +122,7 @@ impl<'a> Builder<'a> {
             .inst_builder
             .ins()
             .icmp(cc, lhs.cl_value(), rhs.cl_value());
-        Value::new(res, types::I64)
+        Value::new(res, types::B1)
     }
 
     pub fn set_var(&mut self, name: &str, val: Value) -> Result<Value, Error> {
