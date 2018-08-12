@@ -62,20 +62,20 @@ impl FromStr for Type {
 
 #[derive(Clone, Copy)]
 pub struct Value {
-    pub cranelift_value: prelude::Value,
+    pub cranelift_value: Option<prelude::Value>,
     pub value_type: Type,
 }
 
 impl Value {
     pub fn new(v: prelude::Value, t: prelude::Type) -> Result<Self, Error> {
         Ok(Value {
-            cranelift_value: v,
+            cranelift_value: Some(v),
             value_type: Type::from(t)?,
         })
     }
 
-    pub fn cl_value(&self) -> prelude::Value {
-        self.cranelift_value.clone()
+    pub fn cl_value(&self) -> Option<prelude::Value> {
+        self.cranelift_value.map(|v| v.clone())
     }
 
     pub fn get_type(&self) -> Type {

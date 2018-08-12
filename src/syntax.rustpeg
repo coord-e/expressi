@@ -3,11 +3,14 @@ use expression::Operator;
 
 #[pub]
 expression -> Expression
-  = bin_op
+  = follow
+
+follow -> Expression
+  = l:bin_op ";" r:follow? { Expression::Follow(Box::new(l), r.map(|v| Box::new(v))) }
+    / bin_op
 
 bin_op -> Expression
   = #infix<spaced_atom> {
-  #L x ";" y { Expression::Follow(Box::new(x), Box::new(y)) }
   #R x "=" y { Expression::Assign(Box::new(x), Box::new(y)) }
   #L x "|" y { Expression::BinOp(Operator::BitOr, Box::new(x), Box::new(y)) }
      x "^" y { Expression::BinOp(Operator::BitXor, Box::new(x), Box::new(y)) }

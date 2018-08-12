@@ -51,7 +51,7 @@ pub enum Expression {
     Boolean(bool),
     Identifier(String),
     Assign(Box<Expression>, Box<Expression>),
-    Follow(Box<Expression>, Box<Expression>),
+    Follow(Box<Expression>, Option<Box<Expression>>),
     BinOp(Operator, Box<Expression>, Box<Expression>),
     IfElse(Box<Expression>, Box<Expression>, Box<Expression>),
     Cast(Box<Expression>, Type)

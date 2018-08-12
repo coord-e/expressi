@@ -2,7 +2,7 @@ use expression::Expression;
 
 use builder::Builder;
 use error::UndeclaredVariableError;
-use value::Value;
+use value::{Value, Type};
 
 use failure::Error;
 
@@ -33,7 +33,11 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Follow(lhs, rhs) => {
                 self.translate_expr(*lhs)?;
-                self.translate_expr(*rhs)?
+                if let Some(rhs) = rhs {
+                    self.translate_expr(*rhs)?
+                } else {
+                    Value { cranelift_value: None, value_type: Type::Empty }
+                }
             }
 
             Expression::Assign(lhs, rhs) => {
@@ -62,7 +66,7 @@ impl<'a> FunctionTranslator<'a> {
                 let merge_block = self.builder.create_block();
 
                 // Test the confition
-                self.builder.brz(condition_value, else_block);
+                self.builder.brz(condition_value, else_block)?;
 
                 let then_return = self.translate_expr(*then_expr)?;
 
