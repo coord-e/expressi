@@ -9,6 +9,7 @@ cranelift = "0.18.1"
 cranelift-module = "0.18.1"
 cranelift-simplejit = "0.18.1"
 clap = "2.32.0"
+failure = "0.1.2"
 
 [build-dependencies]
 peg = "0.5"

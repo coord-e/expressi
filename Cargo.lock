@@ -172,6 +172,7 @@ dependencies = [
  "cranelift 0.18.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cranelift-module 0.18.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cranelift-simplejit 0.18.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "peg 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
