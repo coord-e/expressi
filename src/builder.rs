@@ -179,7 +179,7 @@ impl<'a> Builder<'a> {
 
     pub fn cast_to(&mut self, v: Value, t: Type) -> Result<Value, Error> {
         if v.get_type() == t {
-            return Err(InvalidCastError.into());
+            return Err(InvalidCastError{from: v.get_type(), to: t}.into());
         }
         Ok(match (v.get_type(), t) {
             (Type::Number, Type::Boolean) => {
@@ -187,7 +187,7 @@ impl<'a> Builder<'a> {
                 self.cmp(CondCode::NotEqual, v, zero)?
             }
             (Type::Boolean, Type::Number) => Value { cranelift_value: self.inst_builder.ins().bint(t.cl_type()?, v.cl_value()), value_type: t, .. v },
-            _ => return Err(InvalidCastError.into())
+            _ => return Err(InvalidCastError{from: v.get_type(), to: t}.into())
         })
     }
 

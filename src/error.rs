@@ -10,8 +10,11 @@ pub struct UndeclaredVariableError;
 pub struct TypeError;
 
 #[derive(Fail, Debug)]
-#[fail(display = "Invalid Cast")]
-pub struct InvalidCastError;
+#[fail(display = "Invalid Cast from {} to {}", from, to)]
+pub struct InvalidCastError {
+    pub from: Type,
+    pub to: Type
+}
 
 #[derive(Fail, Debug)]
 #[fail(
