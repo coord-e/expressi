@@ -6,6 +6,10 @@ use value::Type;
 pub struct UndeclaredVariableError;
 
 #[derive(Fail, Debug)]
+#[fail(display = "Invalid Type")]
+pub struct TypeError;
+
+#[derive(Fail, Debug)]
 #[fail(
     display = "Attempt to convert incompatible cranelift type {} to expressi's type representation",
     from
