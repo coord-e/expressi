@@ -2,8 +2,11 @@ use builder::Builder;
 use expression::Expression;
 use parser;
 use translator::FunctionTranslator;
+use error::{ParseError, FinalizationError};
 
 use std::collections::HashMap;
+
+use failure::Error;
 
 use cranelift::prelude::*;
 use cranelift_module::{DataContext, Linkage, Module};
@@ -34,21 +37,21 @@ impl JIT {
     }
 
     /// Compile a string in the toy language into machine code.
-    pub fn compile(&mut self, name: &str, input: &str) -> Result<*const u8, String> {
+    pub fn compile(&mut self, name: &str, input: &str) -> Result<*const u8, Error> {
         // Parse the string, producing AST nodes.
-        let ast = parser::parse(&input).map_err(|e| e.to_string())?;
+        let ast = parser::parse(&input).map_err(|e| ParseError{ message: e.to_string()})?;
 
         // Translate the AST nodes into Cranelift IR.
-        self.translate(ast).map_err(|e| e.to_string())?;
+        self.translate(ast)?;
 
         let id = self
             .module
             .declare_function(&name, Linkage::Export, &self.ctx.func.signature)
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| FinalizationError{ message: e.to_string()})?;
 
         self.module
             .define_function(id, &mut self.ctx)
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| FinalizationError{ message: e.to_string()})?;
 
         // Now that compilation is finished, we can clear out the context state.
         self.module.clear_context(&mut self.ctx);
@@ -60,7 +63,7 @@ impl JIT {
     }
 
     // Translate from toy-language AST nodes into Cranelift IR.
-    fn translate(&mut self, expr: Expression) -> Result<(), String> {
+    fn translate(&mut self, expr: Expression) -> Result<(), Error> {
         self.ctx
             .func
             .signature
@@ -89,7 +92,7 @@ impl JIT {
             builder,
             module: &mut self.module,
         };
-        let evaluated_value = trans.translate_expr(expr).unwrap();
+        let evaluated_value = trans.translate_expr(expr)?;
         let return_value = if evaluated_value.get_type().cl_type().unwrap() != types::I64 {
             trans
                 .builder
