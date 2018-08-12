@@ -50,8 +50,8 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.get_var(&name).ok_or(UndeclaredVariableError)?
             }
 
-            Expression::Type(_) => {
-                // WIP: Return Empty
+            Expression::Cast(lhs, ty) => {
+                // WIP: Cast
                 self.builder.number_constant(0)?
             }
 
