@@ -42,7 +42,7 @@ impl<'a> FunctionTranslator<'a> {
                     Expression::Identifier(name) => name,
                     _ => panic!("Non-identifier identifier"),
                 };
-                self.builder.set_var(&name, new_value);
+                self.builder.set_var(&name, new_value)?;
                 new_value
             }
 
@@ -62,7 +62,7 @@ impl<'a> FunctionTranslator<'a> {
                 let then_return = self.translate_expr(*then_expr)?;
 
                 self.builder
-                    .set_block_signature(merge_block, &[then_return.get_type()]);
+                    .set_block_signature(merge_block, &[then_return.get_type()])?;
 
                 // Jump to merge block after translation of the 'then' block
                 self.builder.jump(merge_block, &[then_return]);

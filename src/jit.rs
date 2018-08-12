@@ -93,7 +93,7 @@ impl JIT {
             module: &mut self.module,
         };
         let evaluated_value = trans.translate_expr(expr)?;
-        let return_value = if evaluated_value.get_type().cl_type().unwrap() != types::I64 {
+        let return_value = if evaluated_value.get_type().cl_type()? != types::I64 {
             trans
                 .builder
                 .inst_builder()

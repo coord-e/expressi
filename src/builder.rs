@@ -125,18 +125,19 @@ impl<'a> Builder<'a> {
         Value::new(res, types::I64)
     }
 
-    pub fn set_var(&mut self, name: &str, val: Value) {
+    pub fn set_var(&mut self, name: &str, val: Value) -> Result<Value, Error> {
         let variable = if self.variable_map.contains_key(name) {
             *self.variable_map.get(name).unwrap()
         } else {
             let variable = Variable::new(self.variable_map.len());
             self.variable_map.insert(name.to_owned(), variable);
             self.inst_builder
-                .declare_var(variable, val.get_type().cl_type().unwrap());
+                .declare_var(variable, val.get_type().cl_type()?);
             variable
         };
         self.inst_builder.def_var(variable, val.cl_value());
         self.variable_value_map.insert(variable.index(), val);
+        Ok(val)
     }
 
     pub fn get_var(&mut self, name: &str) -> Option<Value> {
@@ -162,12 +163,13 @@ impl<'a> Builder<'a> {
             .brz(condition.cl_value(), block.cl_ebb(), &[]);
     }
 
-    pub fn set_block_signature(&mut self, block: Block, types: &[Type]) {
+    pub fn set_block_signature(&mut self, block: Block, types: &[Type]) -> Result<(), Error> {
         for t in types {
             self.inst_builder
-                .append_ebb_param(block.cl_ebb(), t.cl_type().unwrap());
+                .append_ebb_param(block.cl_ebb(), t.cl_type()?);
         }
         self.block_table.insert(block, types.to_vec());
+        Ok(())
     }
 
     pub fn jump(&mut self, block: Block, args: &[Value]) {

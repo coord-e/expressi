@@ -1,4 +1,4 @@
-use error::InternalTypeConversionError;
+use error::{CraneliftTypeConversionError, InternalTypeConversionError};
 
 use std::fmt;
 
@@ -13,16 +13,16 @@ pub enum Type {
 }
 
 impl Type {
-    pub fn from(t: prelude::Type) -> Result<Self, InternalTypeConversionError> {
+    pub fn from(t: prelude::Type) -> Result<Self, CraneliftTypeConversionError> {
         Ok(match t {
             prelude::types::I64 => Type::Number,
             prelude::types::B1 => Type::Boolean,
-            _ => return Err(InternalTypeConversionError { from: t }),
+            _ => return Err(CraneliftTypeConversionError { from: t }),
         })
     }
 
-    pub fn cl_type(&self) -> Option<prelude::Type> {
-        Some(match self {
+    pub fn cl_type(&self) -> Result<prelude::Type, InternalTypeConversionError> {
+        Ok(match self {
             Type::Number => prelude::types::I64,
             Type::Boolean => prelude::types::B1,
         })
