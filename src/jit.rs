@@ -3,6 +3,7 @@ use error::{FinalizationError, ParseError};
 use expression::Expression;
 use parser;
 use translator::FunctionTranslator;
+use value::Type;
 
 use std::collections::HashMap;
 
@@ -10,7 +11,9 @@ use failure::Error;
 
 use scopeguard;
 
-use cranelift::prelude::*;
+use cranelift::prelude::{
+    codegen, types, AbiParam, FunctionBuilder, FunctionBuilderContext, InstBuilder, Variable,
+};
 use cranelift_module::{DataContext, Linkage, Module};
 use cranelift_simplejit::{SimpleJITBackend, SimpleJITBuilder};
 
@@ -104,21 +107,24 @@ impl JIT {
             module: &mut self.module,
         };
         let mut trans = scopeguard::guard(trans_, |trans_| {
+            if !trans_.builder.inst_builder().is_filled() {
+                trans_.builder.inst_builder().ins().return_(&[]);
+            }
             trans_.builder.finalize();
         });
 
         let evaluated_value = trans.translate_expr(expr)?;
-        let return_value = if evaluated_value.get_type().cl_type()? != types::I64 {
-            trans
-                .builder
-                .inst_builder()
-                .ins()
-                .bint(types::I64, evaluated_value.cl_value()?)
+        let return_value = if evaluated_value.get_type() != Type::Number {
+            trans.builder.cast_to(evaluated_value, Type::Number)?
         } else {
-            evaluated_value.cl_value()?
+            evaluated_value
         };
         // Emit the return instruction.
-        trans.builder.inst_builder().ins().return_(&[return_value]);
+        trans
+            .builder
+            .inst_builder()
+            .ins()
+            .return_(&[return_value.cl_value()?]);
 
         Ok(())
     }
