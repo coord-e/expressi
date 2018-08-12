@@ -40,6 +40,9 @@ impl JIT {
 
     /// Compile a string in the toy language into machine code.
     pub fn compile(&mut self, name: &str, input: &str) -> Result<*const u8, Error> {
+        // Clear the context first of all because there may be something left after error
+        self.module.clear_context(&mut self.ctx);
+
         // Parse the string, producing AST nodes.
         let ast = parser::parse(&input).map_err(|e| ParseError {
             message: e.to_string(),
