@@ -25,6 +25,8 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Boolean(tf) => self.builder.boolean_constant(tf)?,
 
+            Expression::Empty => Value { cranelift_value: None, value_type: Type::Empty },
+
             Expression::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?;
                 let rhs = self.translate_expr(*rhs)?;
@@ -33,11 +35,7 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Follow(lhs, rhs) => {
                 self.translate_expr(*lhs)?;
-                if let Some(rhs) = rhs {
-                    self.translate_expr(*rhs)?
-                } else {
-                    Value { cranelift_value: None, value_type: Type::Empty }
-                }
+                self.translate_expr(*rhs)?
             }
 
             Expression::Assign(lhs, rhs) => {

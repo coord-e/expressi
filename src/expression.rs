@@ -50,8 +50,9 @@ pub enum Expression {
     Number(i64),
     Boolean(bool),
     Identifier(String),
+    Empty,
     Assign(Box<Expression>, Box<Expression>),
-    Follow(Box<Expression>, Option<Box<Expression>>),
+    Follow(Box<Expression>, Box<Expression>),
     BinOp(Operator, Box<Expression>, Box<Expression>),
     IfElse(Box<Expression>, Box<Expression>, Box<Expression>),
     Cast(Box<Expression>, Type)
