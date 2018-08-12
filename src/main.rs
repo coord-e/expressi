@@ -1,16 +1,46 @@
 extern crate clap;
 extern crate expressi;
 extern crate ansi_term;
+extern crate failure;
 
 use clap::{App, Arg};
 use ansi_term::Colour::{Red, Blue};
+use failure::Error;
 
 use expressi::jit;
+use expressi::error::{IOError, NotFoundError};
 
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 use std::mem;
+
+fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
+    let mut f = File::open(path).map_err(|_| NotFoundError{ path: path.to_owned() })?;
+    let mut contents = String::new();
+    f.read_to_string(&mut contents)
+        .map_err(|_| IOError{ message: "Failed to read file".to_owned() })?;
+    let func_obj = jit
+        .compile("file_input", &contents.trim())?;
+    let func = unsafe { mem::transmute::<_, fn() -> isize>(func_obj) };
+    println!("{}", func());
+    Ok(())
+}
+
+fn repl(jit: &mut jit::JIT, line_count: u32) -> Result<(), Error> {
+    print!("{}: > ", line_count);
+    io::stdout().flush().map_err(|_| IOError { message: "Failed to flush stdin".to_owned() })?;
+
+    let mut buffer = String::new();
+    io::stdin()
+        .read_line(&mut buffer)
+        .map_err(|_| IOError { message: "Failed to read stdin".to_owned() })?;
+
+    let func_obj = jit.compile(&format!("repl_{}", line_count), &buffer.trim())?;
+    let func = unsafe { mem::transmute::<_, fn() -> isize>(func_obj) };
+    println!("{}{}", Blue.paint("-> "), Blue.paint(func().to_string()));
+    Ok(())
+}
 
 fn main() {
     let matches = App::new("expressi")
@@ -26,34 +56,14 @@ fn main() {
     let mut jit = jit::JIT::new();
 
     if matches.is_present("INPUT") {
-        let mut f = File::open(matches.value_of("INPUT").unwrap()).expect("file not found");
-        let mut contents = String::new();
-        f.read_to_string(&mut contents)
-            .expect("something went wrong reading the file");
-        let func_obj = jit
-            .compile("file_input", &contents.trim())
-            .unwrap_or_else(|msg| panic!("{}: {}", Red.paint("Error"), msg));
-        let func = unsafe { mem::transmute::<_, fn() -> isize>(func_obj) };
-        println!("{}", func());
+        if let Err(e) = compile_from_file(&mut jit, matches.value_of("INPUT").unwrap()) {
+            eprintln!("{}: {}", Red.paint("Error"), e);
+        }
     } else {
         let mut line_count = 0;
         loop {
-            print!("{}: > ", line_count);
-            io::stdout().flush().expect("Failed to flush stdout");
-
-            let mut buffer = String::new();
-            io::stdin()
-                .read_line(&mut buffer)
-                .expect("Failed to read line");
-
-            match jit.compile(&format!("repl_{}", line_count), &buffer.trim()) {
-                Ok(func) => {
-                    let func = unsafe { mem::transmute::<_, fn() -> isize>(func) };
-                    println!("{}{}", Blue.paint("-> "), Blue.paint(func().to_string()));
-                }
-                Err(msg) => {
-                    eprintln!("{}: {}", Red.paint("Error"), msg);
-                }
+            if let Err(e) = repl(&mut jit, line_count) {
+                eprintln!("{}: {}", Red.paint("Error"), e);
             }
             line_count += 1;
         }

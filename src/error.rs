@@ -28,3 +28,15 @@ pub struct ParseError {
 pub struct FinalizationError {
     pub message: String
 }
+
+#[derive(Fail, Debug)]
+#[fail(display = "IO Error: {}", message)]
+pub struct IOError {
+    pub message: String
+}
+
+#[derive(Fail, Debug)]
+#[fail(display = "File not found: {}", path)]
+pub struct NotFoundError {
+    pub path: String
+}
