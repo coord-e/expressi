@@ -1,6 +1,6 @@
 use expression::Operator;
 use value::{Type, Value};
-use error::TypeError;
+use error::{InvalidCastError, TypeError};
 
 use failure::Error;
 
@@ -178,14 +178,16 @@ impl<'a> Builder<'a> {
     }
 
     pub fn cast_to(&mut self, v: Value, t: Type) -> Result<Value, Error> {
+        if v.get_type() == t {
+            return Err(InvalidCastError.into());
+        }
         Ok(match (v.get_type(), t) {
             (Type::Number, Type::Boolean) => {
                 let zero = self.number_constant(0)?;
                 self.cmp(CondCode::NotEqual, v, zero)?
             }
             (Type::Boolean, Type::Number) => Value { cranelift_value: self.inst_builder.ins().bint(t.cl_type()?, v.cl_value()), value_type: t, .. v },
-            (Type::Number, Type::Number) => v,
-            (Type::Boolean, Type::Boolean) => v
+            _ => return Err(InvalidCastError.into())
         })
     }
 
