@@ -8,6 +8,8 @@ use std::collections::HashMap;
 
 use failure::Error;
 
+use scopeguard;
+
 use cranelift::prelude::*;
 use cranelift_module::{DataContext, Linkage, Module};
 use cranelift_simplejit::{SimpleJITBackend, SimpleJITBuilder};
@@ -94,10 +96,14 @@ impl JIT {
             block_table: HashMap::new(),
         };
 
-        let mut trans = FunctionTranslator {
+        let trans_ = FunctionTranslator {
             builder,
             module: &mut self.module,
         };
+        let mut trans = scopeguard::guard(trans_, |trans_| {
+            trans_.builder.finalize();
+        });
+
         let evaluated_value = trans.translate_expr(expr)?;
         let return_value = if evaluated_value.get_type().cl_type()? != types::I64 {
             trans
@@ -111,8 +117,6 @@ impl JIT {
         // Emit the return instruction.
         trans.builder.inst_builder().ins().return_(&[return_value]);
 
-        // Tell the builder we're done with this function.
-        trans.builder.finalize();
         Ok(())
     }
 }
