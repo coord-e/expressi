@@ -21,14 +21,14 @@ impl<'a> FunctionTranslator<'a> {
     /// can then use these references in other instructions.
     pub fn translate_expr(&mut self, expr: Expression) -> Result<Value, Error> {
         Ok(match expr {
-            Expression::Number(number) => self.builder.number_constant(i64::from(number)),
+            Expression::Number(number) => self.builder.number_constant(i64::from(number))?,
 
-            Expression::Boolean(tf) => self.builder.boolean_constant(tf),
+            Expression::Boolean(tf) => self.builder.boolean_constant(tf)?,
 
             Expression::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?;
                 let rhs = self.translate_expr(*rhs)?;
-                self.builder.apply_op(op, lhs, rhs)
+                self.builder.apply_op(op, lhs, rhs)?
             }
 
             Expression::Follow(lhs, rhs) => {

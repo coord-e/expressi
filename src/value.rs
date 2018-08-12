@@ -2,6 +2,8 @@ use error::InternalTypeConversionError;
 
 use std::fmt;
 
+use failure::Error;
+
 use cranelift::prelude;
 
 #[derive(Debug, Clone, PartialEq, Copy)]
@@ -45,11 +47,11 @@ pub struct Value {
 }
 
 impl Value {
-    pub fn new(v: prelude::Value, t: prelude::Type) -> Self {
-        Value {
+    pub fn new(v: prelude::Value, t: prelude::Type) -> Result<Self, Error> {
+        Ok(Value {
             cranelift_value: v,
-            value_type: Type::from(t).unwrap(),
-        }
+            value_type: Type::from(t)?,
+        })
     }
 
     pub fn cl_value(&self) -> prelude::Value {

@@ -1,6 +1,8 @@
 use expression::Operator;
 use value::{Type, Value};
 
+use failure::Error;
+
 use cranelift::codegen::ir::{condcodes, entities, types, InstBuilder};
 use cranelift::prelude::{EntityRef, FunctionBuilder, Variable};
 
@@ -43,17 +45,17 @@ impl<'a> Builder<'a> {
         self.inst_builder.finalize()
     }
 
-    pub fn number_constant(&mut self, v: i64) -> Value {
+    pub fn number_constant(&mut self, v: i64) -> Result<Value, Error> {
         let t = types::I64;
         Value::new(self.inst_builder.ins().iconst(t, v), t)
     }
 
-    pub fn boolean_constant(&mut self, v: bool) -> Value {
+    pub fn boolean_constant(&mut self, v: bool) -> Result<Value, Error> {
         let t = types::B1;
         Value::new(self.inst_builder.ins().bconst(t, v), t)
     }
 
-    pub fn apply_op(&mut self, op: Operator, lhs: Value, rhs: Value) -> Value {
+    pub fn apply_op(&mut self, op: Operator, lhs: Value, rhs: Value) -> Result<Value, Error>{
         match op {
             Operator::Add => self.add(lhs, rhs),
             Operator::Sub => self.sub(lhs, rhs),
@@ -71,42 +73,42 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn add(&mut self, lhs: Value, rhs: Value) -> Value {
+    pub fn add(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
         let res = self.inst_builder.ins().iadd(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn sub(&mut self, lhs: Value, rhs: Value) -> Value {
+    pub fn sub(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
         let res = self.inst_builder.ins().isub(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn mul(&mut self, lhs: Value, rhs: Value) -> Value {
+    pub fn mul(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
         let res = self.inst_builder.ins().imul(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn div(&mut self, lhs: Value, rhs: Value) -> Value {
+    pub fn div(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
         let res = self.inst_builder.ins().udiv(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn bit_and(&mut self, lhs: Value, rhs: Value) -> Value {
+    pub fn bit_and(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
         let res = self.inst_builder.ins().band(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn bit_or(&mut self, lhs: Value, rhs: Value) -> Value {
+    pub fn bit_or(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
         let res = self.inst_builder.ins().bor(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn bit_xor(&mut self, lhs: Value, rhs: Value) -> Value {
+    pub fn bit_xor(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
         let res = self.inst_builder.ins().bxor(lhs.cl_value(), rhs.cl_value());
         Value::new(res, types::I64)
     }
 
-    pub fn cmp(&mut self, cmp_type: CondCode, lhs: Value, rhs: Value) -> Value {
+    pub fn cmp(&mut self, cmp_type: CondCode, lhs: Value, rhs: Value) -> Result<Value, Error> {
         let cc = match cmp_type {
             CondCode::Equal => condcodes::IntCC::Equal,
             CondCode::NotEqual => condcodes::IntCC::NotEqual,
