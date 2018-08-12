@@ -1,3 +1,5 @@
+use value::Type;
+
 use std::str::FromStr;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -47,6 +49,7 @@ impl FromStr for Operator {
 pub enum Expression {
     Number(i64),
     Boolean(bool),
+    Type(Type),
     Identifier(String),
     Assign(Box<Expression>, Box<Expression>),
     Follow(Box<Expression>, Box<Expression>),

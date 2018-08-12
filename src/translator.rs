@@ -50,6 +50,11 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.get_var(&name).ok_or(UndeclaredVariableError)?
             }
 
+            Expression::Type(_) => {
+                // WIP: Return Empty
+                self.builder.number_constant(0)?
+            }
+
             Expression::IfElse(cond, then_expr, else_expr) => {
                 let condition_value = self.translate_expr(*cond)?;
 

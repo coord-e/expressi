@@ -36,6 +36,9 @@ atom -> Expression
   / identifier
   / "(" v:expression ")" { v }
 
+type_ -> Expression
+  = n:$([a-zA-Z] [a-zA-Z0-9_]*) { Expression::Type(n.parse().unwrap()) }
+
 identifier -> Expression
   = n:$([a-zA-Z] [a-zA-Z0-9_]*) { Expression::Identifier(n.to_owned()) }
 
