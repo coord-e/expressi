@@ -6,7 +6,7 @@ expression -> Expression
   = follow
 
 follow -> Expression
-  = l:bin_op ";" r:follow? { Expression::Follow(Box::new(l), Box::new(if let Some(v) = r {v} else {Expression::Empty})) }
+  = l:bin_op ";" r:follow? { Expression::Follow(Box::new(l), Box::new(r.unwrap_or(Expression::Empty))) }
     / bin_op
 
 bin_op -> Expression
@@ -28,7 +28,7 @@ bin_op -> Expression
 }
 
 if_else -> Expression
-  = "if" cond:expression then_expr:expression else_expr:("else" v:spaced_atom {v})? { Expression::IfElse(Box::new(cond), Box::new(then_expr), Box::new(if let Some(v) = else_expr {v} else { Expression::Empty })) }
+  = "if" cond:expression then_expr:expression else_expr:("else" v:spaced_atom {v})? { Expression::IfElse(Box::new(cond), Box::new(then_expr), Box::new(else_expr.unwrap_or(Expression::Empty))) }
 
 cast -> Expression
   = l:atom _ "as" _ r:$([a-zA-Z] [a-zA-Z0-9_]*) { Expression::Cast(Box::new(l), r.parse().unwrap()) }

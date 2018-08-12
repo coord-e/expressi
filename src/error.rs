@@ -13,7 +13,7 @@ pub struct TypeError;
 #[fail(display = "Invalid Cast from {} to {}", from, to)]
 pub struct InvalidCastError {
     pub from: Type,
-    pub to: Type
+    pub to: Type,
 }
 
 #[derive(Fail, Debug)]

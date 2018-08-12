@@ -2,7 +2,7 @@ use expression::Expression;
 
 use builder::Builder;
 use error::UndeclaredVariableError;
-use value::{Value, Type};
+use value::{Type, Value};
 
 use failure::Error;
 
@@ -25,7 +25,10 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Boolean(tf) => self.builder.boolean_constant(tf)?,
 
-            Expression::Empty => Value { cranelift_value: None, value_type: Type::Empty },
+            Expression::Empty => Value {
+                cranelift_value: None,
+                value_type: Type::Empty,
+            },
 
             Expression::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?;

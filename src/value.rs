@@ -11,7 +11,7 @@ use cranelift::prelude;
 pub enum Type {
     Number,
     Boolean,
-    Empty
+    Empty,
 }
 
 impl Type {
@@ -55,7 +55,7 @@ impl FromStr for Type {
             "Number" => Type::Number,
             "Boolean" => Type::Boolean,
             "Empty" => Type::Empty,
-            _ => return Err(TypeParseError)
+            _ => return Err(TypeParseError),
         })
     }
 }

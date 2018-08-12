@@ -55,7 +55,7 @@ pub enum Expression {
     Follow(Box<Expression>, Box<Expression>),
     BinOp(Operator, Box<Expression>, Box<Expression>),
     IfElse(Box<Expression>, Box<Expression>, Box<Expression>),
-    Cast(Box<Expression>, Type)
+    Cast(Box<Expression>, Type),
 }
 
 #[cfg(test)]

@@ -1,6 +1,6 @@
+use error::{InvalidCastError, TypeError};
 use expression::Operator;
 use value::{Type, Value};
-use error::{InvalidCastError, TypeError};
 
 use failure::Error;
 
@@ -78,7 +78,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().iadd(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+        let res = self
+            .inst_builder
+            .ins()
+            .iadd(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
         Value::new(res, types::I64)
     }
 
@@ -86,7 +89,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().isub(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+        let res = self
+            .inst_builder
+            .ins()
+            .isub(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
         Value::new(res, types::I64)
     }
 
@@ -94,7 +100,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().imul(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+        let res = self
+            .inst_builder
+            .ins()
+            .imul(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
         Value::new(res, types::I64)
     }
 
@@ -102,7 +111,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().udiv(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+        let res = self
+            .inst_builder
+            .ins()
+            .udiv(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
         Value::new(res, types::I64)
     }
 
@@ -110,7 +122,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().band(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+        let res = self
+            .inst_builder
+            .ins()
+            .band(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
         Value::new(res, types::I64)
     }
 
@@ -118,7 +133,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().bor(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+        let res = self
+            .inst_builder
+            .ins()
+            .bor(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
         Value::new(res, types::I64)
     }
 
@@ -126,7 +144,10 @@ impl<'a> Builder<'a> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
-        let res = self.inst_builder.ins().bxor(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+        let res = self
+            .inst_builder
+            .ins()
+            .bxor(lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
         Value::new(res, types::I64)
     }
 
@@ -143,10 +164,10 @@ impl<'a> Builder<'a> {
             CondCode::LessThanOrEqual => condcodes::IntCC::SignedLessThanOrEqual,
         };
 
-        let res = self
-            .inst_builder
-            .ins()
-            .icmp(cc, lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
+        let res =
+            self.inst_builder
+                .ins()
+                .icmp(cc, lhs.cl_value().unwrap(), rhs.cl_value().unwrap());
         Value::new(res, types::B1)
     }
 
@@ -181,15 +202,31 @@ impl<'a> Builder<'a> {
 
     pub fn cast_to(&mut self, v: Value, t: Type) -> Result<Value, Error> {
         if v.get_type() == t {
-            return Err(InvalidCastError{from: v.get_type(), to: t}.into());
+            return Err(InvalidCastError {
+                from: v.get_type(),
+                to: t,
+            }.into());
         }
         Ok(match (v.get_type(), t) {
             (Type::Number, Type::Boolean) => {
                 let zero = self.number_constant(0)?;
                 self.cmp(CondCode::NotEqual, v, zero)?
             }
-            (Type::Boolean, Type::Number) => Value { cranelift_value: Some(self.inst_builder.ins().bint(t.cl_type()?, v.cl_value().unwrap())), value_type: t, .. v },
-            _ => return Err(InvalidCastError{from: v.get_type(), to: t}.into())
+            (Type::Boolean, Type::Number) => Value {
+                cranelift_value: Some(
+                    self.inst_builder
+                        .ins()
+                        .bint(t.cl_type()?, v.cl_value().unwrap()),
+                ),
+                value_type: t,
+                ..v
+            },
+            _ => {
+                return Err(InvalidCastError {
+                    from: v.get_type(),
+                    to: t,
+                }.into())
+            }
         })
     }
 
