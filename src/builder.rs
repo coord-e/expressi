@@ -164,10 +164,10 @@ impl<'a> Builder<'a> {
             CondCode::LessThanOrEqual => condcodes::IntCC::SignedLessThanOrEqual,
         };
 
-        let res =
-            self.inst_builder
-                .ins()
-                .icmp(cc, lhs.cl_value()?, rhs.cl_value()?);
+        let res = self
+            .inst_builder
+            .ins()
+            .icmp(cc, lhs.cl_value()?, rhs.cl_value()?);
         Value::new(res, types::B1)
     }
 
@@ -213,11 +213,7 @@ impl<'a> Builder<'a> {
                 self.cmp(CondCode::NotEqual, v, zero)?
             }
             (Type::Boolean, Type::Number) => Value {
-                cranelift_value: Some(
-                    self.inst_builder
-                        .ins()
-                        .bint(t.cl_type()?, v.cl_value()?),
-                ),
+                cranelift_value: Some(self.inst_builder.ins().bint(t.cl_type()?, v.cl_value()?)),
                 value_type: t,
                 ..v
             },

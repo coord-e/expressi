@@ -1,4 +1,6 @@
-use error::{CraneliftTypeConversionError, InternalTypeConversionError, CraneValueNotAvailableError};
+use error::{
+    CraneValueNotAvailableError, CraneliftTypeConversionError, InternalTypeConversionError,
+};
 
 use std::fmt;
 use std::str::FromStr;
@@ -75,7 +77,9 @@ impl Value {
     }
 
     pub fn cl_value(&self) -> Result<prelude::Value, Error> {
-        self.cranelift_value.map(|v| v.clone()).ok_or(CraneValueNotAvailableError.into())
+        self.cranelift_value
+            .map(|v| v.clone())
+            .ok_or(CraneValueNotAvailableError.into())
     }
 
     pub fn get_type(&self) -> Type {
