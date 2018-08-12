@@ -8,6 +8,8 @@ use std::collections::HashMap;
 
 use failure::Error;
 
+use scopeguard;
+
 use cranelift::prelude::*;
 use cranelift_module::{DataContext, Linkage, Module};
 use cranelift_simplejit::{SimpleJITBackend, SimpleJITBuilder};
@@ -38,6 +40,9 @@ impl JIT {
 
     /// Compile a string in the toy language into machine code.
     pub fn compile(&mut self, name: &str, input: &str) -> Result<*const u8, Error> {
+        // Clear the context first of all because there may be something left after error
+        self.module.clear_context(&mut self.ctx);
+
         // Parse the string, producing AST nodes.
         let ast = parser::parse(&input).map_err(|e| ParseError {
             message: e.to_string(),
@@ -94,10 +99,14 @@ impl JIT {
             block_table: HashMap::new(),
         };
 
-        let mut trans = FunctionTranslator {
+        let trans_ = FunctionTranslator {
             builder,
             module: &mut self.module,
         };
+        let mut trans = scopeguard::guard(trans_, |trans_| {
+            trans_.builder.finalize();
+        });
+
         let evaluated_value = trans.translate_expr(expr)?;
         let return_value = if evaluated_value.get_type().cl_type()? != types::I64 {
             trans
@@ -111,8 +120,6 @@ impl JIT {
         // Emit the return instruction.
         trans.builder.inst_builder().ins().return_(&[return_value]);
 
-        // Tell the builder we're done with this function.
-        trans.builder.finalize();
         Ok(())
     }
 }

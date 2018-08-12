@@ -13,3 +13,5 @@ extern crate cranelift_simplejit;
 
 #[macro_use]
 extern crate failure;
+
+extern crate scopeguard;
