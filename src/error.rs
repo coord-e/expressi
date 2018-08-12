@@ -1,6 +1,15 @@
+use value::Type;
+use cranelift::prelude::types;
+
 #[derive(Fail, Debug)]
 #[fail(display = "Use of undeclared variable")]
 pub struct UndeclaredVariableError;
+
+#[derive(Fail, Debug)]
+#[fail(display = "Attempt to convert incompatible cranelift type {} to expressi's type representation", from)]
+pub struct InternalTypeConversionError {
+    pub from: types::Type
+}
 
 #[derive(Fail, Debug)]
 #[fail(display = "Failed to parse: {}", message)]

@@ -1,3 +1,7 @@
+use error::InternalTypeConversionError;
+
+use std::fmt;
+
 use cranelift::prelude;
 
 #[derive(Debug, Clone, PartialEq, Copy)]
@@ -7,11 +11,11 @@ pub enum Type {
 }
 
 impl Type {
-    pub fn from(t: prelude::Type) -> Result<Self, String> {
+    pub fn from(t: prelude::Type) -> Result<Self, InternalTypeConversionError> {
         Ok(match t {
             prelude::types::I64 => Type::Number,
             prelude::types::B1 => Type::Boolean,
-            _ => return Err("There is no representation of this cranelift IR type".to_owned()),
+            _ => return Err(InternalTypeConversionError { from: t }),
         })
     }
 
@@ -20,6 +24,17 @@ impl Type {
             Type::Number => prelude::types::I64,
             Type::Boolean => prelude::types::B1,
         })
+    }
+}
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let rep = match self {
+            Type::Number => "Number",
+            Type::Boolean => "Boolean",
+        };
+
+        write!(f, "{}", rep)
     }
 }
 
