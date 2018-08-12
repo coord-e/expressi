@@ -1,6 +1,7 @@
 use error::{InvalidCastError, TypeError};
 use expression::Operator;
 use value::{Type, Value};
+use scope::Scope;
 
 use failure::Error;
 
@@ -35,6 +36,7 @@ pub struct Builder<'a> {
     pub variable_map: HashMap<String, Variable>,
     pub variable_value_map: HashMap<usize, Value>,
     pub block_table: HashMap<Block, Vec<Type>>,
+    pub scope_stack: Vec<Scope>
 }
 
 impl<'a> Builder<'a> {
@@ -224,6 +226,14 @@ impl<'a> Builder<'a> {
                 }.into())
             }
         })
+    }
+
+    pub fn enter_scope(&mut self, sc: Scope) {
+        self.scope_stack.push(sc);
+    }
+
+    pub fn exit_scope(&mut self) {
+        self.scope_stack.pop();
     }
 
     pub fn create_block(&mut self) -> Block {

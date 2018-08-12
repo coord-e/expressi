@@ -3,6 +3,7 @@ use expression::Expression;
 use builder::Builder;
 use error::UndeclaredVariableError;
 use value::{Type, Value};
+use scope::Scope;
 
 use failure::Error;
 
@@ -58,6 +59,13 @@ impl<'a> FunctionTranslator<'a> {
             Expression::Cast(lhs, ty) => {
                 let lhs = self.translate_expr(*lhs)?;
                 self.builder.cast_to(lhs, ty)?
+            }
+
+            Expression::Scope(expr) => {
+                let scope = self.builder.enter_scope(Scope::new());
+                let content = self.translate_expr(*expr)?;
+                self.builder.exit_scope();
+                content
             }
 
             Expression::IfElse(cond, then_expr, else_expr) => {
