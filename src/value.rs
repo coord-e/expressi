@@ -11,6 +11,7 @@ use cranelift::prelude;
 pub enum Type {
     Number,
     Boolean,
+    Empty
 }
 
 impl Type {
@@ -26,6 +27,7 @@ impl Type {
         Ok(match self {
             Type::Number => prelude::types::I64,
             Type::Boolean => prelude::types::B1,
+            _ => return Err(InternalTypeConversionError { from: *self }),
         })
     }
 }
@@ -35,6 +37,7 @@ impl fmt::Display for Type {
         let rep = match self {
             Type::Number => "Number",
             Type::Boolean => "Boolean",
+            Type::Empty => "Empty",
         };
 
         write!(f, "{}", rep)
@@ -51,6 +54,7 @@ impl FromStr for Type {
         Ok(match x {
             "Number" => Type::Number,
             "Boolean" => Type::Boolean,
+            "Empty" => Type::Empty,
             _ => return Err(TypeParseError)
         })
     }
