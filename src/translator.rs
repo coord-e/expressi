@@ -28,6 +28,18 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Empty => Value::new(None, Type::Empty),
 
+            Expression::Array(expr) => {
+                let elements = expr.into_iter().map(|expr| self.translate_expr(*expr)).collect::<Result<Vec<_>, _>>()?;
+                let size = elements.iter().fold(0, |sum, e| sum + e.get_type().size());
+                let slot = self.builder.alloc(size)?;
+                let mut stored_size: i32 = 0;
+                for val in elements {
+                    self.builder.store(val, slot, stored_size)?;
+                    stored_size += val.get_type().size() as i32;
+                }
+                Value::new(None, Type::Empty)
+            }
+
             Expression::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?;
                 let rhs = self.translate_expr(*rhs)?;

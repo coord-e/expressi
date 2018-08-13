@@ -49,6 +49,7 @@ impl FromStr for Operator {
 pub enum Expression {
     Number(i64),
     Boolean(bool),
+    Array(Vec<Box<Expression>>),
     Identifier(String),
     Empty,
     Assign(Box<Expression>, Box<Expression>),

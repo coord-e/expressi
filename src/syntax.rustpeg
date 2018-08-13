@@ -39,6 +39,7 @@ spaced_atom -> Expression
 atom -> Expression
   = number
   / boolean
+  / array
   / identifier
   / "{" v:expression "}" { Expression::Scope(Box::new(v)) }
   / "(" v:expression ")" { v }
@@ -51,5 +52,8 @@ number -> Expression
 
 boolean -> Expression
   = n:$("true" / "false") { Expression::Boolean(n.parse().unwrap()) }
+
+array -> Expression
+  = "[" e:(expression ** ',') "]" { Expression::Array(e.into_iter().map(|v| Box::new(v)).collect()) }
 
 _ = [ \t\n]*
