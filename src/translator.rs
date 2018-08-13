@@ -26,10 +26,7 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Boolean(tf) => self.builder.boolean_constant(tf)?,
 
-            Expression::Empty => Value {
-                cranelift_value: None,
-                value_type: Type::Empty,
-            },
+            Expression::Empty => Value::new(None, Type::Empty),
 
             Expression::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?;
