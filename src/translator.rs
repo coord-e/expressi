@@ -62,7 +62,7 @@ impl<'a> FunctionTranslator<'a> {
             }
 
             Expression::Scope(expr) => {
-                let scope = self.builder.enter_scope(Scope::new());
+                self.builder.enter_scope(Scope::new());
                 let content = self.translate_expr(*expr)?;
                 self.builder.exit_scope();
                 content
