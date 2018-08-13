@@ -17,7 +17,7 @@ pub enum Type {
 }
 
 impl Type {
-    pub fn from(t: prelude::Type) -> Result<Self, CraneliftTypeConversionError> {
+    pub fn from_cl(t: prelude::Type) -> Result<Self, CraneliftTypeConversionError> {
         Ok(match t {
             prelude::types::I64 => Type::Number,
             prelude::types::B1 => Type::Boolean,
@@ -64,15 +64,22 @@ impl FromStr for Type {
 
 #[derive(Clone, Copy)]
 pub struct Value {
-    pub cranelift_value: Option<prelude::Value>,
-    pub value_type: Type,
+    cranelift_value: Option<prelude::Value>,
+    value_type: Type,
 }
 
 impl Value {
-    pub fn new(v: prelude::Value, t: prelude::Type) -> Result<Self, Error> {
+    pub fn new(v: Option<prelude::Value>, t: Type) -> Self {
+        Value {
+            cranelift_value: v,
+            value_type: t
+        }
+    }
+
+    pub fn from_cl(v: prelude::Value, t: prelude::Type) -> Result<Self, Error> {
         Ok(Value {
             cranelift_value: Some(v),
-            value_type: Type::from(t)?,
+            value_type: Type::from_cl(t)?,
         })
     }
 
