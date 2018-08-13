@@ -56,6 +56,7 @@ pub enum Expression {
     BinOp(Operator, Box<Expression>, Box<Expression>),
     IfElse(Box<Expression>, Box<Expression>, Box<Expression>),
     Cast(Box<Expression>, Type),
+    Scope(Box<Expression>),
 }
 
 #[cfg(test)]
