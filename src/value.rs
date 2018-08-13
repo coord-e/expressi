@@ -32,6 +32,14 @@ impl Type {
             _ => return Err(InternalTypeConversionError { from: *self }),
         })
     }
+
+    pub fn size(&self) -> u32 {
+        match self {
+            Type::Number => 1,
+            Type::Boolean => 1,
+            Type::Empty => 0
+        }
+    }
 }
 
 impl fmt::Display for Type {

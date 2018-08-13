@@ -5,6 +5,7 @@ pub mod parser;
 pub mod translator;
 pub mod value;
 pub mod scope;
+pub mod slot;
 
 pub mod error;
 

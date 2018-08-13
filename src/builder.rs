@@ -2,10 +2,12 @@ use error::{InvalidCastError, TypeError};
 use expression::Operator;
 use value::{Type, Value};
 use scope::{Scope, ScopeStack};
+use slot::Slot;
 
 use failure::Error;
 
-use cranelift::codegen::ir::{condcodes, entities, types, InstBuilder};
+use cranelift::codegen::ir::{condcodes, entities, types, InstBuilder, stackslot};
+use cranelift::codegen::ir::immediates::Offset32;
 use cranelift::prelude::{EntityRef, FunctionBuilder, Variable};
 
 use std::collections::HashMap;
@@ -223,6 +225,20 @@ impl<'a> Builder<'a> {
 
     pub fn exit_scope(&mut self) -> Result<Scope, Error> {
         self.scope_stack.pop()
+    }
+
+    pub fn alloc(&mut self, size: u32) -> Result<Slot, Error> {
+        let ss = self.inst_builder.create_stack_slot(stackslot::StackSlotData::new(stackslot::StackSlotKind::ExplicitSlot, size));
+        Ok(Slot::new(ss, size))
+    }
+
+    pub fn store(&mut self, v: Value, slot: Slot, offset: i32) -> Result<(), Error> {
+        self.inst_builder.ins().stack_store(v.cl_value()?, slot.cl_slot(), Offset32::new(offset));
+        Ok(())
+    }
+
+    pub fn load(&mut self, t: Type, slot: Slot, offset: i32) -> Result<Value, Error> {
+        Value::from_cl(self.inst_builder.ins().stack_load(t.cl_type()?, slot.cl_slot(), Offset32::new(offset)), t.cl_type()?)
     }
 
     pub fn create_block(&mut self) -> Block {
