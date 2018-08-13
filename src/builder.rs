@@ -172,8 +172,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn set_var(&mut self, name: &str, val: Value) -> Result<Value, Error> {
-        let found = self.scope_stack.get_var(name);
-        let variable = found.unwrap_or({
+        let variable = self.scope_stack.get_var(name).unwrap_or({
             let variable = Variable::new(self.scope_stack.variables().count());
             self.scope_stack.add(name, val, variable);
             self.inst_builder
@@ -188,8 +187,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn get_var(&mut self, name: &str) -> Option<Value> {
-        let found = self.scope_stack.get_var(name);
-        found.map(|var| {
+        self.scope_stack.get_var(name).map(|var| {
             let value = self.scope_stack.get(name).unwrap();
             Value {
                 cranelift_value: Some(self.inst_builder.use_var(var)),
