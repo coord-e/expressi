@@ -17,7 +17,7 @@ pub enum Type {
 }
 
 impl Type {
-    pub fn from(t: prelude::Type) -> Result<Self, CraneliftTypeConversionError> {
+    pub fn from_cl(t: prelude::Type) -> Result<Self, CraneliftTypeConversionError> {
         Ok(match t {
             prelude::types::I64 => Type::Number,
             prelude::types::B1 => Type::Boolean,
@@ -79,7 +79,7 @@ impl Value {
     pub fn from_cl(v: prelude::Value, t: prelude::Type) -> Result<Self, Error> {
         Ok(Value {
             cranelift_value: Some(v),
-            value_type: Type::from(t)?,
+            value_type: Type::from_cl(t)?,
         })
     }
 
