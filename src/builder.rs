@@ -1,7 +1,7 @@
 use error::{InvalidCastError, TypeError};
 use expression::Operator;
 use value::{Type, Value};
-use scope::Scope;
+use scope::{Scope, ScopeStack};
 
 use failure::Error;
 
@@ -33,10 +33,8 @@ impl Block {
 
 pub struct Builder<'a> {
     pub inst_builder: &'a mut FunctionBuilder<'a, Variable>,
-    pub variable_map: HashMap<String, Variable>,
-    pub variable_value_map: HashMap<usize, Value>,
-    pub block_table: HashMap<Block, Vec<Type>>,
-    pub scope_stack: Vec<Scope>
+    pub scope_stack: ScopeStack,
+    pub block_table: HashMap<Block, Vec<Type>>
 }
 
 impl<'a> Builder<'a> {
@@ -174,32 +172,30 @@ impl<'a> Builder<'a> {
     }
 
     pub fn set_var(&mut self, name: &str, val: Value) -> Result<Value, Error> {
-        let variable = if self.variable_map.contains_key(name) {
-            *self.variable_map.get(name).unwrap()
-        } else {
-            let variable = Variable::new(self.variable_map.len());
-            self.variable_map.insert(name.to_owned(), variable);
+        let found = self.scope_stack.get_var(name);
+        let variable = found.unwrap_or({
+            let variable = Variable::new(self.scope_stack.variables().count());
+            self.scope_stack.add(name, val, variable);
             self.inst_builder
                 .declare_var(variable, val.get_type().cl_type()?);
             variable
-        };
+        });
         if let Ok(val) = val.cl_value() {
             self.inst_builder.def_var(variable, val);
         }
-        self.variable_value_map.insert(variable.index(), val);
+        self.scope_stack.set(name, val);
         Ok(val)
     }
 
     pub fn get_var(&mut self, name: &str) -> Option<Value> {
-        if let Some(variable) = self.variable_map.get(name) {
-            let value = self.variable_value_map.get(&variable.index()).unwrap();
-            Some(Value {
-                cranelift_value: Some(self.inst_builder.use_var(*variable)),
+        let found = self.scope_stack.get_var(name);
+        found.map(|var| {
+            let value = self.scope_stack.get(name).unwrap();
+            Value {
+                cranelift_value: Some(self.inst_builder.use_var(var)),
                 ..*value
-            })
-        } else {
-            None
-        }
+            }
+        })
     }
 
     pub fn cast_to(&mut self, v: Value, t: Type) -> Result<Value, Error> {

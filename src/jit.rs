@@ -4,6 +4,7 @@ use expression::Expression;
 use parser;
 use translator::FunctionTranslator;
 use value::Type;
+use scope::ScopeStack;
 
 use std::collections::HashMap;
 
@@ -97,10 +98,8 @@ impl JIT {
 
         let builder = Builder {
             inst_builder: &mut function_builder,
-            variable_map: HashMap::new(),
-            variable_value_map: HashMap::new(),
-            block_table: HashMap::new(),
-            scope_stack: Vec::new()
+            scope_stack: ScopeStack::new(),
+            block_table: HashMap::new()
         };
 
         let trans_ = FunctionTranslator {
