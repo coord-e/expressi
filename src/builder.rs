@@ -226,8 +226,8 @@ impl<'a> Builder<'a> {
         self.scope_stack.push(sc);
     }
 
-    pub fn exit_scope(&mut self) {
-        self.scope_stack.pop();
+    pub fn exit_scope(&mut self) -> Result<Scope, Error> {
+        self.scope_stack.pop()
     }
 
     pub fn create_block(&mut self) -> Block {

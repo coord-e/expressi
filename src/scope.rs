@@ -1,7 +1,9 @@
 use value::Value;
+use error::UnexpectedScopePopError;
 
 use std::collections::HashMap;
 
+use failure::Error;
 use cranelift::prelude::{Variable, EntityRef};
 
 pub struct Scope {
@@ -65,8 +67,11 @@ impl ScopeStack {
         self.scopes.push(sc)
     }
 
-    pub fn pop(&mut self) -> Option<Scope> {
-        self.scopes.pop()
+    pub fn pop(&mut self) -> Result<Scope, Error> {
+        if self.scopes.len() == 1 {
+            return Err(UnexpectedScopePopError.into());
+        }
+        self.scopes.pop().ok_or(UnexpectedScopePopError.into())
     }
 
     pub fn variables(&self) -> impl Iterator<Item=(&String, Variable)> {

@@ -14,6 +14,10 @@ pub struct CraneValueNotAvailableError;
 pub struct TypeError;
 
 #[derive(Fail, Debug)]
+#[fail(display = "Can't pop the scope stack anymore")]
+pub struct UnexpectedScopePopError;
+
+#[derive(Fail, Debug)]
 #[fail(display = "Invalid Cast from {} to {}", from, to)]
 pub struct InvalidCastError {
     pub from: Type,
