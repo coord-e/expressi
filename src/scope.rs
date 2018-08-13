@@ -82,11 +82,11 @@ impl ScopeStack {
     }
 
     pub fn get(&self, s: &str) -> Option<&Value> {
-        self.values().find(|(k, v)| k == &s).map(|(_, v)| v)
+        self.values().find(|(k, _)| k == &s).map(|(_, v)| v)
     }
 
     pub fn get_var(&self, s: &str) -> Option<Variable> {
-        self.variables().find(|(k, v)| k == &s).map(|(_, v)| v)
+        self.variables().find(|(k, _)| k == &s).map(|(_, v)| v)
     }
 
     pub fn set(&mut self, s: &str, val: Value) {
