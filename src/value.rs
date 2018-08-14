@@ -4,6 +4,7 @@ use error::{
 
 use std::fmt;
 use std::str::FromStr;
+use std::ptr::NonNull;
 
 use failure::Error;
 
@@ -13,8 +14,12 @@ use cranelift::prelude;
 pub enum Type {
     Number,
     Boolean,
+    Array(NonNull<Type>, u32),
     Empty,
 }
+
+unsafe impl Send for Type {}
+unsafe impl Sync for Type {}
 
 impl Type {
     pub fn from_cl(t: prelude::Type) -> Result<Self, CraneliftTypeConversionError> {
@@ -37,6 +42,7 @@ impl Type {
         match self {
             Type::Number => 1,
             Type::Boolean => 1,
+            Type::Array(t, length) => unsafe {*t.as_ptr()}.size() * length,
             Type::Empty => 0
         }
     }
@@ -44,10 +50,11 @@ impl Type {
 
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let rep = match self {
-            Type::Number => "Number",
-            Type::Boolean => "Boolean",
-            Type::Empty => "Empty",
+        let rep: String = match self {
+            Type::Number => "Number".to_string(),
+            Type::Boolean => "Boolean".to_string(),
+            Type::Array(t, length) => format!("[{}; {}]", unsafe {*t.as_ptr()}, length),
+            Type::Empty => "Empty".to_string(),
         };
 
         write!(f, "{}", rep)
@@ -73,6 +80,7 @@ impl FromStr for Type {
 #[derive(Debug)]
 pub enum ValueData {
     Primitive { cranelift_value: prelude::Value, value_type: Type },
+    Array { elements: Vec<ValueData>, item_type: Type },
     Empty
 }
 
@@ -80,6 +88,7 @@ impl ValueData {
     pub fn get_type(&self) -> Type {
         match *self {
             ValueData::Primitive{value_type, ..} => value_type,
+            ValueData::Array{ref elements, mut item_type, ..} => Type::Array(NonNull::new(&mut item_type).unwrap(), elements.len() as u32),
             ValueData::Empty => Type::Empty
         }
     }
