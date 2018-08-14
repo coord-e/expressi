@@ -71,33 +71,37 @@ impl FromStr for Type {
 }
 
 #[derive(Clone, Copy)]
-pub struct Value {
-    cranelift_value: Option<prelude::Value>,
-    value_type: Type,
+pub enum Value {
+    Primitive { cranelift_value: prelude::Value, value_type: Type },
+    Empty
 }
 
 impl Value {
-    pub fn new(v: Option<prelude::Value>, t: Type) -> Self {
-        Value {
+    pub fn get_type(self) -> Type {
+        match self {
+            Value::Primitive{value_type, ..} => value_type,
+            Value::Empty => Type::Empty
+        }
+    }
+
+    pub fn primitive(v: prelude::Value, t: Type) -> Self {
+        Value::Primitive {
             cranelift_value: v,
             value_type: t
         }
     }
 
     pub fn from_cl(v: prelude::Value, t: prelude::Type) -> Result<Self, Error> {
-        Ok(Value {
-            cranelift_value: Some(v),
-            value_type: Type::from_cl(t)?,
+        Ok(Value::Primitive {
+            cranelift_value: v,
+            value_type: Type::from_cl(t)?
         })
     }
 
-    pub fn cl_value(&self) -> Result<prelude::Value, Error> {
-        self.cranelift_value
-            .map(|v| v.clone())
-            .ok_or(CraneValueNotAvailableError.into())
-    }
-
-    pub fn get_type(&self) -> Type {
-        self.value_type.clone()
+    pub fn cl_value(self) -> Result<prelude::Value, Error> {
+        Ok(match self {
+            Value::Primitive {cranelift_value, ..} => cranelift_value,
+            _ => return Err(CraneValueNotAvailableError.into())
+        })
     }
 }

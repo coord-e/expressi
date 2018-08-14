@@ -191,7 +191,7 @@ impl<'a> Builder<'a> {
     pub fn get_var(&mut self, name: &str) -> Option<Value> {
         self.scope_stack.get_var(name).map(|var| {
             let value = self.scope_stack.get(name).unwrap();
-            Value::new(Some(self.inst_builder.use_var(var)), value.get_type())
+            Value::primitive(self.inst_builder.use_var(var), value.get_type())
         })
     }
 
@@ -208,7 +208,7 @@ impl<'a> Builder<'a> {
                 self.cmp(CondCode::NotEqual, v, zero)?
             }
             (Type::Boolean, Type::Number) => {
-                Value::new(Some(self.inst_builder.ins().bint(t.cl_type()?, v.cl_value()?)), t)
+                Value::primitive(self.inst_builder.ins().bint(t.cl_type()?, v.cl_value()?), t)
             },
             _ => {
                 return Err(InvalidCastError {
@@ -282,7 +282,7 @@ impl<'a> Builder<'a> {
             .ebb_params(block.cl_ebb())
             .into_iter()
             .zip(signature.into_iter())
-            .map(|(v, t)| Value::new(Some(*v), *t))
+            .map(|(v, t)| Value::primitive(*v, *t))
             .collect();
         Box::new(params)
     }
