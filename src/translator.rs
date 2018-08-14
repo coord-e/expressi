@@ -2,7 +2,7 @@ use expression::Expression;
 
 use builder::Builder;
 use error::UndeclaredVariableError;
-use value::Value;
+use value::{Value, ValueData};
 use scope::Scope;
 
 use failure::Error;
@@ -26,7 +26,7 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Boolean(tf) => self.builder.boolean_constant(tf)?,
 
-            Expression::Empty => Value::Empty,
+            Expression::Empty => self.builder.value_store.new_value(ValueData::Empty),
 
             Expression::Array(expr) => {
                 let elements = expr.into_iter().map(|expr| self.translate_expr(*expr)).collect::<Result<Vec<_>, _>>()?;
@@ -37,7 +37,7 @@ impl<'a> FunctionTranslator<'a> {
                     self.builder.store(val, slot, stored_size)?;
                     stored_size += val.get_type().size() as i32;
                 }
-                Value::Empty
+                self.builder.value_store.new_value(ValueData::Empty)
             }
 
             Expression::BinOp(op, lhs, rhs) => {

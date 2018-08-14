@@ -3,7 +3,7 @@ use error::{FinalizationError, ParseError};
 use expression::Expression;
 use parser;
 use translator::FunctionTranslator;
-use value::Type;
+use value::{Type, ValueStore};
 use scope::ScopeStack;
 
 use std::collections::HashMap;
@@ -99,6 +99,7 @@ impl JIT {
         let builder = Builder {
             inst_builder: &mut function_builder,
             scope_stack: ScopeStack::new(),
+            value_store: ValueStore::new(),
             block_table: HashMap::new()
         };
 
@@ -120,11 +121,12 @@ impl JIT {
             evaluated_value
         };
         // Emit the return instruction.
+        let cl = trans.builder.to_cl(return_value)?;
         trans
             .builder
             .inst_builder()
             .ins()
-            .return_(&[return_value.cl_value()?]);
+            .return_(&[cl]);
 
         Ok(())
     }

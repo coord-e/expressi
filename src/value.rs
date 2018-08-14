@@ -70,38 +70,82 @@ impl FromStr for Type {
     }
 }
 
-#[derive(Clone, Copy)]
-pub enum Value {
+#[derive(Debug)]
+pub enum ValueData {
     Primitive { cranelift_value: prelude::Value, value_type: Type },
     Empty
 }
 
-impl Value {
-    pub fn get_type(self) -> Type {
-        match self {
-            Value::Primitive{value_type, ..} => value_type,
-            Value::Empty => Type::Empty
+impl ValueData {
+    pub fn get_type(&self) -> Type {
+        match *self {
+            ValueData::Primitive{value_type, ..} => value_type,
+            ValueData::Empty => Type::Empty
         }
     }
 
     pub fn primitive(v: prelude::Value, t: Type) -> Self {
-        Value::Primitive {
+        ValueData::Primitive {
             cranelift_value: v,
             value_type: t
         }
     }
 
     pub fn from_cl(v: prelude::Value, t: prelude::Type) -> Result<Self, Error> {
-        Ok(Value::Primitive {
+        Ok(ValueData::Primitive {
             cranelift_value: v,
             value_type: Type::from_cl(t)?
         })
     }
 
-    pub fn cl_value(self) -> Result<prelude::Value, Error> {
-        Ok(match self {
-            Value::Primitive {cranelift_value, ..} => cranelift_value,
+    pub fn cl_value(&self) -> Result<prelude::Value, Error> {
+        Ok(match *self {
+            ValueData::Primitive {cranelift_value, ..} => cranelift_value,
             _ => return Err(CraneValueNotAvailableError.into())
         })
+    }
+}
+
+/// Stores ValueData
+#[derive(Debug)]
+pub struct ValueStore {
+    data: Vec<ValueData>
+}
+
+impl ValueStore {
+    pub fn new() -> Self {
+        ValueStore {
+            data: Vec::new(),
+        }
+    }
+
+    pub fn new_value(&mut self, data: ValueData) -> Value {
+        let t = data.get_type();
+        self.data.push(data);
+        Value::from_idx(self.data.len() - 1, t)
+    }
+
+    pub fn get(&self, rf: Value) -> Option<&ValueData> {
+        let Value(idx, ..) = rf;
+        if self.data.len() <= idx { None } else { Some(&self.data[idx]) }
+    }
+
+    pub fn release(&mut self) {
+        self.data.clear()
+    }
+}
+
+
+/// The lightweight and copyable reference to ValueData
+#[derive(Clone, Copy, Debug)]
+pub struct Value(usize, Type);
+
+impl Value {
+    fn from_idx(idx: usize, t: Type) -> Self {
+        Value(idx, t)
+    }
+
+    pub fn get_type(&self) -> Type {
+        self.1
     }
 }
