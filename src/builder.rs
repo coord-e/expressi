@@ -234,13 +234,13 @@ impl<'a> Builder<'a> {
                 to: t,
             }.into());
         }
-        let cl = self.to_cl(v)?;
         Ok(match (v.get_type(), t) {
             (Type::Number, Type::Boolean) => {
                 let zero = self.number_constant(0)?;
                 self.cmp(CondCode::NotEqual, v, zero)?
             }
             (Type::Boolean, Type::Number) => {
+                let cl = self.to_cl(v)?;
                 let data = ValueData::primitive(self.inst_builder.ins().bint(t.cl_type()?, cl), t);
                 self.value_store.new_value(data)
             },
