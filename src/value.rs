@@ -14,7 +14,7 @@ use cranelift::prelude;
 pub enum Type {
     Number,
     Boolean,
-    Array(NonNull<Type>, u32),
+    Array(NonNull<Type>, usize),
     Empty,
 }
 
@@ -38,7 +38,7 @@ impl Type {
         })
     }
 
-    pub fn size(&self) -> u32 {
+    pub fn size(&self) -> usize {
         match self {
             Type::Number => 1,
             Type::Boolean => 1,
@@ -80,7 +80,7 @@ impl FromStr for Type {
 #[derive(Debug)]
 pub enum ValueData {
     Primitive { cranelift_value: prelude::Value, value_type: Type },
-    Array { elements: Vec<ValueData>, item_type: Type },
+    Array { elements: Vec<Value>, item_type: Type },
     Empty
 }
 
@@ -88,7 +88,7 @@ impl ValueData {
     pub fn get_type(&self) -> Type {
         match *self {
             ValueData::Primitive{value_type, ..} => value_type,
-            ValueData::Array{ref elements, mut item_type, ..} => Type::Array(NonNull::new(&mut item_type).unwrap(), elements.len() as u32),
+            ValueData::Array{ref elements, mut item_type, ..} => Type::Array(NonNull::new(&mut item_type).unwrap(), elements.len()),
             ValueData::Empty => Type::Empty
         }
     }
@@ -105,6 +105,12 @@ impl ValueData {
             cranelift_value: v,
             value_type: Type::from_cl(t)?
         })
+    }
+
+    pub fn array(elements: Vec<Value>, item_type: Type) -> Self {
+        ValueData::Array {
+            elements, item_type
+        }
     }
 
     pub fn cl_value(&self) -> Result<prelude::Value, Error> {
