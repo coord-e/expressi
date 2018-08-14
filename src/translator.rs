@@ -30,14 +30,15 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Array(expr) => {
                 let elements = expr.into_iter().map(|expr| self.translate_expr(*expr)).collect::<Result<Vec<_>, _>>()?;
-                let size = elements.iter().fold(0, |sum, e| sum + e.get_type().size());
-                let slot = self.builder.alloc(size)?;
+                let item_type = elements.last().unwrap().get_type();
+                let size = item_type.size() * elements.len();
+                let slot = self.builder.alloc(size as u32)?;
                 let mut stored_size: i32 = 0;
-                for val in elements {
-                    self.builder.store(val, slot, stored_size)?;
+                for val in &elements {
+                    self.builder.store(*val, slot, stored_size)?;
                     stored_size += val.get_type().size() as i32;
                 }
-                self.builder.value_store.new_value(ValueData::Empty)
+                self.builder.value_store.new_value(ValueData::array(elements, item_type))
             }
 
             Expression::BinOp(op, lhs, rhs) => {
