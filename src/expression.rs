@@ -17,6 +17,7 @@ pub enum Operator {
     Ge,
     Eq,
     Ne,
+    Index
 }
 
 #[derive(Debug, Clone, PartialEq)]

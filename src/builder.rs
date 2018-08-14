@@ -8,7 +8,7 @@ use failure::Error;
 
 use cranelift::codegen::ir::{condcodes, entities, types, InstBuilder, stackslot};
 use cranelift::codegen::ir::immediates::Offset32;
-use cranelift::prelude::{EntityRef, FunctionBuilder, Variable};
+use cranelift::prelude::{EntityRef, FunctionBuilder, Variable, MemFlags};
 
 use std::collections::HashMap;
 
@@ -80,6 +80,7 @@ impl<'a> Builder<'a> {
             Operator::Ge => self.cmp(CondCode::GreaterThanOrEqual, lhs, rhs),
             Operator::Eq => self.cmp(CondCode::Equal, lhs, rhs),
             Operator::Ne => self.cmp(CondCode::NotEqual, lhs, rhs),
+            Operator::Index => self.index(lhs, rhs),
         }
     }
 
@@ -201,6 +202,31 @@ impl<'a> Builder<'a> {
             .ins()
             .icmp(cc, lhs_cl, rhs_cl);
         let data = ValueData::from_cl(res, types::B1)?;
+        Ok(self.value_store.new_value(data))
+    }
+
+    pub fn index(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+        match lhs.get_type() {
+            Type::Array(..) => {},
+            _ => return Err(TypeError.into())
+        }
+        if rhs.get_type() != Type::Number {
+            return Err(TypeError.into());
+        }
+
+        let rhs_cl = self.to_cl(rhs)?;
+
+        let data = {
+            let lhs_data = self.value_store.get(lhs).ok_or(ReleasedValueError)?;
+            if let ValueData::Array { elements, slot, item_type, ..} = lhs_data {
+                    let addr = self.inst_builder.ins().stack_addr(types::I64, slot.cl_slot(), 0);
+                    let pointed_addr = self.inst_builder.ins().iadd(addr, rhs_cl);
+                    let loaded = self.inst_builder.ins().load(item_type.cl_type()?, MemFlags::new(), pointed_addr, 0);
+                    ValueData::primitive(loaded, *item_type)
+            } else {
+                return Err(TypeError.into());
+            }
+        };
         Ok(self.value_store.new_value(data))
     }
 

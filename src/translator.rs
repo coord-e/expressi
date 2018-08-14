@@ -38,7 +38,7 @@ impl<'a> FunctionTranslator<'a> {
                     self.builder.store(*val, slot, stored_size)?;
                     stored_size += val.get_type().size() as i32;
                 }
-                self.builder.value_store.new_value(ValueData::array(elements, item_type))
+                self.builder.value_store.new_value(ValueData::array(slot, elements, item_type))
             }
 
             Expression::BinOp(op, lhs, rhs) => {

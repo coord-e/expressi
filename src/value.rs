@@ -1,6 +1,7 @@
 use error::{
     CraneValueNotAvailableError, CraneliftTypeConversionError, InternalTypeConversionError,
 };
+use slot::Slot;
 
 use std::fmt;
 use std::str::FromStr;
@@ -80,7 +81,7 @@ impl FromStr for Type {
 #[derive(Debug)]
 pub enum ValueData {
     Primitive { cranelift_value: prelude::Value, value_type: Type },
-    Array { elements: Vec<Value>, item_type: Type },
+    Array { slot: Slot, elements: Vec<Value>, item_type: Type },
     Empty
 }
 
@@ -107,9 +108,9 @@ impl ValueData {
         })
     }
 
-    pub fn array(elements: Vec<Value>, item_type: Type) -> Self {
+    pub fn array(slot: Slot, elements: Vec<Value>, item_type: Type) -> Self {
         ValueData::Array {
-            elements, item_type
+            slot, elements, item_type
         }
     }
 

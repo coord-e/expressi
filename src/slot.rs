@@ -1,6 +1,6 @@
 use cranelift::codegen::ir::entities::StackSlot;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Slot {
     ss: StackSlot,
     size: u32
