@@ -1,7 +1,7 @@
 use expression::Expression;
 
 use builder::Builder;
-use error::UndeclaredVariableError;
+use error::{UndeclaredVariableError, TypeError};
 use value::{Value, ValueData};
 use scope::Scope;
 
@@ -35,6 +35,9 @@ impl<'a> FunctionTranslator<'a> {
                 let slot = self.builder.alloc(size as u32)?;
                 let mut stored_size: i32 = 0;
                 for val in &elements {
+                    if val.get_type() != item_type {
+                        return Err(TypeError.into())
+                    }
                     self.builder.store(*val, slot, stored_size)?;
                     stored_size += val.get_type().size() as i32;
                 }
