@@ -89,7 +89,7 @@ impl ValueData {
     pub fn get_type(&self) -> Type {
         match *self {
             ValueData::Primitive{value_type, ..} => value_type,
-            ValueData::Array{ref elements, mut item_type, ..} => Type::Array(NonNull::new(&mut item_type).unwrap(), elements.len()),
+            ValueData::Array{ref elements, item_type, ..} => Type::Array(Box::into_raw_non_null(Box::new(item_type)), elements.len()),
             ValueData::Empty => Type::Empty
         }
     }
