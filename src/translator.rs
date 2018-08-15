@@ -38,7 +38,7 @@ impl<'a> FunctionTranslator<'a> {
                     return Err(TypeError.into());
                 }
                 for (idx, val) in elements.iter().enumerate() {
-                    self.builder.store(*val, addr, (item_type.size() * idx) as i32);
+                    self.builder.store(*val, addr, (item_type.size() * idx) as i32)?;
                 }
                 self.builder.value_store.new_value(ValueData::array(addr, elements, item_type))
             }
