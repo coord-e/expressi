@@ -60,7 +60,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn boolean_constant(&mut self, v: bool) -> Result<Value, Error> {
-        let t = types::B1;
+        let t = types::B8;
         let data = ValueData::from_cl(self.inst_builder.ins().bconst(t, v), t)?;
         Ok(self.value_store.new_value(data))
     }
@@ -201,7 +201,7 @@ impl<'a> Builder<'a> {
             .inst_builder
             .ins()
             .icmp(cc, lhs_cl, rhs_cl);
-        let data = ValueData::from_cl(res, types::B1)?;
+        let data = ValueData::from_cl(res, types::B8)?;
         Ok(self.value_store.new_value(data))
     }
 

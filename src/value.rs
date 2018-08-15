@@ -26,7 +26,7 @@ impl Type {
     pub fn from_cl(t: prelude::Type) -> Result<Self, CraneliftTypeConversionError> {
         Ok(match t {
             prelude::types::I64 => Type::Number,
-            prelude::types::B1 => Type::Boolean,
+            prelude::types::B8 => Type::Boolean,
             _ => return Err(CraneliftTypeConversionError { from: t }),
         })
     }
@@ -34,7 +34,7 @@ impl Type {
     pub fn cl_type(&self) -> Result<prelude::Type, InternalTypeConversionError> {
         Ok(match self {
             Type::Number => prelude::types::I64,
-            Type::Boolean => prelude::types::B1,
+            Type::Boolean => prelude::types::B8,
             _ => return Err(InternalTypeConversionError { from: *self }),
         })
     }
@@ -42,7 +42,7 @@ impl Type {
     pub fn size(&self) -> usize {
         match self {
             Type::Number => 8,
-            Type::Boolean => 8,
+            Type::Boolean => 1,
             Type::Array(t, length) => unsafe {*t.as_ptr()}.size() * length,
             Type::Empty => 0
         }
