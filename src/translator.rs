@@ -9,6 +9,7 @@ use failure::Error;
 
 use cranelift_module::Module;
 use cranelift_simplejit::SimpleJITBackend;
+use cranelift::prelude::{MemFlags, types, InstBuilder};
 
 /// A collection of state used for translating from toy-language AST nodes
 /// into Cranelift IR.
@@ -32,14 +33,14 @@ impl<'a> FunctionTranslator<'a> {
                 let elements = expr.into_iter().map(|expr| self.translate_expr(*expr)).collect::<Result<Vec<_>, _>>()?;
                 let item_type = elements.last().unwrap().get_type();
                 let size = item_type.size() * elements.len();
-                let slot = self.builder.alloc(size as u32)?;
+                let addr = self.builder.alloc(size as u32)?;
                 if elements.iter().any(|v| v.get_type() != item_type) {
                     return Err(TypeError.into());
                 }
                 for (idx, val) in elements.iter().enumerate() {
-                    self.builder.store(*val, slot, (item_type.size() * idx) as i32)?;
+                    self.builder.store(*val, addr, (item_type.size() * idx) as i32);
                 }
-                self.builder.value_store.new_value(ValueData::array(slot, elements, item_type))
+                self.builder.value_store.new_value(ValueData::array(addr, elements, item_type))
             }
 
             Expression::BinOp(op, lhs, rhs) => {

@@ -218,9 +218,8 @@ impl<'a> Builder<'a> {
 
         let data = {
             let lhs_data = self.value_store.get(lhs).ok_or(ReleasedValueError)?;
-            if let ValueData::Array { elements, slot, item_type, ..} = lhs_data {
-                    let addr = self.inst_builder.ins().stack_addr(types::I64, slot.cl_slot(), 0);
-                    let pointed_addr = self.inst_builder.ins().iadd(addr, rhs_cl);
+            if let ValueData::Array { elements, addr, item_type, ..} = lhs_data {
+                    let pointed_addr = self.inst_builder.ins().iadd(*addr, rhs_cl);
                     let loaded = self.inst_builder.ins().load(item_type.cl_type()?, MemFlags::new(), pointed_addr, 0);
                     ValueData::primitive(loaded, *item_type)
             } else {
@@ -287,19 +286,20 @@ impl<'a> Builder<'a> {
         self.scope_stack.pop()
     }
 
-    pub fn alloc(&mut self, size: u32) -> Result<Slot, Error> {
+    pub fn alloc(&mut self, size: u32) -> Result<entities::Value, Error> {
         let ss = self.inst_builder.create_stack_slot(stackslot::StackSlotData::new(stackslot::StackSlotKind::ExplicitSlot, size));
-        Ok(Slot::new(ss, size))
+        let addr = self.inst_builder.ins().stack_addr(types::I64, ss, 0);
+        Ok(addr)
     }
 
-    pub fn store(&mut self, v: Value, slot: Slot, offset: i32) -> Result<(), Error> {
+    pub fn store(&mut self, v: Value, addr: entities::Value, offset: i32) -> Result<(), Error> {
         let cl = self.to_cl(v)?;
-        self.inst_builder.ins().stack_store(cl, slot.cl_slot(), Offset32::new(offset));
+        self.inst_builder.ins().store(MemFlags::new(), cl, addr, Offset32::new(offset));
         Ok(())
     }
 
-    pub fn load(&mut self, t: Type, slot: Slot, offset: i32) -> Result<Value, Error> {
-        let data = ValueData::from_cl(self.inst_builder.ins().stack_load(t.cl_type()?, slot.cl_slot(), Offset32::new(offset)), t.cl_type()?)?;
+    pub fn load(&mut self, t: Type, addr: entities::Value, offset: i32) -> Result<Value, Error> {
+        let data = ValueData::from_cl(self.inst_builder.ins().load(t.cl_type()?, MemFlags::new(), addr, Offset32::new(offset)), t.cl_type()?)?;
         Ok(self.value_store.new_value(data))
     }
 

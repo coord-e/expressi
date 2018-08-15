@@ -81,7 +81,7 @@ impl FromStr for Type {
 #[derive(Debug)]
 pub enum ValueData {
     Primitive { cranelift_value: prelude::Value, value_type: Type },
-    Array { slot: Slot, elements: Vec<Value>, item_type: Type },
+    Array { addr: prelude::Value, elements: Vec<Value>, item_type: Type },
     Empty
 }
 
@@ -108,9 +108,9 @@ impl ValueData {
         })
     }
 
-    pub fn array(slot: Slot, elements: Vec<Value>, item_type: Type) -> Self {
+    pub fn array(addr: prelude::Value, elements: Vec<Value>, item_type: Type) -> Self {
         ValueData::Array {
-            slot, elements, item_type
+            addr, elements, item_type
         }
     }
 
