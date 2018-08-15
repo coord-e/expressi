@@ -41,8 +41,8 @@ impl Type {
 
     pub fn size(&self) -> usize {
         match self {
-            Type::Number => 1,
-            Type::Boolean => 1,
+            Type::Number => 8,
+            Type::Boolean => 8,
             Type::Array(t, length) => unsafe {*t.as_ptr()}.size() * length,
             Type::Empty => 0
         }
