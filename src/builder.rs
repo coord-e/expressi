@@ -214,12 +214,13 @@ impl<'a> Builder<'a> {
             return Err(TypeError.into());
         }
 
-        let rhs_cl = self.to_cl(rhs)?;
-
+        let byte = self.number_constant(8)?;
+        let offset = self.mul(rhs, byte)?;
+        let offset_cl = self.to_cl(offset)?;
         let data = {
             let lhs_data = self.value_store.get(lhs).ok_or(ReleasedValueError)?;
             if let ValueData::Array { elements, addr, item_type, ..} = lhs_data {
-                    let pointed_addr = self.inst_builder.ins().iadd(*addr, rhs_cl);
+                    let pointed_addr = self.inst_builder.ins().iadd(*addr, offset_cl);
                     let loaded = self.inst_builder.ins().load(item_type.cl_type()?, MemFlags::new(), pointed_addr, 0);
                     ValueData::primitive(loaded, *item_type)
             } else {
