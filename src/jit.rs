@@ -69,7 +69,8 @@ impl JIT {
         self.module.clear_context(&mut self.ctx);
 
         // Finalize the function, finishing any outstanding relocations.
-        let code = self.module.finalize_function(id);
+        self.module.finalize_definitions();
+        let code = self.module.get_finalized_function(id);
 
         Ok(code)
     }
