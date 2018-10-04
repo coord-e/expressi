@@ -16,7 +16,7 @@ use cranelift_module::{DataContext, Linkage, Module};
 use cranelift_simplejit::{SimpleJITBackend, SimpleJITBuilder};
 
 pub struct JIT {
-    builder_context: FunctionBuilderContext<Variable>,
+    builder_context: FunctionBuilderContext,
     ctx: codegen::Context,
     data_ctx: DataContext,
     module: Module<SimpleJITBackend>,
@@ -32,7 +32,7 @@ impl JIT {
         let builder = SimpleJITBuilder::new();
         let module = Module::new(builder);
         Self {
-            builder_context: FunctionBuilderContext::<Variable>::new(),
+            builder_context: FunctionBuilderContext::new(),
             ctx: module.make_context(),
             data_ctx: DataContext::new(),
             module,
@@ -83,7 +83,7 @@ impl JIT {
             .push(AbiParam::new(types::I64));
 
         let mut function_builder =
-            FunctionBuilder::<Variable>::new(&mut self.ctx.func, &mut self.builder_context);
+            FunctionBuilder::new(&mut self.ctx.func, &mut self.builder_context);
 
         // TODO: Replace FunctionBuilder with Builder
         let entry_ebb = function_builder.create_ebb();

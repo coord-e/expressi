@@ -32,13 +32,13 @@ impl Block {
 }
 
 pub struct Builder<'a> {
-    inst_builder: &'a mut FunctionBuilder<'a, Variable>,
+    inst_builder: &'a mut FunctionBuilder<'a>,
     scope_stack: ScopeStack,
     block_table: HashMap<Block, Vec<Type>>
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(inst_builder: &'a mut FunctionBuilder<'a, Variable>) -> Self {
+    pub fn new(inst_builder: &'a mut FunctionBuilder<'a>) -> Self {
         Builder {
             inst_builder,
             scope_stack: ScopeStack::new(),
@@ -46,7 +46,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn inst_builder<'short>(&'short mut self) -> &'short mut FunctionBuilder<'a, Variable> {
+    pub fn inst_builder<'short>(&'short mut self) -> &'short mut FunctionBuilder<'a> {
         self.inst_builder
     }
 
