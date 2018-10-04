@@ -34,7 +34,7 @@ impl Block {
 }
 
 pub struct Builder<'a> {
-    pub value_store: ValueStore,
+    value_store: ValueStore,
     inst_builder: &'a mut FunctionBuilder<'a>,
     scope_stack: ScopeStack,
     block_table: HashMap<Block, Vec<Type>>
@@ -56,6 +56,10 @@ impl<'a> Builder<'a> {
 
     pub fn inst_builder<'short>(&'short mut self) -> &'short mut FunctionBuilder<'a> {
         self.inst_builder
+    }
+
+    pub fn value_store<'short>(&'short mut self) -> &'short mut ValueStore {
+        &mut self.value_store
     }
 
     pub fn finalize(&mut self) {

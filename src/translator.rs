@@ -27,7 +27,7 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Boolean(tf) => self.builder.boolean_constant(tf)?,
 
-            Expression::Empty => self.builder.value_store.new_value(ValueData::Empty),
+            Expression::Empty => self.builder.value_store().new_value(ValueData::Empty),
 
             Expression::Array(expr) => {
                 let elements = expr.into_iter().map(|expr| self.translate_expr(*expr)).collect::<Result<Vec<_>, _>>()?;
@@ -40,7 +40,7 @@ impl<'a> FunctionTranslator<'a> {
                 for (idx, val) in elements.iter().enumerate() {
                     self.builder.store(*val, addr, (item_type.size() * idx) as i32)?;
                 }
-                self.builder.value_store.new_value(ValueData::array(addr, elements, item_type))
+                self.builder.value_store().new_value(ValueData::array(addr, elements, item_type))
             }
 
             Expression::BinOp(op, lhs, rhs) => {
