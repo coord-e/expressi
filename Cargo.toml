@@ -5,9 +5,9 @@ authors = ["coord.e <me@coord-e.com>"]
 build = "build.rs"
 
 [dependencies]
-cranelift = "0.18.1"
-cranelift-module = "0.18.1"
-cranelift-simplejit = "0.18.1"
+cranelift = "0.22.0"
+cranelift-module = "0.22.0"
+cranelift-simplejit = "0.22.0"
 clap = "2.32.0"
 failure = "0.1.2"
 ansi_term = "0.11.0"
