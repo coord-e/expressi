@@ -19,7 +19,7 @@ use cranelift_module::{DataContext, Linkage, Module};
 use cranelift_simplejit::{SimpleJITBackend, SimpleJITBuilder};
 
 pub struct JIT {
-    builder_context: FunctionBuilderContext<Variable>,
+    builder_context: FunctionBuilderContext,
     ctx: codegen::Context,
     data_ctx: DataContext,
     module: Module<SimpleJITBackend>,
@@ -35,7 +35,7 @@ impl JIT {
         let builder = SimpleJITBuilder::new();
         let module = Module::new(builder);
         Self {
-            builder_context: FunctionBuilderContext::<Variable>::new(),
+            builder_context: FunctionBuilderContext::new(),
             ctx: module.make_context(),
             data_ctx: DataContext::new(),
             module,
@@ -72,7 +72,8 @@ impl JIT {
         self.module.clear_context(&mut self.ctx);
 
         // Finalize the function, finishing any outstanding relocations.
-        let code = self.module.finalize_function(id);
+        self.module.finalize_definitions();
+        let code = self.module.get_finalized_function(id);
 
         Ok(code)
     }
@@ -86,7 +87,7 @@ impl JIT {
             .push(AbiParam::new(types::I64));
 
         let mut function_builder =
-            FunctionBuilder::<Variable>::new(&mut self.ctx.func, &mut self.builder_context);
+            FunctionBuilder::new(&mut self.ctx.func, &mut self.builder_context);
 
         // TODO: Replace FunctionBuilder with Builder
         let entry_ebb = function_builder.create_ebb();
@@ -96,12 +97,7 @@ impl JIT {
         function_builder.switch_to_block(entry_ebb);
         function_builder.seal_block(entry_ebb);
 
-        let builder = Builder {
-            inst_builder: &mut function_builder,
-            scope_stack: ScopeStack::new(),
-            value_store: ValueStore::new(),
-            block_table: HashMap::new()
-        };
+        let builder = Builder::new(&mut function_builder);
 
         let trans_ = FunctionTranslator {
             builder,

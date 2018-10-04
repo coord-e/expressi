@@ -34,18 +34,27 @@ impl Block {
 }
 
 pub struct Builder<'a> {
-    pub inst_builder: &'a mut FunctionBuilder<'a, Variable>,
-    pub scope_stack: ScopeStack,
     pub value_store: ValueStore,
-    pub block_table: HashMap<Block, Vec<Type>>
+    inst_builder: &'a mut FunctionBuilder<'a>,
+    scope_stack: ScopeStack,
+    block_table: HashMap<Block, Vec<Type>>
 }
 
 impl<'a> Builder<'a> {
+    pub fn new(inst_builder: &'a mut FunctionBuilder<'a>) -> Self {
+        Builder {
+            inst_builder,
+            value_store: ValueStore::new(),
+            scope_stack: ScopeStack::new(),
+            block_table: HashMap::new()
+        }
+    }
+
     pub fn to_cl(&self, v: Value) -> Result<entities::Value, Error> {
         self.value_store.get(v).ok_or(ReleasedValueError.into()).and_then(|v| v.cl_value())
     }
 
-    pub fn inst_builder<'short>(&'short mut self) -> &'short mut FunctionBuilder<'a, Variable> {
+    pub fn inst_builder<'short>(&'short mut self) -> &'short mut FunctionBuilder<'a> {
         self.inst_builder
     }
 
