@@ -1,5 +1,5 @@
 use error::{
-    CraneValueNotAvailableError, CraneliftTypeConversionError, InternalTypeConversionError,
+    LLVMValueNotAvailableError, LLVMTypeConversionError, InternalTypeConversionError,
 };
 use slot::Slot;
 
@@ -8,8 +8,8 @@ use std::str::FromStr;
 use std::ptr::NonNull;
 
 use failure::Error;
-
-use cranelift::prelude;
+use inkwell::values::{AnyValue, PointerValue};
+use inkwell::types::{AnyTypeEnum, IntType};
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum Type {
@@ -23,18 +23,21 @@ unsafe impl Send for Type {}
 unsafe impl Sync for Type {}
 
 impl Type {
-    pub fn from_cl(t: prelude::Type) -> Result<Self, CraneliftTypeConversionError> {
+    pub fn from_cl(t: AnyTypeEnum) -> Result<Self, LLVMTypeConversionError> {
         Ok(match t {
-            prelude::types::I64 => Type::Number,
-            prelude::types::B8 => Type::Boolean,
-            _ => return Err(CraneliftTypeConversionError { from: t }),
+            IntType(int) => match int.get_bit_width() {
+                1  => Type::Boolean,
+                64 => Type::Number,
+                _  => unimplemented!()
+            },
+            _ => return Err(LLVMTypeConversionError { from: t }),
         })
     }
 
-    pub fn cl_type(&self) -> Result<prelude::Type, InternalTypeConversionError> {
+    pub fn cl_type(&self) -> Result<AnyTypeEnum, InternalTypeConversionError> {
         Ok(match self {
-            Type::Number => prelude::types::I64,
-            Type::Boolean => prelude::types::B8,
+            Type::Number => IntType::i64_type(),
+            Type::Boolean => IntType::bool_type(),
             _ => return Err(InternalTypeConversionError { from: *self }),
         })
     }
@@ -80,8 +83,8 @@ impl FromStr for Type {
 
 #[derive(Debug)]
 pub enum ValueData {
-    Primitive { cranelift_value: prelude::Value, value_type: Type },
-    Array { addr: prelude::Value, elements: Vec<Value>, item_type: Type },
+    Primitive { internal_value: AnyValue, value_type: Type },
+    Array { addr: PointerValue, elements: Vec<Value>, item_type: Type },
     Empty
 }
 
@@ -94,30 +97,30 @@ impl ValueData {
         }
     }
 
-    pub fn primitive(v: prelude::Value, t: Type) -> Self {
+    pub fn primitive(v: AnyValue, t: Type) -> Self {
         ValueData::Primitive {
-            cranelift_value: v,
+            internal_value: v,
             value_type: t
         }
     }
 
-    pub fn from_cl(v: prelude::Value, t: prelude::Type) -> Result<Self, Error> {
+    pub fn from_cl(v: AnyValue, t: AnyTypeEnum) -> Result<Self, Error> {
         Ok(ValueData::Primitive {
-            cranelift_value: v,
+            internal_value: v,
             value_type: Type::from_cl(t)?
         })
     }
 
-    pub fn array(addr: prelude::Value, elements: Vec<Value>, item_type: Type) -> Self {
+    pub fn array(addr: PointerValue, elements: Vec<Value>, item_type: Type) -> Self {
         ValueData::Array {
             addr, elements, item_type
         }
     }
 
-    pub fn cl_value(&self) -> Result<prelude::Value, Error> {
+    pub fn cl_value(&self) -> Result<AnyValue, Error> {
         Ok(match *self {
-            ValueData::Primitive {cranelift_value, ..} => cranelift_value,
-            _ => return Err(CraneValueNotAvailableError.into())
+            ValueData::Primitive {internal_value, ..} => internal_value,
+            _ => return Err(LLVMValueNotAvailableError.into())
         })
     }
 }
