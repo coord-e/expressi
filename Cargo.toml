@@ -5,9 +5,7 @@ authors = ["coord.e <me@coord-e.com>"]
 build = "build.rs"
 
 [dependencies]
-cranelift = "0.22.0"
-cranelift-module = "0.22.0"
-cranelift-simplejit = "0.22.0"
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "llvm7-0" }
 clap = "2.32.0"
 failure = "0.1.2"
 ansi_term = "0.11.0"
