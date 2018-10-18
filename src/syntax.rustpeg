@@ -33,12 +33,16 @@ if_else -> Expression
 cast -> Expression
   = l:atom _ "as" _ r:$([a-zA-Z] [a-zA-Z0-9_]*) { Expression::Cast(Box::new(l), r.parse().unwrap()) }
 
+index -> Expression
+  = l:atom _ "[" r:expression "]" { Expression::BinOp(Operator::Index, Box::new(l), Box::new(r)) }
+
 spaced_atom -> Expression
-  = _ v:(cast / if_else / atom) _ { v }
+  = _ v:(cast / index / if_else / atom) _ { v }
 
 atom -> Expression
   = number
   / boolean
+  / array
   / identifier
   / "{" v:expression "}" { Expression::Scope(Box::new(v)) }
   / "(" v:expression ")" { v }
@@ -51,5 +55,8 @@ number -> Expression
 
 boolean -> Expression
   = n:$("true" / "false") { Expression::Boolean(n.parse().unwrap()) }
+
+array -> Expression
+  = "[" e:(expression ** ',') "]" { Expression::Array(e.into_iter().map(|v| Box::new(v)).collect()) }
 
 _ = [ \t\n]*

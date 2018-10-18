@@ -1,9 +1,11 @@
 use error::{
     CraneValueNotAvailableError, CraneliftTypeConversionError, InternalTypeConversionError,
 };
+use slot::Slot;
 
 use std::fmt;
 use std::str::FromStr;
+use std::ptr::NonNull;
 
 use failure::Error;
 
@@ -13,14 +15,18 @@ use cranelift::prelude;
 pub enum Type {
     Number,
     Boolean,
+    Array(NonNull<Type>, usize),
     Empty,
 }
+
+unsafe impl Send for Type {}
+unsafe impl Sync for Type {}
 
 impl Type {
     pub fn from_cl(t: prelude::Type) -> Result<Self, CraneliftTypeConversionError> {
         Ok(match t {
             prelude::types::I64 => Type::Number,
-            prelude::types::B1 => Type::Boolean,
+            prelude::types::B8 => Type::Boolean,
             _ => return Err(CraneliftTypeConversionError { from: t }),
         })
     }
@@ -28,18 +34,28 @@ impl Type {
     pub fn cl_type(&self) -> Result<prelude::Type, InternalTypeConversionError> {
         Ok(match self {
             Type::Number => prelude::types::I64,
-            Type::Boolean => prelude::types::B1,
+            Type::Boolean => prelude::types::B8,
             _ => return Err(InternalTypeConversionError { from: *self }),
         })
+    }
+
+    pub fn size(&self) -> usize {
+        match self {
+            Type::Number => 8,
+            Type::Boolean => 1,
+            Type::Array(t, length) => unsafe {*t.as_ptr()}.size() * length,
+            Type::Empty => 0
+        }
     }
 }
 
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let rep = match self {
-            Type::Number => "Number",
-            Type::Boolean => "Boolean",
-            Type::Empty => "Empty",
+        let rep: String = match self {
+            Type::Number => "Number".to_string(),
+            Type::Boolean => "Boolean".to_string(),
+            Type::Array(t, length) => format!("[{}; {}]", unsafe {*t.as_ptr()}, length),
+            Type::Empty => "Empty".to_string(),
         };
 
         write!(f, "{}", rep)
@@ -62,34 +78,90 @@ impl FromStr for Type {
     }
 }
 
-#[derive(Clone, Copy)]
-pub struct Value {
-    cranelift_value: Option<prelude::Value>,
-    value_type: Type,
+#[derive(Debug)]
+pub enum ValueData {
+    Primitive { cranelift_value: prelude::Value, value_type: Type },
+    Array { addr: prelude::Value, elements: Vec<Value>, item_type: Type },
+    Empty
 }
 
-impl Value {
-    pub fn new(v: Option<prelude::Value>, t: Type) -> Self {
-        Value {
+impl ValueData {
+    pub fn get_type(&self) -> Type {
+        match *self {
+            ValueData::Primitive{value_type, ..} => value_type,
+            ValueData::Array{ref elements, item_type, ..} => Type::Array(Box::into_raw_non_null(Box::new(item_type)), elements.len()),
+            ValueData::Empty => Type::Empty
+        }
+    }
+
+    pub fn primitive(v: prelude::Value, t: Type) -> Self {
+        ValueData::Primitive {
             cranelift_value: v,
             value_type: t
         }
     }
 
     pub fn from_cl(v: prelude::Value, t: prelude::Type) -> Result<Self, Error> {
-        Ok(Value {
-            cranelift_value: Some(v),
-            value_type: Type::from_cl(t)?,
+        Ok(ValueData::Primitive {
+            cranelift_value: v,
+            value_type: Type::from_cl(t)?
         })
     }
 
+    pub fn array(addr: prelude::Value, elements: Vec<Value>, item_type: Type) -> Self {
+        ValueData::Array {
+            addr, elements, item_type
+        }
+    }
+
     pub fn cl_value(&self) -> Result<prelude::Value, Error> {
-        self.cranelift_value
-            .map(|v| v.clone())
-            .ok_or(CraneValueNotAvailableError.into())
+        Ok(match *self {
+            ValueData::Primitive {cranelift_value, ..} => cranelift_value,
+            _ => return Err(CraneValueNotAvailableError.into())
+        })
+    }
+}
+
+/// Stores ValueData
+#[derive(Debug)]
+pub struct ValueStore {
+    data: Vec<ValueData>
+}
+
+impl ValueStore {
+    pub fn new() -> Self {
+        ValueStore {
+            data: Vec::new(),
+        }
+    }
+
+    pub fn new_value(&mut self, data: ValueData) -> Value {
+        let t = data.get_type();
+        self.data.push(data);
+        Value::from_idx(self.data.len() - 1, t)
+    }
+
+    pub fn get(&self, rf: Value) -> Option<&ValueData> {
+        let Value(idx, ..) = rf;
+        if self.data.len() <= idx { None } else { Some(&self.data[idx]) }
+    }
+
+    pub fn release(&mut self) {
+        self.data.clear()
+    }
+}
+
+
+/// The lightweight and copyable reference to ValueData
+#[derive(Clone, Copy, Debug)]
+pub struct Value(usize, Type);
+
+impl Value {
+    fn from_idx(idx: usize, t: Type) -> Self {
+        Value(idx, t)
     }
 
     pub fn get_type(&self) -> Type {
-        self.value_type.clone()
+        self.1
     }
 }

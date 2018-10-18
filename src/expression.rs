@@ -17,6 +17,7 @@ pub enum Operator {
     Ge,
     Eq,
     Ne,
+    Index
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -49,6 +50,7 @@ impl FromStr for Operator {
 pub enum Expression {
     Number(i64),
     Boolean(bool),
+    Array(Vec<Box<Expression>>),
     Identifier(String),
     Empty,
     Assign(Box<Expression>, Box<Expression>),

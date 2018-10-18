@@ -1,14 +1,15 @@
 use expression::Expression;
 
 use builder::Builder;
-use error::UndeclaredVariableError;
-use value::{Type, Value};
+use error::{UndeclaredVariableError, TypeError};
+use value::{Value, ValueData};
 use scope::Scope;
 
 use failure::Error;
 
 use cranelift_module::Module;
 use cranelift_simplejit::SimpleJITBackend;
+use cranelift::prelude::{MemFlags, types, InstBuilder};
 
 /// A collection of state used for translating from toy-language AST nodes
 /// into Cranelift IR.
@@ -26,7 +27,21 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Boolean(tf) => self.builder.boolean_constant(tf)?,
 
-            Expression::Empty => Value::new(None, Type::Empty),
+            Expression::Empty => self.builder.value_store().new_value(ValueData::Empty),
+
+            Expression::Array(expr) => {
+                let elements = expr.into_iter().map(|expr| self.translate_expr(*expr)).collect::<Result<Vec<_>, _>>()?;
+                let item_type = elements.last().unwrap().get_type();
+                let size = item_type.size() * elements.len();
+                let addr = self.builder.alloc(size as u32)?;
+                if elements.iter().any(|v| v.get_type() != item_type) {
+                    return Err(TypeError.into());
+                }
+                for (idx, val) in elements.iter().enumerate() {
+                    self.builder.store(*val, addr, (item_type.size() * idx) as i32)?;
+                }
+                self.builder.value_store().new_value(ValueData::array(addr, elements, item_type))
+            }
 
             Expression::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?;

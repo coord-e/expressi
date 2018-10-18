@@ -1,3 +1,5 @@
+#![feature(box_into_raw_non_null)]
+
 pub mod builder;
 pub mod expression;
 pub mod jit;
@@ -5,6 +7,7 @@ pub mod parser;
 pub mod translator;
 pub mod value;
 pub mod scope;
+pub mod slot;
 
 pub mod error;
 
