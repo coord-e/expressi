@@ -105,7 +105,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .build_int_add(lhs_cl, rhs_cl, "add");
-        let data = ValueData::from_cl(res, types::i64_type())?;
+        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -118,7 +118,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .build_int_sub(lhs_cl, rhs_cl, "sub");
-        let data = ValueData::from_cl(res, types::i64_type())?;
+        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -131,7 +131,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .build_int_mul(lhs_cl, rhs_cl, "mul");
-        let data = ValueData::from_cl(res, types::i64_type())?;
+        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -144,7 +144,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .build_int_unsigned_div(lhs_cl, rhs_cl, "div");
-        let data = ValueData::from_cl(res, types::i64_type())?;
+        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -157,7 +157,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .build_and(lhs_cl, rhs_cl, "and");
-        let data = ValueData::from_cl(res, types::i64_type())?;
+        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -170,7 +170,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .build_or(lhs_cl, rhs_cl, "or");
-        let data = valuedata::from_cl(res, types::i64_type())?;
+        let data = valuedata::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -183,7 +183,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .build_xor(lhs_cl, rhs_cl, "xor");
-        let data = valuedata::from_cl(res, types::i64_type())?;
+        let data = valuedata::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
