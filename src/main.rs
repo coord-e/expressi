@@ -23,9 +23,8 @@ fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
     f.read_to_string(&mut contents).map_err(|_| IOError {
         message: "Failed to read file".to_owned(),
     })?;
-    let func_obj = jit.compile("file_input", &contents.trim())?;
-    let func = unsafe { mem::transmute::<_, fn() -> isize>(func_obj) };
-    println!("{}", func());
+    let func = jit.compile("file_input", &contents.trim())?;
+    println!("{}", unsafe { func() });
     Ok(())
 }
 
@@ -40,9 +39,8 @@ fn repl(jit: &mut jit::JIT, line_count: u32) -> Result<(), Error> {
         message: "Failed to read stdin".to_owned(),
     })?;
 
-    let func_obj = jit.compile(&format!("repl_{}", line_count), &buffer.trim())?;
-    let func = unsafe { mem::transmute::<_, fn() -> isize>(func_obj) };
-    println!("{}{}", Blue.paint("-> "), Blue.paint(func().to_string()));
+    let func = jit.compile(&format!("repl_{}", line_count), &buffer.trim())?;
+    println!("{}{}", Blue.paint("-> "), Blue.paint(unsafe { func() }.to_string()));
     Ok(())
 }
 
