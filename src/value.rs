@@ -38,7 +38,7 @@ impl Type {
             Type::Number => IntType::i64_type(),
             Type::Boolean => IntType::bool_type(),
             _ => return Err(InternalTypeConversionError { from: *self }),
-        })
+        }.into())
     }
 
     pub fn size(&self) -> usize {
