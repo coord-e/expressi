@@ -69,8 +69,14 @@ pub struct ParseError {
 }
 
 #[derive(Fail, Debug)]
-#[fail(display = "Failed to finalize the function: {}", message)]
-pub struct FinalizationError {
+#[fail(display = "The function '{}' is invaild", name)]
+pub struct FunctionVerificationError {
+    pub name: String,
+}
+
+#[derive(Fail, Debug)]
+#[fail(display = "Invaild module was generated: {}", message)]
+pub struct ModuleVerificationError {
     pub message: String,
 }
 

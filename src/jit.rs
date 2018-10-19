@@ -1,5 +1,5 @@
 use builder::Builder;
-use error::{ParseError, FailedToCreateJITError, TargetInitializationError};
+use error::{FunctionVerificationError, ModuleVerificationError, ParseError, FailedToCreateJITError, TargetInitializationError};
 use expression::Expression;
 use parser;
 use translator::FunctionTranslator;
@@ -16,7 +16,7 @@ use inkwell::targets::{InitializationConfig, Target};
 type CompiledFunc = unsafe extern "C" fn() -> u64;
 
 pub struct JIT {
-    context: context::Context,
+    context: context::ContextRef,
     builder: builder::Builder
 }
 
@@ -24,7 +24,7 @@ impl JIT {
     pub fn new() -> Result<Self, Error> {
         Target::initialize_native(&InitializationConfig::default()).map_err(|message| TargetInitializationError { message })?;
 
-        let context = context::Context::create();
+        let context = context::Context::get_global();
         let builder = context.create_builder();
 
         Ok(Self {
@@ -45,8 +45,6 @@ impl JIT {
 
         // Translate the AST nodes into Cranelift IR.
         self.translate(module.clone(), ast)?;
-
-        module.print_to_stderr();
 
         unsafe { execution_engine.get_function(name) }.map_err(|e| e.into())
     }
@@ -79,6 +77,15 @@ impl JIT {
             .builder
             .inst_builder()
             .build_return(Some(&cl));
+
+        if !function.verify(true) {
+            eprintln!(""); // function.verify print results to stderr directory but it doesn't contain \n on the end
+            return Err(FunctionVerificationError { name: function.get_name().to_str()?.to_string() }.into())
+        }
+
+        if let Err(message) = module.verify() {
+            return Err(ModuleVerificationError { message: message.to_string() }.into())
+        }
 
         Ok(())
     }
