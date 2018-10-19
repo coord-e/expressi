@@ -96,17 +96,19 @@ impl ValueData {
         }
     }
 
-    pub fn primitive(v: AnyValueEnum, t: Type) -> Self {
+    pub fn primitive<V>(v: V, t: Type) -> Self
+        where AnyValueEnum: From<V> {
         ValueData::Primitive {
-            internal_value: v,
+            internal_value: AnyValueEnum::from(v),
             value_type: t
         }
     }
 
-    pub fn from_cl(v: AnyValueEnum, t: AnyTypeEnum) -> Result<Self, Error> {
+    pub fn from_cl<V, T>(v: V, t: T) -> Result<Self, Error>
+        where AnyValueEnum: From<V>, AnyTypeEnum: From<T> {
         Ok(ValueData::Primitive {
-            internal_value: v,
-            value_type: Type::from_cl(t)?
+            internal_value: AnyValueEnum::from(v),
+            value_type: Type::from_cl(AnyTypeEnum::from(t))?
         })
     }
 
