@@ -98,7 +98,7 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .build_int_add(lhs_cl, rhs_cl, "add");
+            .build_int_add(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "add");
         let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
@@ -111,7 +111,7 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .build_int_sub(lhs_cl, rhs_cl, "sub");
+            .build_int_sub(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "sub");
         let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
@@ -124,7 +124,7 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .build_int_mul(lhs_cl, rhs_cl, "mul");
+            .build_int_mul(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "mul");
         let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
@@ -137,7 +137,7 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .build_int_unsigned_div(lhs_cl, rhs_cl, "div");
+            .build_int_unsigned_div(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "div");
         let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
@@ -150,7 +150,7 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .build_and(lhs_cl, rhs_cl, "and");
+            .build_and(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "and");
         let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
@@ -163,7 +163,7 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .build_or(lhs_cl, rhs_cl, "or");
+            .build_or(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "or");
         let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
@@ -176,7 +176,7 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .build_xor(lhs_cl, rhs_cl, "xor");
+            .build_xor(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "xor");
         let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
@@ -198,7 +198,7 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .build_int_compare(cc, lhs_cl, rhs_cl);
+            .build_int_compare(cc, lhs_cl.into_int_value(), rhs_cl.into_int_value());
         let data = ValueData::from_cl(res, types::IntType::bool_type())?;
         Ok(self.value_store.new_value(data))
     }
