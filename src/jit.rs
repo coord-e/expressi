@@ -48,7 +48,7 @@ impl JIT {
         })?;
 
         // Translate the AST nodes into Cranelift IR.
-        self.translate(name, module.clone(), ast)?;
+        self.translate(module.clone(), ast)?;
 
         module.print_to_stderr();
 
@@ -56,11 +56,11 @@ impl JIT {
     }
 
     // Translate from toy-language AST nodes into Cranelift IR.
-    fn translate(&mut self, name: &str, module: Rc<module::Module>, expr: Expression) -> Result<(), Error> {
+    fn translate(&mut self, module: Rc<module::Module>, expr: Expression) -> Result<(), Error> {
         let i64_type = self.context.i64_type();
         let fn_type = i64_type.fn_type(&[], false);
 
-        let function = module.add_function(name, fn_type, None);
+        let function = module.add_function(module.get_name().to_str()?, fn_type, None);
         let basic_block = self.context.append_basic_block(&function, "entry");
 
         self.builder.position_at_end(&basic_block);
