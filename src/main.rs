@@ -55,7 +55,7 @@ fn main() {
         )
         .get_matches();
 
-    let mut jit = jit::JIT::new();
+    let mut jit = jit::JIT::new().unwrap();
 
     if matches.is_present("INPUT") {
         if let Err(e) = compile_from_file(&mut jit, matches.value_of("INPUT").unwrap()) {
