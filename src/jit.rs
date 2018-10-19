@@ -16,7 +16,7 @@ use inkwell::targets::{InitializationConfig, Target};
 type CompiledFunc = unsafe extern "C" fn() -> u64;
 
 pub struct JIT {
-    context: context::Context,
+    context: context::ContextRef,
     builder: builder::Builder
 }
 
@@ -24,7 +24,7 @@ impl JIT {
     pub fn new() -> Result<Self, Error> {
         Target::initialize_native(&InitializationConfig::default()).map_err(|message| TargetInitializationError { message })?;
 
-        let context = context::Context::create();
+        let context = context::Context::get_global();
         let builder = context.create_builder();
 
         Ok(Self {
@@ -45,8 +45,6 @@ impl JIT {
 
         // Translate the AST nodes into Cranelift IR.
         self.translate(module.clone(), ast)?;
-
-        module.print_to_stderr();
 
         unsafe { execution_engine.get_function(name) }.map_err(|e| e.into())
     }
