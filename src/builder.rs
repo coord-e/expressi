@@ -20,14 +20,14 @@ pub enum CondCode {
     LessThanOrEqual,
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Copy)]
+#[derive(Hash, PartialEq, Eq)]
 pub struct Block {
     ebb: basic_block::BasicBlock,
 }
 
 impl Block {
-    pub fn cl_ebb(&self) -> basic_block::BasicBlock {
-        self.ebb
+    pub fn cl_ebb(&self) -> &basic_block::BasicBlock {
+        &self.ebb
     }
 }
 
@@ -206,7 +206,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .build_int_compare(cc, lhs_cl, rhs_cl);
-        let data = ValueData::from_cl(res, types::bool_type())?;
+        let data = ValueData::from_cl(res, types::IntType::bool_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -316,12 +316,12 @@ impl<'a> Builder<'a> {
     }
 
     pub fn create_block(&mut self) -> Result<Block, Error> {
-        let parent = self.inst_builder.get_insert_block().and_then(|b| ins_block.get_parent()).ok_or(InvalidContextBranchError.into())?;
+        let parent = self.inst_builder.get_insert_block().and_then(|b| b.get_parent()).ok_or(InvalidContextBranchError.into())?;
         let block = self.module.get_context().append_basic_block(parent, "");
         Block { ebb: block }
     }
 
-    pub fn brz(&mut self, condition: Value, then_block: Block, else_block: Block) -> Result<(), Error> {
+    pub fn brz(&mut self, condition: Value, then_block: &Block, else_block: &Block) -> Result<(), Error> {
         if condition.get_type() != Type::Boolean {
             return Err(TypeError.into());
         }
@@ -331,11 +331,11 @@ impl<'a> Builder<'a> {
         Ok(())
     }
 
-    pub fn jump(&mut self, block: Block) {
+    pub fn jump(&mut self, block: &Block) {
         self.inst_builder.build_unconditional_branch(block.cl_ebb());
     }
 
-    pub fn switch_to_block(&mut self, block: Block) {
+    pub fn switch_to_block(&mut self, block: &Block) {
         self.inst_builder.position_at_end(block.cl_ebb());
     }
 }
