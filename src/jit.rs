@@ -81,6 +81,7 @@ impl JIT {
             .build_return(Some(&cl));
 
         if !function.verify(true) {
+            eprintln!(""); // function.verify print results to stderr directory but it doesn't contain \n on the end
             return Err(FunctionVerificationError { name: function.get_name().to_str()?.to_string() }.into())
         }
 
