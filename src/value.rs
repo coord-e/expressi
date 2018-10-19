@@ -7,8 +7,8 @@ use std::str::FromStr;
 use std::ptr::NonNull;
 
 use failure::Error;
-use inkwell::values::{AnyValueEnum, PointerValue};
-use inkwell::types::{AnyTypeEnum, IntType};
+use inkwell::values::{BasicValueEnum, PointerValue};
+use inkwell::types::{BasicTypeEnum, IntType};
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum Type {
@@ -22,9 +22,9 @@ unsafe impl Send for Type {}
 unsafe impl Sync for Type {}
 
 impl Type {
-    pub fn from_cl(t: AnyTypeEnum) -> Result<Self, LLVMTypeConversionError> {
+    pub fn from_cl(t: BasicTypeEnum) -> Result<Self, LLVMTypeConversionError> {
         Ok(match t {
-            AnyTypeEnum::IntType(int) => match int.get_bit_width() {
+            BasicTypeEnum::IntType(int) => match int.get_bit_width() {
                 1  => Type::Boolean,
                 64 => Type::Number,
                 _  => unimplemented!()
@@ -33,7 +33,7 @@ impl Type {
         })
     }
 
-    pub fn cl_type(&self) -> Result<AnyTypeEnum, InternalTypeConversionError> {
+    pub fn cl_type(&self) -> Result<BasicTypeEnum, InternalTypeConversionError> {
         Ok(match self {
             Type::Number => IntType::i64_type(),
             Type::Boolean => IntType::bool_type(),
@@ -82,7 +82,7 @@ impl FromStr for Type {
 
 #[derive(Debug)]
 pub enum ValueData {
-    Primitive { internal_value: AnyValueEnum, value_type: Type },
+    Primitive { internal_value: BasicValueEnum, value_type: Type },
     Array { addr: PointerValue, elements: Vec<Value>, item_type: Type },
     Empty
 }
@@ -97,18 +97,18 @@ impl ValueData {
     }
 
     pub fn primitive<V>(v: V, t: Type) -> Self
-        where AnyValueEnum: From<V> {
+        where BasicValueEnum: From<V> {
         ValueData::Primitive {
-            internal_value: AnyValueEnum::from(v),
+            internal_value: BasicValueEnum::from(v),
             value_type: t
         }
     }
 
     pub fn from_cl<V, T>(v: V, t: T) -> Result<Self, Error>
-        where AnyValueEnum: From<V>, AnyTypeEnum: From<T> {
+        where BasicValueEnum: From<V>, BasicTypeEnum: From<T> {
         Ok(ValueData::Primitive {
-            internal_value: AnyValueEnum::from(v),
-            value_type: Type::from_cl(AnyTypeEnum::from(t))?
+            internal_value: BasicValueEnum::from(v),
+            value_type: Type::from_cl(BasicTypeEnum::from(t))?
         })
     }
 
@@ -118,7 +118,7 @@ impl ValueData {
         }
     }
 
-    pub fn cl_value(&self) -> Result<AnyValueEnum, Error> {
+    pub fn cl_value(&self) -> Result<BasicValueEnum, Error> {
         Ok(match *self {
             ValueData::Primitive {internal_value, ..} => internal_value,
             _ => return Err(LLVMValueNotAvailableError.into())

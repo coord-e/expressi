@@ -47,7 +47,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn to_cl(&self, v: Value) -> Result<values::AnyValueEnum, Error> {
+    pub fn to_cl(&self, v: Value) -> Result<values::BasicValueEnum, Error> {
         self.value_store.get(v).ok_or(ReleasedValueError.into()).and_then(|v| v.cl_value())
     }
 
@@ -61,13 +61,13 @@ impl<'a> Builder<'a> {
 
     pub fn number_constant(&mut self, v: i64) -> Result<Value, Error> {
         let t = types::IntType::i64_type();
-        let data = ValueData::from_cl(types::AnyValueEnum::IntValue(t.const_int(v.abs() as u64, v < 0)), t)?;
+        let data = ValueData::from_cl(values::BasicValueEnum::IntValue(t.const_int(v.abs() as u64, v < 0)), t)?;
         Ok(self.value_store.new_value(data))
     }
 
     pub fn boolean_constant(&mut self, v: bool) -> Result<Value, Error> {
         let t = types::IntType::bool_type();
-        let data = ValueData::from_cl(types::AnyValueEnum::IntValue(t.const_int(v as u64, false)), t)?;
+        let data = ValueData::from_cl(values::BasicValueEnum::IntValue(t.const_int(v as u64, false)), t)?;
         Ok(self.value_store.new_value(data))
     }
 
