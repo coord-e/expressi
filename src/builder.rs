@@ -61,13 +61,13 @@ impl<'a> Builder<'a> {
 
     pub fn number_constant(&mut self, v: i64) -> Result<Value, Error> {
         let t = types::IntType::i64_type();
-        let data = ValueData::from_cl(t.const_int(v.abs(), v < 0), t)?;
+        let data = ValueData::from_cl(types::AnyValueEnum::IntValue(t.const_int(v.abs(), v < 0)), t)?;
         Ok(self.value_store.new_value(data))
     }
 
     pub fn boolean_constant(&mut self, v: bool) -> Result<Value, Error> {
         let t = types::IntType::bool_type();
-        let data = ValueData::from_cl(t.const_int(v, false), t)?;
+        let data = ValueData::from_cl(types::AnyValueEnum::IntValue(t.const_int(v, false)), t)?;
         Ok(self.value_store.new_value(data))
     }
 
