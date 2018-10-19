@@ -26,7 +26,7 @@ impl Scope {
         Scope {
             variables: HashMap::new(),
             variable_values: HashMap::new(),
-            variable_pointer: HashMap::new()
+            variable_pointers: HashMap::new()
         }
     }
 
