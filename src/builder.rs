@@ -51,7 +51,7 @@ impl<'a> Builder<'a> {
         self.value_store.get(v).ok_or(ReleasedValueError.into()).and_then(|v| v.cl_value())
     }
 
-    pub fn inst_builder<'short>(&'short mut self) -> &'short mut Builder {
+    pub fn inst_builder<'short>(&'short mut self) -> &'short mut builder::Builder {
         self.inst_builder
     }
 
