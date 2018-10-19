@@ -59,10 +59,6 @@ impl<'a> Builder<'a> {
         &mut self.value_store
     }
 
-    pub fn finalize(&mut self) {
-        self.inst_builder.finalize()
-    }
-
     pub fn number_constant(&mut self, v: i64) -> Result<Value, Error> {
         let t = types::IntType::i64_type();
         let data = ValueData::from_cl(t.const_int(v, false), t)?;
