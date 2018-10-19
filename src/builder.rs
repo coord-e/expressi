@@ -219,7 +219,7 @@ impl<'a> Builder<'a> {
             let lhs_data = self.value_store.get(lhs).ok_or(ReleasedValueError)?;
             if let ValueData::Array { elements, addr, item_type, ..} = lhs_data {
                 // TODO: Safety check
-                let ptr = unsafe { self.inst_builder.build_in_bounds_gep(*addr, &[types::IntType::i32_type().const_int(0, false), offset_cl], "idx_offset") };
+                let ptr = unsafe { self.inst_builder.build_in_bounds_gep(*addr, &[offset_cl], "idx_offset") };
                 let loaded = self.inst_builder.build_load(ptr, "idx_load");
                 ValueData::primitive(loaded, *item_type)
             } else {
@@ -298,7 +298,7 @@ impl<'a> Builder<'a> {
 
     pub fn store(&mut self, v: Value, addr: values::PointerValue, offset: u32) -> Result<(), Error> {
         // TODO: Safety check
-        let ptr = unsafe { self.inst_builder.build_in_bounds_gep(addr, &[types::IntType::i32_type().const_int(0, false), types::IntType::i32_type().const_int(offset as u64, false)], "store") };
+        let ptr = unsafe { self.inst_builder.build_in_bounds_gep(addr, &[types::IntType::i32_type().const_int(offset as u64, false)], "store") };
         let cl = self.to_cl(v)?;
         self.inst_builder.build_store(ptr, cl);
         Ok(())
@@ -306,7 +306,7 @@ impl<'a> Builder<'a> {
 
     pub fn load(&mut self, t: Type, addr: values::PointerValue, offset: u32) -> Result<Value, Error> {
         // TODO: Safety check
-        let ptr = unsafe { self.inst_builder.build_in_bounds_gep(addr, &[types::IntType::i32_type().const_int(0, false), types::IntType::i32_type().const_int(offset as u64, false)], "store") };
+        let ptr = unsafe { self.inst_builder.build_in_bounds_gep(addr, &[types::IntType::i32_type().const_int(offset as u64, false)], "store") };
         let data = ValueData::from_cl(self.inst_builder.build_load(ptr, "load"), t.cl_type()?)?;
         Ok(self.value_store.new_value(data))
     }
