@@ -43,7 +43,7 @@ impl Scope {
     }
 
     pub fn add(&mut self, s: &str, val: Value, var: PointerValue) {
-        let idx = self.variables.count();
+        let idx = self.variables.len();
         self.variables.insert(s.to_string(), idx);
         self.variable_values.insert(idx, val);
         self.variable_pointers.insert(idx, var);
