@@ -320,7 +320,7 @@ impl<'a> Builder<'a> {
         }
         let cl = self.to_cl(condition)?;
         self.inst_builder
-            .build_conditional_branch(cl, then_block.cl_ebb(), else_block.cl_ebb());
+            .build_conditional_branch(cl.into_int_value(), then_block.cl_ebb(), else_block.cl_ebb());
         Ok(())
     }
 
