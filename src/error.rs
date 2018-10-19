@@ -38,7 +38,7 @@ pub struct InvalidCastError {
     from
 )]
 pub struct LLVMTypeConversionError {
-    pub from: types::AnyTypeEnum,
+    pub from: String,
 }
 
 #[derive(Fail, Debug)]

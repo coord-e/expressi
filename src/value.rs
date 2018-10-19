@@ -29,7 +29,7 @@ impl Type {
                 64 => Type::Number,
                 _  => unimplemented!()
             },
-            _ => return Err(LLVMTypeConversionError { from: t }),
+            _ => return Err(LLVMTypeConversionError { from: format!("{:?}", t) }),
         })
     }
 
