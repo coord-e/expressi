@@ -39,7 +39,7 @@ impl JIT {
 
     /// Compile a string in the toy language into machine code.
     pub fn compile(&mut self, name: &str, input: &str) -> Result<execution_engine::Symbol<CompiledFunc>, Error> {
-        let module = Rc::new(self.context.create_module("expressi"));
+        let module = Rc::new(self.context.create_module(name));
         let execution_engine = module.create_jit_execution_engine(OptimizationLevel::None).map_err(|_| FailedToCreateJITError)?;
 
         // Parse the string, producing AST nodes.
