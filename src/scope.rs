@@ -5,6 +5,8 @@ use std::collections::HashMap;
 
 use failure::Error;
 
+use inkwell::values::PointerValue;
+
 type VariableId = usize;
 
 pub struct Scope {
