@@ -81,7 +81,7 @@ impl JIT {
         trans
             .builder
             .inst_builder()
-            .build_return(Option::new(&cl));
+            .build_return(Some(&cl));
 
         Ok(())
     }
