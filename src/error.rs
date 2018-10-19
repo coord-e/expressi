@@ -26,6 +26,10 @@ pub struct ReleasedValueError;
 pub struct InvalidContextBranchError;
 
 #[derive(Fail, Debug)]
+#[fail(display = "Failed to create JIT execution engine")]
+pub struct FailedToCreateJITError;
+
+#[derive(Fail, Debug)]
 #[fail(display = "Invalid Cast from {} to {}", from, to)]
 pub struct InvalidCastError {
     pub from: Type,

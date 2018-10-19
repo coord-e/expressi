@@ -1,5 +1,5 @@
 use builder::Builder;
-use error::{FinalizationError, ParseError};
+use error::{FinalizationError, ParseError, FailedToCreateJITError};
 use expression::Expression;
 use parser;
 use translator::FunctionTranslator;
@@ -31,7 +31,7 @@ impl JIT {
         let context = context::Context::create();
         let module = Rc::new(context.create_module("expressi"));
         let builder = context.create_builder();
-        let execution_engine = module.create_jit_execution_engine(OptimizationLevel::None)?;
+        let execution_engine = module.create_jit_execution_engine(OptimizationLevel::None).map_err(|_| FailedToCreateJITError.into())?;
 
         Ok(Self {
             context,
@@ -42,7 +42,7 @@ impl JIT {
     }
 
     /// Compile a string in the toy language into machine code.
-    pub fn compile(&mut self, name: &str, input: &str) -> Result<*const u8, Error> {
+    pub fn compile(&mut self, name: &str, input: &str) -> Result<execution_engine::Symbol<CompiledFunc>, Error> {
         // Parse the string, producing AST nodes.
         let ast = parser::parse(&input).map_err(|e| ParseError {
             message: e.to_string(),
@@ -51,7 +51,7 @@ impl JIT {
         // Translate the AST nodes into Cranelift IR.
         self.translate(name, ast)?;
 
-        Ok(unsafe { self.execution_engine.get_function(name).ok() })
+        unsafe { self.execution_engine.get_function(name) }.map_err(|e| e.into())
     }
 
     // Translate from toy-language AST nodes into Cranelift IR.
