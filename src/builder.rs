@@ -230,7 +230,7 @@ impl<'a> Builder<'a> {
 
     pub fn declare_var(&mut self, name: &str, t: Type, unique: bool) -> Result<String, Error> {
         let real_name = if unique { self.scope_stack.unique_name(name) } else { name.to_string() };
-        let variable = self.inst_builder.build_alloc(t.cl_type()?, name);
+        let variable = self.inst_builder.build_alloca(t.cl_type()?, name);
         let empty = self.value_store.new_value(ValueData::Empty);
         self.scope_stack.add(&real_name, empty, variable); // TODO: TypeValue
         Ok(real_name)
