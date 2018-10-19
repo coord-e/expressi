@@ -10,9 +10,7 @@ pub mod scope;
 
 pub mod error;
 
-extern crate cranelift;
-extern crate cranelift_module;
-extern crate cranelift_simplejit;
+extern crate inkwell;
 
 #[macro_use]
 extern crate failure;
