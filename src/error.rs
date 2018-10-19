@@ -22,6 +22,10 @@ pub struct UnexpectedScopePopError;
 pub struct ReleasedValueError;
 
 #[derive(Fail, Debug)]
+#[fail(display = "Attempt to create a new branch in an invalid context")]
+pub struct InvalidContextBranchError;
+
+#[derive(Fail, Debug)]
 #[fail(display = "Invalid Cast from {} to {}", from, to)]
 pub struct InvalidCastError {
     pub from: Type,

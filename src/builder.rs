@@ -1,4 +1,4 @@
-use error::{InvalidCastError, TypeError, ReleasedValueError};
+use error::{InvalidCastError, TypeError, ReleasedValueError, InvalidContextBranchError};
 use expression::Operator;
 use value::{Type, Value, ValueStore, ValueData};
 use scope::{Scope, ScopeStack};
@@ -307,9 +307,10 @@ impl<'a> Builder<'a> {
         Ok(self.value_store.new_value(data))
     }
 
-    pub fn create_block(&mut self) -> Block {
-        let ebb = self.inst_builder.create_ebb();
-        Block { ebb }
+    pub fn create_block(&mut self) -> Result<Block, Error> {
+        let parent = self.inst_builder.get_insert_block().and_then(|b| ins_block.get_parent()).ok_or(InvalidContextBranchError.into())?;
+        let block = self.module.get_context().append_basic_block(parent, "");
+        Block { ebb: block }
     }
 
     pub fn brz(&mut self, condition: Value, block: Block) -> Result<(), Error> {
