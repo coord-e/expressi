@@ -6,9 +6,7 @@ use slot::Slot;
 
 use failure::Error;
 
-use cranelift::codegen::ir::{condcodes, entities, types, InstBuilder, stackslot};
-use cranelift::codegen::ir::immediates::Offset32;
-use cranelift::prelude::{EntityRef, FunctionBuilder, Variable, MemFlags};
+use inkwell::{basic_block,builder,types,values};
 
 use std::collections::HashMap;
 
@@ -24,24 +22,24 @@ pub enum CondCode {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Copy)]
 pub struct Block {
-    ebb: entities::Ebb,
+    ebb: basic_block::BasicBlock,
 }
 
 impl Block {
-    pub fn cl_ebb(&self) -> entities::Ebb {
+    pub fn cl_ebb(&self) -> basic_block::BasicBlock {
         self.ebb
     }
 }
 
 pub struct Builder<'a> {
     value_store: ValueStore,
-    inst_builder: &'a mut FunctionBuilder<'a>,
+    inst_builder: &'a mut builder::Builder,
     scope_stack: ScopeStack,
     block_table: HashMap<Block, Vec<Type>>
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(inst_builder: &'a mut FunctionBuilder<'a>) -> Self {
+    pub fn new(inst_builder: &'a mut builder::Builder) -> Self {
         Builder {
             inst_builder,
             value_store: ValueStore::new(),
@@ -50,11 +48,11 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn to_cl(&self, v: Value) -> Result<entities::Value, Error> {
+    pub fn to_cl(&self, v: Value) -> Result<values::AnyValue, Error> {
         self.value_store.get(v).ok_or(ReleasedValueError.into()).and_then(|v| v.cl_value())
     }
 
-    pub fn inst_builder<'short>(&'short mut self) -> &'short mut FunctionBuilder<'a> {
+    pub fn inst_builder<'short>(&'short mut self) -> &'short mut Builder {
         self.inst_builder
     }
 
@@ -67,14 +65,14 @@ impl<'a> Builder<'a> {
     }
 
     pub fn number_constant(&mut self, v: i64) -> Result<Value, Error> {
-        let t = types::I64;
-        let data = ValueData::from_cl(self.inst_builder.ins().iconst(t, v), t)?;
+        let t = types::IntType::i64_type();
+        let data = ValueData::from_cl(t.const_int(v, false), t)?;
         Ok(self.value_store.new_value(data))
     }
 
     pub fn boolean_constant(&mut self, v: bool) -> Result<Value, Error> {
-        let t = types::B8;
-        let data = ValueData::from_cl(self.inst_builder.ins().bconst(t, v), t)?;
+        let t = types::IntType::bool_type();
+        let data = ValueData::from_cl(t.const_int(v, false), t)?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -105,9 +103,8 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .ins()
-            .iadd(lhs_cl, rhs_cl);
-        let data = ValueData::from_cl(res, types::I64)?;
+            .build_int_add(lhs_cl, rhs_cl, "add");
+        let data = ValueData::from_cl(res, types::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -119,9 +116,8 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .ins()
-            .isub(lhs_cl, rhs_cl);
-        let data = ValueData::from_cl(res, types::I64)?;
+            .build_int_sub(lhs_cl, rhs_cl, "sub");
+        let data = ValueData::from_cl(res, types::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -133,9 +129,8 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .ins()
-            .imul(lhs_cl, rhs_cl);
-        let data = ValueData::from_cl(res, types::I64)?;
+            .build_int_mul(lhs_cl, rhs_cl, "mul");
+        let data = ValueData::from_cl(res, types::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -147,9 +142,8 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .ins()
-            .udiv(lhs_cl, rhs_cl);
-        let data = ValueData::from_cl(res, types::I64)?;
+            .build_int_unsigned_div(lhs_cl, rhs_cl, "div");
+        let data = ValueData::from_cl(res, types::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -161,9 +155,8 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .ins()
-            .band(lhs_cl, rhs_cl);
-        let data = ValueData::from_cl(res, types::I64)?;
+            .build_and(lhs_cl, rhs_cl, "and");
+        let data = ValueData::from_cl(res, types::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -175,9 +168,8 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .ins()
-            .bor(lhs_cl, rhs_cl);
-        let data = ValueData::from_cl(res, types::I64)?;
+            .build_or(lhs_cl, rhs_cl, "or");
+        let data = valuedata::from_cl(res, types::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -189,9 +181,8 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .ins()
-            .bxor(lhs_cl, rhs_cl);
-        let data = ValueData::from_cl(res, types::I64)?;
+            .build_xor(lhs_cl, rhs_cl, "xor");
+        let data = valuedata::from_cl(res, types::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -200,21 +191,20 @@ impl<'a> Builder<'a> {
             return Err(TypeError.into());
         }
         let cc = match cmp_type {
-            CondCode::Equal => condcodes::IntCC::Equal,
-            CondCode::NotEqual => condcodes::IntCC::NotEqual,
-            CondCode::LessThan => condcodes::IntCC::SignedLessThan,
-            CondCode::GreaterThanOrEqual => condcodes::IntCC::SignedGreaterThanOrEqual,
-            CondCode::GreaterThan => condcodes::IntCC::SignedGreaterThan,
-            CondCode::LessThanOrEqual => condcodes::IntCC::SignedLessThanOrEqual,
+            CondCode::Equal              => IntPredicate::EQ,
+            CondCode::NotEqual           => IntPredicate::NE,
+            CondCode::LessThan           => IntPredicate::SLT,
+            CondCode::GreaterThanOrEqual => IntPredicate::SGE,
+            CondCode::GreaterThan        => IntPredicate::SGT,
+            CondCode::LessThanOrEqual    => IntPredicate::SLE,
         };
 
         let lhs_cl = self.to_cl(lhs)?;
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .ins()
-            .icmp(cc, lhs_cl, rhs_cl);
-        let data = ValueData::from_cl(res, types::B8)?;
+            .build_int_compare(cc, lhs_cl, rhs_cl);
+        let data = ValueData::from_cl(res, types::bool_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -233,8 +223,8 @@ impl<'a> Builder<'a> {
         let data = {
             let lhs_data = self.value_store.get(lhs).ok_or(ReleasedValueError)?;
             if let ValueData::Array { elements, addr, item_type, ..} = lhs_data {
-                    let pointed_addr = self.inst_builder.ins().iadd(*addr, offset_cl);
-                    let loaded = self.inst_builder.ins().load(item_type.cl_type()?, MemFlags::new(), pointed_addr, 0);
+                    let pointed_addr = self.inst_builder.build_int_add(*addr, offset_cl, "idx_offset");
+                    let loaded = self.inst_builder.build_load(pointed_addr, "idx_load");
                     ValueData::primitive(loaded, *item_type)
             } else {
                 return Err(TypeError.into());
@@ -245,14 +235,12 @@ impl<'a> Builder<'a> {
 
     pub fn set_var(&mut self, name: &str, val: Value) -> Result<Value, Error> {
         let variable = self.scope_stack.get_var(name).unwrap_or({
-            let variable = Variable::new(self.scope_stack.variables().count());
+            let variable = self.inst_builder.build_alloc(val.get_type().cl_type()?, name);
             self.scope_stack.add(name, val, variable);
-            self.inst_builder
-                .declare_var(variable, val.get_type().cl_type()?);
             variable
         });
         if let Ok(val) = self.to_cl(val) {
-            self.inst_builder.def_var(variable, val);
+            self.inst_builder.build_store(variable, val);
         }
         self.scope_stack.set(name, val);
         Ok(val)
@@ -261,7 +249,7 @@ impl<'a> Builder<'a> {
     pub fn get_var(&mut self, name: &str) -> Option<Value> {
         self.scope_stack.get_var(name).map(|var| {
             let value = self.scope_stack.get(name).unwrap();
-            let data = ValueData::primitive(self.inst_builder.use_var(var), value.get_type());
+            let data = ValueData::primitive(self.inst_builder.build_load(var, "load_var"), value.get_type());
             self.value_store.new_value(data)
         })
     }
@@ -280,7 +268,7 @@ impl<'a> Builder<'a> {
             }
             (Type::Boolean, Type::Number) => {
                 let cl = self.to_cl(v)?;
-                let data = ValueData::primitive(self.inst_builder.ins().bint(t.cl_type()?, cl), t);
+                let data = ValueData::primitive(self.inst_builder.build_int_cast(cl, t.cl_type()?), t);
                 self.value_store.new_value(data)
             },
             _ => {
@@ -300,20 +288,20 @@ impl<'a> Builder<'a> {
         self.scope_stack.pop()
     }
 
-    pub fn alloc(&mut self, size: u32) -> Result<entities::Value, Error> {
-        let ss = self.inst_builder.create_stack_slot(stackslot::StackSlotData::new(stackslot::StackSlotKind::ExplicitSlot, size));
-        let addr = self.inst_builder.ins().stack_addr(types::I64, ss, 0);
-        Ok(addr)
+    pub fn array_alloc(&mut self, t: Type, size: u32) -> Result<values::PointerValue, Error> {
+        Ok(self.inst_builder.build_array_alloca(t.to_cl()?, self.number_constant(size)?, "array_alloc"))
     }
 
-    pub fn store(&mut self, v: Value, addr: entities::Value, offset: i32) -> Result<(), Error> {
+    pub fn store(&mut self, v: Value, addr: values::PointerValue, offset: i32) -> Result<(), Error> {
+        let ptr = self.inst_builder.build_in_bounds_gep(addr, &[types::IntType::i32_type().const_int(0), types::IntType::i32_type().const_int(offset)], "store");
         let cl = self.to_cl(v)?;
-        self.inst_builder.ins().store(MemFlags::new(), cl, addr, Offset32::new(offset));
+        self.inst_builder.build_store(ptr, cl);
         Ok(())
     }
 
-    pub fn load(&mut self, t: Type, addr: entities::Value, offset: i32) -> Result<Value, Error> {
-        let data = ValueData::from_cl(self.inst_builder.ins().load(t.cl_type()?, MemFlags::new(), addr, Offset32::new(offset)), t.cl_type()?)?;
+    pub fn load(&mut self, t: Type, addr: values::PointerValue, offset: i32) -> Result<Value, Error> {
+        let ptr = self.inst_builder.build_in_bounds_gep(addr, &[types::IntType::i32_type().const_int(0), types::IntType::i32_type().const_int(offset)], "store");
+        let data = ValueData::from_cl(self.inst_builder.build_load(ptr), t.cl_type()?)?;
         Ok(self.value_store.new_value(data))
     }
 
