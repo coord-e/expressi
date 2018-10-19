@@ -66,15 +66,9 @@ impl JIT {
 
         let builder = Builder::new(&mut self.builder, self.module);
 
-        let trans_ = FunctionTranslator {
+        let trans = FunctionTranslator {
             builder
         };
-        let mut trans = scopeguard::guard(trans_, |trans_| {
-            if !trans_.builder.inst_builder().is_filled() {
-                trans_.builder.inst_builder().ins().return_(&[]);
-            }
-            trans_.builder.finalize();
-        });
 
         let evaluated_value = trans.translate_expr(expr)?;
         let return_value = if evaluated_value.get_type() != Type::Number {
