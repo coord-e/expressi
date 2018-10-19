@@ -170,7 +170,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .build_or(lhs_cl, rhs_cl, "or");
-        let data = valuedata::from_cl(res, types::IntType::i64_type())?;
+        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 
@@ -183,7 +183,7 @@ impl<'a> Builder<'a> {
         let res = self
             .inst_builder
             .build_xor(lhs_cl, rhs_cl, "xor");
-        let data = valuedata::from_cl(res, types::IntType::i64_type())?;
+        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
         Ok(self.value_store.new_value(data))
     }
 

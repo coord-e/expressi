@@ -1,7 +1,6 @@
 use error::{
     LLVMValueNotAvailableError, LLVMTypeConversionError, InternalTypeConversionError,
 };
-use slot::Slot;
 
 use std::fmt;
 use std::str::FromStr;
