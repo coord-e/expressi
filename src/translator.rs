@@ -78,7 +78,7 @@ impl<'a> FunctionTranslator<'a> {
                 let merge_block = self.builder.create_block()?;
                 self.builder.brz(condition_value, &then_block, &else_block)?;
 
-                let initial_block = self.builder.current_block();
+                let initial_block = self.builder.current_block()?;
 
                 self.builder.switch_to_block(&then_block);
                 let then_return = self.translate_expr(*then_expr)?;

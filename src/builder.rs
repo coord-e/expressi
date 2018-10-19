@@ -331,4 +331,10 @@ impl<'a> Builder<'a> {
     pub fn switch_to_block(&mut self, block: &Block) {
         self.inst_builder.position_at_end(block.cl_ebb());
     }
+
+    pub fn current_block(&self) -> Result<Block, Error> {
+        self.inst_builder.get_insert_block()
+            .ok_or(InvalidContextBranchError.into())
+            .map(|ebb| Block { ebb })?
+    }
 }
