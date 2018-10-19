@@ -235,6 +235,13 @@ impl<'a> Builder<'a> {
         Ok(self.value_store.new_value(data))
     }
 
+    pub fn declare_var(&mut self, name: &str, t: Type) -> Result<(), Error> {
+        let variable = self.inst_builder.build_alloc(t.cl_type()?, name);
+        let empty = self.value_store.new_value(ValueData::Empty);
+        self.scope_stack.add(name, empty, variable); // TODO: TypeValue
+        Ok(())
+    }
+
     pub fn set_var(&mut self, name: &str, val: Value) -> Result<Value, Error> {
         let variable = self.scope_stack.get_var(name).unwrap_or({
             let variable = self.inst_builder.build_alloc(val.get_type().cl_type()?, name);
