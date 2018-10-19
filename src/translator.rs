@@ -87,7 +87,7 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.brz(condition_value, &then_block, &else_block)?;
 
                 self.builder.switch_to_block(&then_block);
-                self.builder.set_var(&var_name, then_return);
+                self.builder.set_var(&var_name, then_return)?;
                 self.builder.jump(&merge_block);
 
                 // Start writing 'else' block
@@ -96,7 +96,7 @@ impl<'a> FunctionTranslator<'a> {
                 if then_return.get_type() != else_return.get_type() {
                     panic!("Using different type value in if-else")
                 }
-                self.builder.set_var(&var_name, else_return);
+                self.builder.set_var(&var_name, else_return)?;
 
                 // Jump to merge block after translation of the 'then' block
                 self.builder.jump(&merge_block);
