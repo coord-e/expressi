@@ -4,11 +4,12 @@ use error::UnexpectedScopePopError;
 use std::collections::HashMap;
 
 use failure::Error;
-use cranelift::prelude::{Variable, EntityRef};
 
 pub struct Scope {
-    variables: HashMap<String, usize>,
-    variable_values: HashMap<usize, Value>
+    type VariableId = usize;
+    variables: HashMap<String, VariableId>,
+    variable_values: HashMap<VariableId, Value>,
+    variable_pointers: HashMap<VariableId, PointerValue>
 }
 
 impl Default for Scope {
@@ -21,7 +22,8 @@ impl Scope {
     pub fn new() -> Self {
         Scope {
             variables: HashMap::new(),
-            variable_values: HashMap::new()
+            variable_values: HashMap::new(),
+            variable_pointer: HashMap::new()
         }
     }
 
@@ -29,22 +31,23 @@ impl Scope {
         self.variables.get(s).and_then(|var| self.variable_values.get(var)).cloned()
     }
 
-    pub fn get_var(&self, s: &str) -> Option<Variable> {
-        self.variables.get(s).map(|v| Variable::with_u32(*v as u32))
+    pub fn get_var(&self, s: &str) -> Option<PointerValue> {
+        self.variables.get(s).and_then(|var| self.variable_pointers.get(var)).cloned()
     }
 
     pub fn set(&mut self, s: &str, val: Value) {
         self.variable_values.insert(*self.variables.get(s).unwrap(), val);
     }
 
-    pub fn add(&mut self, s: &str, val: Value, var: Variable) {
-        let idx = var.index();
+    pub fn add(&mut self, s: &str, val: Value, var: PointerValue) {
+        let idx = self.variables.count();
         self.variables.insert(s.to_string(), idx);
         self.variable_values.insert(idx, val);
+        self.variable_pointers.insert(idx, var);
     }
 
-    pub fn variables(&self) -> impl Iterator<Item=(&String, Variable)> {
-        self.variables.iter().map(|(k, v)| (k, Variable::with_u32(*v as u32)))
+    pub fn variables(&self) -> impl Iterator<Item=(&String, PointerValue)> {
+        self.variables.iter().map(move |(k, v)| (k, self.variable_pointers.get(&v).unwrap()))
     }
 
     pub fn values(&self) -> impl Iterator<Item=(&String, &Value)> {
@@ -74,7 +77,7 @@ impl ScopeStack {
         self.scopes.pop().ok_or(UnexpectedScopePopError.into())
     }
 
-    pub fn variables(&self) -> impl Iterator<Item=(&String, Variable)> {
+    pub fn variables(&self) -> impl Iterator<Item=(&String, PointerValue)> {
         self.scopes.iter().flat_map(|it| it.variables())
     }
 
@@ -82,7 +85,7 @@ impl ScopeStack {
         self.scopes.iter().flat_map(|it| it.values())
     }
 
-    pub fn add(&mut self, s: &str, val: Value, var: Variable) {
+    pub fn add(&mut self, s: &str, val: Value, var: PointerValue) {
         self.scopes.last_mut().unwrap().add(s, val, var)
     }
 
@@ -90,7 +93,7 @@ impl ScopeStack {
         self.values().find(|(k, _)| k == &s).map(|(_, v)| v)
     }
 
-    pub fn get_var(&self, s: &str) -> Option<Variable> {
+    pub fn get_var(&self, s: &str) -> Option<PointerValue> {
         self.variables().find(|(k, _)| k == &s).map(|(_, v)| v)
     }
 
