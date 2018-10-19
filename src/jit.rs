@@ -66,7 +66,7 @@ impl JIT {
 
         let builder = Builder::new(&mut self.builder, self.module.clone());
 
-        let trans = FunctionTranslator {
+        let mut trans = FunctionTranslator {
             builder
         };
 
