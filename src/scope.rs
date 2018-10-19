@@ -100,4 +100,9 @@ impl ScopeStack {
     pub fn set(&mut self, s: &str, val: Value) {
         self.scopes.last_mut().unwrap().set(s, val)
     }
+
+    pub fn unique_name(&self, s: &str) -> String {
+        let num_vars = self.variables().count();
+        format!("{}.{}", s, num_vars)
+    }
 }
