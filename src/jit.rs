@@ -1,5 +1,5 @@
 use builder::Builder;
-use error::{FinalizationError, ParseError};
+use error::{FinalizationError, ParseError, FailedToCreateJITError, TargetInitializationError};
 use expression::Expression;
 use parser;
 use translator::FunctionTranslator;
@@ -7,45 +7,40 @@ use value::{Type, ValueStore};
 use scope::ScopeStack;
 
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use failure::Error;
 
 use scopeguard;
 
-use cranelift::prelude::{
-    codegen, types, AbiParam, FunctionBuilder, FunctionBuilderContext, InstBuilder, Variable,
-};
-use cranelift_module::{DataContext, Linkage, Module};
-use cranelift_simplejit::{SimpleJITBackend, SimpleJITBuilder};
+use inkwell::{module,builder,context,execution_engine};
+use inkwell::OptimizationLevel;
+use inkwell::targets::{InitializationConfig, Target};
+
+type CompiledFunc = unsafe extern "C" fn() -> u64;
 
 pub struct JIT {
-    builder_context: FunctionBuilderContext,
-    ctx: codegen::Context,
-    data_ctx: DataContext,
-    module: Module<SimpleJITBackend>,
+    context: context::Context,
+    builder: builder::Builder
 }
 
 impl JIT {
-    pub fn new() -> Self {
-        // Windows calling conventions are not supported by cranelift yet.
-        if cfg!(windows) {
-            unimplemented!();
-        }
+    pub fn new() -> Result<Self, Error> {
+        Target::initialize_native(&InitializationConfig::default()).map_err(|message| TargetInitializationError { message })?;
 
-        let builder = SimpleJITBuilder::new();
-        let module = Module::new(builder);
-        Self {
-            builder_context: FunctionBuilderContext::new(),
-            ctx: module.make_context(),
-            data_ctx: DataContext::new(),
-            module,
-        }
+        let context = context::Context::create();
+        let builder = context.create_builder();
+
+        Ok(Self {
+            context,
+            builder
+        })
     }
 
     /// Compile a string in the toy language into machine code.
-    pub fn compile(&mut self, name: &str, input: &str) -> Result<*const u8, Error> {
-        // Clear the context first of all because there may be something left after error
-        self.module.clear_context(&mut self.ctx);
+    pub fn compile(&mut self, name: &str, input: &str) -> Result<execution_engine::Symbol<CompiledFunc>, Error> {
+        let module = Rc::new(self.context.create_module("expressi"));
+        let execution_engine = module.create_jit_execution_engine(OptimizationLevel::None).map_err(|_| FailedToCreateJITError)?;
 
         // Parse the string, producing AST nodes.
         let ast = parser::parse(&input).map_err(|e| ParseError {
@@ -53,62 +48,28 @@ impl JIT {
         })?;
 
         // Translate the AST nodes into Cranelift IR.
-        self.translate(ast)?;
+        self.translate(name, module.clone(), ast)?;
 
-        let id = self
-            .module
-            .declare_function(&name, Linkage::Export, &self.ctx.func.signature)
-            .map_err(|e| FinalizationError {
-                message: e.to_string(),
-            })?;
+        module.print_to_stderr();
 
-        self.module
-            .define_function(id, &mut self.ctx)
-            .map_err(|e| FinalizationError {
-                message: e.to_string(),
-            })?;
-
-        // Now that compilation is finished, we can clear out the context state.
-        self.module.clear_context(&mut self.ctx);
-
-        // Finalize the function, finishing any outstanding relocations.
-        self.module.finalize_definitions();
-        let code = self.module.get_finalized_function(id);
-
-        Ok(code)
+        unsafe { execution_engine.get_function(name) }.map_err(|e| e.into())
     }
 
     // Translate from toy-language AST nodes into Cranelift IR.
-    fn translate(&mut self, expr: Expression) -> Result<(), Error> {
-        self.ctx
-            .func
-            .signature
-            .returns
-            .push(AbiParam::new(types::I64));
+    fn translate(&mut self, name: &str, module: Rc<module::Module>, expr: Expression) -> Result<(), Error> {
+        let i64_type = self.context.i64_type();
+        let fn_type = i64_type.fn_type(&[], false);
 
-        let mut function_builder =
-            FunctionBuilder::new(&mut self.ctx.func, &mut self.builder_context);
+        let function = module.add_function(name, fn_type, None);
+        let basic_block = self.context.append_basic_block(&function, "entry");
 
-        // TODO: Replace FunctionBuilder with Builder
-        let entry_ebb = function_builder.create_ebb();
+        self.builder.position_at_end(&basic_block);
 
-        function_builder.append_ebb_params_for_function_params(entry_ebb);
+        let builder = Builder::new(&mut self.builder, module.clone());
 
-        function_builder.switch_to_block(entry_ebb);
-        function_builder.seal_block(entry_ebb);
-
-        let builder = Builder::new(&mut function_builder);
-
-        let trans_ = FunctionTranslator {
-            builder,
-            module: &mut self.module,
+        let mut trans = FunctionTranslator {
+            builder
         };
-        let mut trans = scopeguard::guard(trans_, |trans_| {
-            if !trans_.builder.inst_builder().is_filled() {
-                trans_.builder.inst_builder().ins().return_(&[]);
-            }
-            trans_.builder.finalize();
-        });
 
         let evaluated_value = trans.translate_expr(expr)?;
         let return_value = if evaluated_value.get_type() != Type::Number {
@@ -117,12 +78,11 @@ impl JIT {
             evaluated_value
         };
         // Emit the return instruction.
-        let cl = trans.builder.to_cl(return_value)?;
+        let cl = trans.builder.to_cl(return_value)?.into_int_value();
         trans
             .builder
             .inst_builder()
-            .ins()
-            .return_(&[cl]);
+            .build_return(Some(&cl));
 
         Ok(())
     }

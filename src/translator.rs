@@ -7,20 +7,11 @@ use scope::Scope;
 
 use failure::Error;
 
-use cranelift_module::Module;
-use cranelift_simplejit::SimpleJITBackend;
-use cranelift::prelude::{MemFlags, types, InstBuilder};
-
-/// A collection of state used for translating from toy-language AST nodes
-/// into Cranelift IR.
 pub struct FunctionTranslator<'a> {
     pub builder: Builder<'a>,
-    pub module: &'a mut Module<SimpleJITBackend>,
 }
 
 impl<'a> FunctionTranslator<'a> {
-    /// When you write out instructions in Cranelift, you get back `Value`s. You
-    /// can then use these references in other instructions.
     pub fn translate_expr(&mut self, expr: Expression) -> Result<Value, Error> {
         Ok(match expr {
             Expression::Number(number) => self.builder.number_constant(i64::from(number))?,
@@ -32,13 +23,12 @@ impl<'a> FunctionTranslator<'a> {
             Expression::Array(expr) => {
                 let elements = expr.into_iter().map(|expr| self.translate_expr(*expr)).collect::<Result<Vec<_>, _>>()?;
                 let item_type = elements.last().unwrap().get_type();
-                let size = item_type.size() * elements.len();
-                let addr = self.builder.alloc(size as u32)?;
+                let addr = self.builder.array_alloc(item_type, elements.len() as u32)?;
                 if elements.iter().any(|v| v.get_type() != item_type) {
                     return Err(TypeError.into());
                 }
                 for (idx, val) in elements.iter().enumerate() {
-                    self.builder.store(*val, addr, (item_type.size() * idx) as i32)?;
+                    self.builder.store(*val, addr, (item_type.size() * idx) as u32)?;
                 }
                 self.builder.value_store().new_value(ValueData::array(addr, elements, item_type))
             }
@@ -83,35 +73,36 @@ impl<'a> FunctionTranslator<'a> {
             Expression::IfElse(cond, then_expr, else_expr) => {
                 let condition_value = self.translate_expr(*cond)?;
 
-                let else_block = self.builder.create_block();
-                let merge_block = self.builder.create_block();
+                let then_block = self.builder.create_block()?;
+                let else_block = self.builder.create_block()?;
+                let merge_block = self.builder.create_block()?;
 
-                // Test the confition
-                self.builder.brz(condition_value, else_block)?;
+                let initial_block = self.builder.current_block()?;
 
+                self.builder.switch_to_block(&then_block);
                 let then_return = self.translate_expr(*then_expr)?;
 
-                self.builder
-                    .set_block_signature(merge_block, &[then_return.get_type()])?;
+                self.builder.switch_to_block(&initial_block);
+                let var_name = self.builder.declare_var("__cond", then_return.get_type(), true)?;
+                self.builder.brz(condition_value, &then_block, &else_block)?;
 
-                // Jump to merge block after translation of the 'then' block
-                self.builder.jump(merge_block, &[then_return]);
+                self.builder.switch_to_block(&then_block);
+                self.builder.set_var(&var_name, then_return)?;
+                self.builder.jump(&merge_block);
 
                 // Start writing 'else' block
-                self.builder.switch_to_block(else_block);
-
+                self.builder.switch_to_block(&else_block);
                 let else_return = self.translate_expr(*else_expr)?;
                 if then_return.get_type() != else_return.get_type() {
                     panic!("Using different type value in if-else")
                 }
+                self.builder.set_var(&var_name, else_return)?;
 
                 // Jump to merge block after translation of the 'then' block
-                self.builder.jump(merge_block, &[else_return]);
+                self.builder.jump(&merge_block);
 
-                self.builder.switch_to_block(merge_block);
-
-                // Get returned value and return it
-                self.builder.block_params(merge_block)[0]
+                self.builder.switch_to_block(&merge_block);
+                self.builder.get_var(&var_name).unwrap()
             }
         })
     }

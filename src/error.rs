@@ -1,4 +1,4 @@
-use cranelift::prelude::types;
+use inkwell::types;
 use value::Type;
 
 #[derive(Fail, Debug)]
@@ -6,8 +6,8 @@ use value::Type;
 pub struct UndeclaredVariableError;
 
 #[derive(Fail, Debug)]
-#[fail(display = "Cranelift Value is not available for this value")]
-pub struct CraneValueNotAvailableError;
+#[fail(display = "LLVM Value is not available for this value")]
+pub struct LLVMValueNotAvailableError;
 
 #[derive(Fail, Debug)]
 #[fail(display = "Invalid Type")]
@@ -22,6 +22,14 @@ pub struct UnexpectedScopePopError;
 pub struct ReleasedValueError;
 
 #[derive(Fail, Debug)]
+#[fail(display = "Attempt to create a new branch in an invalid context")]
+pub struct InvalidContextBranchError;
+
+#[derive(Fail, Debug)]
+#[fail(display = "Failed to create JIT execution engine")]
+pub struct FailedToCreateJITError;
+
+#[derive(Fail, Debug)]
 #[fail(display = "Invalid Cast from {} to {}", from, to)]
 pub struct InvalidCastError {
     pub from: Type,
@@ -30,16 +38,25 @@ pub struct InvalidCastError {
 
 #[derive(Fail, Debug)]
 #[fail(
-    display = "Attempt to convert incompatible cranelift type {} to expressi's type representation",
-    from
+    display = "Failed to initialize the target: {}",
+    message
 )]
-pub struct CraneliftTypeConversionError {
-    pub from: types::Type,
+pub struct TargetInitializationError {
+    pub message: String,
 }
 
 #[derive(Fail, Debug)]
 #[fail(
-    display = "Attempt to convert incompatible cranelift type {} to expressi's type representation",
+    display = "Attempt to convert incompatible llvm type {} to expressi's type representation",
+    from
+)]
+pub struct LLVMTypeConversionError {
+    pub from: String,
+}
+
+#[derive(Fail, Debug)]
+#[fail(
+    display = "Attempt to convert incompatible llvm type {} to expressi's type representation",
     from
 )]
 pub struct InternalTypeConversionError {
