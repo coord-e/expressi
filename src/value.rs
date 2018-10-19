@@ -82,7 +82,7 @@ impl FromStr for Type {
 
 #[derive(Debug)]
 pub enum ValueData {
-    Primitive { internal_value: AnyValue, value_type: Type },
+    Primitive { internal_value: Box<AnyValue>, value_type: Type },
     Array { addr: PointerValue, elements: Vec<Value>, item_type: Type },
     Empty
 }
@@ -98,14 +98,14 @@ impl ValueData {
 
     pub fn primitive(v: AnyValue, t: Type) -> Self {
         ValueData::Primitive {
-            internal_value: v,
+            internal_value: Box::new(v),
             value_type: t
         }
     }
 
     pub fn from_cl(v: AnyValue, t: AnyTypeEnum) -> Result<Self, Error> {
         Ok(ValueData::Primitive {
-            internal_value: v,
+            internal_value: Box::new(v),
             value_type: Type::from_cl(t)?
         })
     }
@@ -116,7 +116,7 @@ impl ValueData {
         }
     }
 
-    pub fn cl_value(&self) -> Result<AnyValue, Error> {
+    pub fn cl_value(&self) -> Result<Box<AnyValue>, Error> {
         Ok(match *self {
             ValueData::Primitive {internal_value, ..} => internal_value,
             _ => return Err(LLVMValueNotAvailableError.into())
