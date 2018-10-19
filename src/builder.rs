@@ -313,46 +313,21 @@ impl<'a> Builder<'a> {
         Block { ebb: block }
     }
 
-    pub fn brz(&mut self, condition: Value, block: Block) -> Result<(), Error> {
+    pub fn brz(&mut self, condition: Value, then_block: Block, else_block: Block) -> Result<(), Error> {
         if condition.get_type() != Type::Boolean {
             return Err(TypeError.into());
         }
         let cl = self.to_cl(condition)?;
         self.inst_builder
-            .ins()
-            .brz(cl, block.cl_ebb(), &[]);
+            .build_conditional_branch(cl, then_block.cl_ebb(), else_block.cl_ebb());
         Ok(())
     }
 
-    pub fn set_block_signature(&mut self, block: Block, types: &[Type]) -> Result<(), Error> {
-        for t in types {
-            self.inst_builder
-                .append_ebb_param(block.cl_ebb(), t.cl_type()?);
-        }
-        self.block_table.insert(block, types.to_vec());
-        Ok(())
-    }
-
-    pub fn jump(&mut self, block: Block, args: &[Value]) {
-        let cl_args: Vec<_> = args.into_iter().filter_map(|v| self.to_cl(*v).ok()).collect();
-        self.inst_builder.ins().jump(block.cl_ebb(), &cl_args);
+    pub fn jump(&mut self, block: Block) {
+        self.inst_builder.build_unconditional_branch(block.cl_ebb());
     }
 
     pub fn switch_to_block(&mut self, block: Block) {
-        self.inst_builder.switch_to_block(block.cl_ebb());
-        self.inst_builder.seal_block(block.cl_ebb());
-    }
-
-    pub fn block_params(&mut self, block: Block) -> Box<Vec<Value>> {
-        let signature = self.block_table.get(&block).unwrap();
-        let store = &mut self.value_store;
-        let params: Vec<_> = self
-            .inst_builder
-            .ebb_params(block.cl_ebb())
-            .into_iter()
-            .zip(signature.into_iter())
-            .map(|(v, t)| store.new_value(ValueData::primitive(*v, *t)))
-            .collect();
-        Box::new(params)
+        self.inst_builder.position_at_end(block.cl_ebb());
     }
 }
