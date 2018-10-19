@@ -101,7 +101,8 @@ impl ScopeStack {
     }
 
     pub fn set(&mut self, s: &str, val: Value) {
-        self.scopes.iter_mut().find(|sc| sc.get(s).is_some()).unwrap().set(s, val)
+        let mut it = self.scopes.iter_mut();
+        it.find(|sc| sc.get(s).is_some()).or(it.last()).unwrap().set(s, val)
     }
 
     pub fn unique_name(&self, s: &str) -> String {
