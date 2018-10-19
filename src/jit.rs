@@ -21,9 +21,7 @@ type CompiledFunc = unsafe extern "C" fn() -> u64;
 
 pub struct JIT {
     context: context::Context,
-    module: Rc<module::Module>,
-    builder: builder::Builder,
-    execution_engine: execution_engine::ExecutionEngine,
+    builder: builder::Builder
 }
 
 impl JIT {
@@ -31,42 +29,43 @@ impl JIT {
         Target::initialize_native(&InitializationConfig::default()).map_err(|message| TargetInitializationError { message })?;
 
         let context = context::Context::create();
-        let module = Rc::new(context.create_module("expressi"));
         let builder = context.create_builder();
-        let execution_engine = module.create_jit_execution_engine(OptimizationLevel::None).map_err(|_| FailedToCreateJITError)?;
 
         Ok(Self {
             context,
-            module,
-            builder,
-            execution_engine
+            builder
         })
     }
 
     /// Compile a string in the toy language into machine code.
     pub fn compile(&mut self, name: &str, input: &str) -> Result<execution_engine::Symbol<CompiledFunc>, Error> {
+        let module = Rc::new(self.context.create_module("expressi"));
+        let execution_engine = module.create_jit_execution_engine(OptimizationLevel::None).map_err(|_| FailedToCreateJITError)?;
+
         // Parse the string, producing AST nodes.
         let ast = parser::parse(&input).map_err(|e| ParseError {
             message: e.to_string(),
         })?;
 
         // Translate the AST nodes into Cranelift IR.
-        self.translate(name, ast)?;
+        self.translate(name, module.clone(), ast)?;
 
-        unsafe { self.execution_engine.get_function(name) }.map_err(|e| e.into())
+        module.print_to_stderr();
+
+        unsafe { execution_engine.get_function(name) }.map_err(|e| e.into())
     }
 
     // Translate from toy-language AST nodes into Cranelift IR.
-    fn translate(&mut self, name: &str, expr: Expression) -> Result<(), Error> {
+    fn translate(&mut self, name: &str, module: Rc<module::Module>, expr: Expression) -> Result<(), Error> {
         let i64_type = self.context.i64_type();
         let fn_type = i64_type.fn_type(&[], false);
 
-        let function = self.module.add_function(name, fn_type, None);
+        let function = module.add_function(name, fn_type, None);
         let basic_block = self.context.append_basic_block(&function, "entry");
 
         self.builder.position_at_end(&basic_block);
 
-        let builder = Builder::new(&mut self.builder, self.module.clone());
+        let builder = Builder::new(&mut self.builder, module.clone());
 
         let mut trans = FunctionTranslator {
             builder
