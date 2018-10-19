@@ -8,7 +8,7 @@ use std::ptr::NonNull;
 
 use failure::Error;
 use inkwell::values::{AnyValue, PointerValue};
-use inkwell::types::{AnyTypeEnum, IntType};
+use inkwell::types::AnyTypeEnum;
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum Type {
@@ -24,7 +24,7 @@ unsafe impl Sync for Type {}
 impl Type {
     pub fn from_cl(t: AnyTypeEnum) -> Result<Self, LLVMTypeConversionError> {
         Ok(match t {
-            IntType(int) => match int.get_bit_width() {
+            AnyTypeEnum::IntType(int) => match int.get_bit_width() {
                 1  => Type::Boolean,
                 64 => Type::Number,
                 _  => unimplemented!()
