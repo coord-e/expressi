@@ -20,7 +20,6 @@ pub enum CondCode {
     LessThanOrEqual,
 }
 
-#[derive(Hash, PartialEq, Eq)]
 pub struct Block {
     ebb: basic_block::BasicBlock,
 }
@@ -35,8 +34,7 @@ pub struct Builder<'a> {
     value_store: ValueStore,
     inst_builder: &'a mut builder::Builder,
     module: Rc<module::Module>,
-    scope_stack: ScopeStack,
-    block_table: HashMap<Block, Vec<Type>>
+    scope_stack: ScopeStack
 }
 
 impl<'a> Builder<'a> {
@@ -45,8 +43,7 @@ impl<'a> Builder<'a> {
             inst_builder,
             module,
             value_store: ValueStore::new(),
-            scope_stack: ScopeStack::new(),
-            block_table: HashMap::new()
+            scope_stack: ScopeStack::new()
         }
     }
 
