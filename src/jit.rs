@@ -31,7 +31,7 @@ impl JIT {
         let context = context::Context::create();
         let module = Rc::new(context.create_module("expressi"));
         let builder = context.create_builder();
-        let execution_engine = module.create_jit_execution_engine(OptimizationLevel::None).map_err(|_| FailedToCreateJITError.into())?;
+        let execution_engine = module.create_jit_execution_engine(OptimizationLevel::None).map_err(|_| FailedToCreateJITError)?;
 
         Ok(Self {
             context,

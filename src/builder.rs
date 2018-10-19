@@ -309,7 +309,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn create_block(&mut self) -> Result<Block, Error> {
-        let parent = self.inst_builder.get_insert_block().and_then(|b| b.get_parent()).ok_or(InvalidContextBranchError.into())?;
+        let parent = self.inst_builder.get_insert_block().and_then(|b| b.get_parent()).ok_or(InvalidContextBranchError)?;
         let block = self.module.get_context().append_basic_block(&parent, "");
         Ok(Block { ebb: block })
     }
