@@ -1,5 +1,5 @@
 use builder::Builder;
-use error::{ParseError, FailedToCreateJITError, TargetInitializationError};
+use error::{FunctionVerificationError, ModuleVerificationError, ParseError, FailedToCreateJITError, TargetInitializationError};
 use expression::Expression;
 use parser;
 use translator::FunctionTranslator;
@@ -79,6 +79,14 @@ impl JIT {
             .builder
             .inst_builder()
             .build_return(Some(&cl));
+
+        if !function.verify(true) {
+            return Err(FunctionVerificationError { name: function.get_name().to_str()?.to_string() }.into())
+        }
+
+        if let Err(message) = module.verify() {
+            return Err(ModuleVerificationError { message: message.to_string() }.into())
+        }
 
         Ok(())
     }
