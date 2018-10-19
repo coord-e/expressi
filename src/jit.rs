@@ -77,7 +77,7 @@ impl JIT {
             evaluated_value
         };
         // Emit the return instruction.
-        let cl = trans.builder.to_cl(return_value)?;
+        let cl = trans.builder.to_cl(return_value)?.into_int_value();
         trans
             .builder
             .inst_builder()
