@@ -271,7 +271,7 @@ impl<'a> Builder<'a> {
             }
             (Type::Boolean, Type::Number) => {
                 let cl = self.to_cl(v)?;
-                let data = ValueData::primitive(self.inst_builder.build_int_cast(cl, t.cl_type()?), t, "b2i");
+                let data = ValueData::primitive(self.inst_builder.build_int_cast(cl.into_int_value(), t.cl_type()?.into_int_type(), "b2i"), t);
                 self.value_store.new_value(data)
             },
             _ => {
