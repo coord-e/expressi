@@ -2,7 +2,6 @@ use error::{InvalidCastError, TypeError, ReleasedValueError, InvalidContextBranc
 use expression::Operator;
 use value::{Type, Value, ValueStore, ValueData};
 use scope::{Scope, ScopeStack};
-use slot::Slot;
 
 use failure::Error;
 
