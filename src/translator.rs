@@ -76,19 +76,19 @@ impl<'a> FunctionTranslator<'a> {
                 let then_block = self.builder.create_block()?;
                 let else_block = self.builder.create_block()?;
                 let merge_block = self.builder.create_block()?;
-                self.builder.brz(condition_value, &then_block, &else_block)?;
 
                 let initial_block = self.builder.current_block()?;
 
                 self.builder.switch_to_block(&then_block);
                 let then_return = self.translate_expr(*then_expr)?;
-                self.builder.jump(&merge_block);
 
                 self.builder.switch_to_block(&initial_block);
                 let var_name = self.builder.declare_var("__cond", then_return.get_type(), true)?;
+                self.builder.brz(condition_value, &then_block, &else_block)?;
 
                 self.builder.switch_to_block(&then_block);
                 self.builder.set_var(&var_name, then_return);
+                self.builder.jump(&merge_block);
 
                 // Start writing 'else' block
                 self.builder.switch_to_block(&else_block);
