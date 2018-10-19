@@ -3,6 +3,7 @@ name = "expressi"
 version = "0.1.0"
 authors = ["coord.e <me@coord-e.com>"]
 build = "build.rs"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "llvm7-0" }
