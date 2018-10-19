@@ -5,7 +5,7 @@ use scope::{Scope, ScopeStack};
 
 use failure::Error;
 
-use inkwell::{basic_block,builder,types,values};
+use inkwell::{basic_block,builder,types,values,IntPredicate};
 
 use std::collections::HashMap;
 
