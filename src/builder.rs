@@ -34,14 +34,16 @@ impl Block {
 pub struct Builder<'a> {
     value_store: ValueStore,
     inst_builder: &'a mut builder::Builder,
+    module: Rc<module::Module>,
     scope_stack: ScopeStack,
     block_table: HashMap<Block, Vec<Type>>
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(inst_builder: &'a mut builder::Builder) -> Self {
+    pub fn new(inst_builder: &'a mut builder::Builder, module: Rc<module::Module>) -> Self {
         Builder {
             inst_builder,
+            module,
             value_store: ValueStore::new(),
             scope_stack: ScopeStack::new(),
             block_table: HashMap::new()
