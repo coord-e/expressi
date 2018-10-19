@@ -64,7 +64,7 @@ impl JIT {
 
         self.builder.position_at_end(&basic_block);
 
-        let builder = Builder::new(&mut self.builder, self.module);
+        let builder = Builder::new(&mut self.builder, self.module.clone());
 
         let trans = FunctionTranslator {
             builder
