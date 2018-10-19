@@ -8,7 +8,7 @@ use std::ptr::NonNull;
 
 use failure::Error;
 use inkwell::values::{AnyValue, PointerValue};
-use inkwell::types::AnyTypeEnum;
+use inkwell::types::{AnyTypeEnum, IntType};
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum Type {

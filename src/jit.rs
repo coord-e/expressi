@@ -7,12 +7,14 @@ use value::{Type, ValueStore};
 use scope::ScopeStack;
 
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use failure::Error;
 
 use scopeguard;
 
 use inkwell::{module,builder,context,execution_engine};
+use inkwell::OptimizationLevel;
 
 type CompiledFunc = unsafe extern "C" fn() -> u64;
 
@@ -28,7 +30,7 @@ impl JIT {
 
         let context = context::Context::create();
         let module = context.create_module("expressi");
-        let builder = context.create_builder();
+        let builder = Rc::new(context.create_builder());
         let execution_engine = module.create_jit_execution_engine(OptimizationLevel::None)?;
 
         Ok(Self {
