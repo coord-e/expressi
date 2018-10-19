@@ -50,7 +50,7 @@ impl Scope {
     }
 
     pub fn variables(&self) -> impl Iterator<Item=(&String, PointerValue)> {
-        self.variables.iter().map(move |(k, v)| (k, self.variable_pointers.get(&v).unwrap()))
+        self.variables.iter().map(move |(k, v)| (k, self.variable_pointers.get(&v).cloned().unwrap()))
     }
 
     pub fn values(&self) -> impl Iterator<Item=(&String, &Value)> {
