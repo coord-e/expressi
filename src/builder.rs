@@ -198,7 +198,7 @@ impl<'a> Builder<'a> {
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
             .inst_builder
-            .build_int_compare(cc, lhs_cl.into_int_value(), rhs_cl.into_int_value());
+            .build_int_compare(cc, lhs_cl.into_int_value(), rhs_cl.into_int_value(), "cmp");
         let data = ValueData::from_cl(res, types::IntType::bool_type())?;
         Ok(self.value_store.new_value(data))
     }
@@ -232,13 +232,13 @@ impl<'a> Builder<'a> {
         let real_name = if unique { self.scope_stack.unique_name(name) } else { name.to_string() };
         let variable = self.inst_builder.build_alloc(t.cl_type()?, name);
         let empty = self.value_store.new_value(ValueData::Empty);
-        self.scope_stack.add(real_name, empty, variable); // TODO: TypeValue
+        self.scope_stack.add(&real_name, empty, variable); // TODO: TypeValue
         Ok(real_name)
     }
 
     pub fn set_var(&mut self, name: &str, val: Value) -> Result<Value, Error> {
         let variable = self.scope_stack.get_var(name).unwrap_or({
-            let variable = self.inst_builder.build_alloc(val.get_type().cl_type()?, name);
+            let variable = self.inst_builder.build_alloca(val.get_type().cl_type()?, name);
             self.scope_stack.add(name, val, variable);
             variable
         });
@@ -271,7 +271,7 @@ impl<'a> Builder<'a> {
             }
             (Type::Boolean, Type::Number) => {
                 let cl = self.to_cl(v)?;
-                let data = ValueData::primitive(self.inst_builder.build_int_cast(cl, t.cl_type()?), t);
+                let data = ValueData::primitive(self.inst_builder.build_int_cast(cl, t.cl_type()?), t, "b2i");
                 self.value_store.new_value(data)
             },
             _ => {
