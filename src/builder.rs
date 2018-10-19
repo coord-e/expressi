@@ -214,12 +214,12 @@ impl<'a> Builder<'a> {
 
         let byte = self.number_constant(8)?;
         let offset = self.mul(rhs, byte)?;
-        let offset_cl = self.to_cl(offset)?;
+        let offset_cl = self.to_cl(offset)?.into_int_value();
         let data = {
             let lhs_data = self.value_store.get(lhs).ok_or(ReleasedValueError)?;
             if let ValueData::Array { elements, addr, item_type, ..} = lhs_data {
-                    let pointed_addr = self.inst_builder.build_int_add(*addr, offset_cl, "idx_offset");
-                    let loaded = self.inst_builder.build_load(pointed_addr, "idx_load");
+                    let ptr = self.inst_builder.build_in_bounds_gep(*addr, &[types::IntType::i32_type().const_int(0, false), offset_cl], "idx_offset");
+                    let loaded = self.inst_builder.build_load(ptr, "idx_load");
                     ValueData::primitive(loaded, *item_type)
             } else {
                 return Err(TypeError.into());
