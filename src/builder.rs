@@ -47,7 +47,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn to_cl(&self, v: Value) -> Result<Box<values::AnyValue>, Error> {
+    pub fn to_cl(&self, v: Value) -> Result<values::AnyValueEnum, Error> {
         self.value_store.get(v).ok_or(ReleasedValueError.into()).and_then(|v| v.cl_value())
     }
 
