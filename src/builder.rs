@@ -292,7 +292,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn array_alloc(&mut self, t: Type, size: u32) -> Result<values::PointerValue, Error> {
-        Ok(self.inst_builder.build_array_alloca(t.to_cl()?, self.number_constant(size)?, "array_alloc"))
+        Ok(self.inst_builder.build_array_alloca(t.cl_type()?, types::IntType::i32_type().const_int(size as u64, false), "array_alloc"))
     }
 
     pub fn store(&mut self, v: Value, addr: values::PointerValue, offset: u32) -> Result<(), Error> {
