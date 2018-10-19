@@ -7,20 +7,11 @@ use scope::Scope;
 
 use failure::Error;
 
-use cranelift_module::Module;
-use cranelift_simplejit::SimpleJITBackend;
-use cranelift::prelude::{MemFlags, types, InstBuilder};
-
-/// A collection of state used for translating from toy-language AST nodes
-/// into Cranelift IR.
 pub struct FunctionTranslator<'a> {
     pub builder: Builder<'a>,
-    pub module: &'a mut Module<SimpleJITBackend>,
 }
 
 impl<'a> FunctionTranslator<'a> {
-    /// When you write out instructions in Cranelift, you get back `Value`s. You
-    /// can then use these references in other instructions.
     pub fn translate_expr(&mut self, expr: Expression) -> Result<Value, Error> {
         Ok(match expr {
             Expression::Number(number) => self.builder.number_constant(i64::from(number))?,
