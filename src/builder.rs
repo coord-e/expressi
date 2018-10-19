@@ -238,11 +238,11 @@ impl<'a> Builder<'a> {
     }
 
     pub fn set_var(&mut self, name: &str, val: Value) -> Result<Value, Error> {
-        let variable = self.scope_stack.get_var(name).unwrap_or({
+        let variable = self.scope_stack.get_var(name).ok_or(()).or_else(|_| -> Result<values::PointerValue, Error> {
             let variable = self.inst_builder.build_alloca(val.get_type().cl_type()?, name);
             self.scope_stack.add(name, val, variable);
-            variable
-        });
+            Ok(variable)
+        })?;
         if let Ok(val) = self.to_cl(val) {
             self.inst_builder.build_store(variable, val);
         }
