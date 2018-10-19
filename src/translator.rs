@@ -32,8 +32,7 @@ impl<'a> FunctionTranslator<'a> {
             Expression::Array(expr) => {
                 let elements = expr.into_iter().map(|expr| self.translate_expr(*expr)).collect::<Result<Vec<_>, _>>()?;
                 let item_type = elements.last().unwrap().get_type();
-                let size = item_type.size() * elements.len();
-                let addr = self.builder.alloc(size as u32)?;
+                let addr = self.builder.array_alloc(item_type, size as u32)?;
                 if elements.iter().any(|v| v.get_type() != item_type) {
                     return Err(TypeError.into());
                 }
