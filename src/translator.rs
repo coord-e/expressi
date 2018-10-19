@@ -82,35 +82,35 @@ impl<'a> FunctionTranslator<'a> {
             Expression::IfElse(cond, then_expr, else_expr) => {
                 let condition_value = self.translate_expr(*cond)?;
 
+                let then_block = self.builder.create_block();
                 let else_block = self.builder.create_block();
                 let merge_block = self.builder.create_block();
 
-                // Test the confition
-                self.builder.brz(condition_value, else_block)?;
+                let initial_block = self.builder.current_block();
 
+                self.builder.switch_to_block(then_block);
                 let then_return = self.translate_expr(*then_expr)?;
+                self.builder.jump(merge_block);
 
-                self.builder
-                    .set_block_signature(merge_block, &[then_return.get_type()])?;
+                self.builder.switch_to_block(initial_block);
+                self.builder.declare_var("__cond", then_return.get_type());
 
-                // Jump to merge block after translation of the 'then' block
-                self.builder.jump(merge_block, &[then_return]);
+                self.builder.switch_to_block(then_block);
+                self.builder.set_var("__cond", then_return);
 
                 // Start writing 'else' block
                 self.builder.switch_to_block(else_block);
-
                 let else_return = self.translate_expr(*else_expr)?;
                 if then_return.get_type() != else_return.get_type() {
                     panic!("Using different type value in if-else")
                 }
+                self.builder.set_var("__cond", else_return);
 
                 // Jump to merge block after translation of the 'then' block
-                self.builder.jump(merge_block, &[else_return]);
+                self.builder.jump(merge_block);
 
                 self.builder.switch_to_block(merge_block);
-
-                // Get returned value and return it
-                self.builder.block_params(merge_block)[0]
+                self.builder.get_var("__cond")
             }
         })
     }
