@@ -29,8 +29,8 @@ impl JIT {
     pub fn new() -> Result<Self, Error> {
 
         let context = context::Context::create();
-        let module = context.create_module("expressi");
-        let builder = Rc::new(context.create_builder());
+        let module = Rc::new(context.create_module("expressi"));
+        let builder = context.create_builder();
         let execution_engine = module.create_jit_execution_engine(OptimizationLevel::None)?;
 
         Ok(Self {
