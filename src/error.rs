@@ -38,6 +38,15 @@ pub struct InvalidCastError {
 
 #[derive(Fail, Debug)]
 #[fail(
+    display = "Failed to initialize the target: {}",
+    message
+)]
+pub struct TargetInitializationError {
+    pub message: String,
+}
+
+#[derive(Fail, Debug)]
+#[fail(
     display = "Attempt to convert incompatible llvm type {} to expressi's type representation",
     from
 )]

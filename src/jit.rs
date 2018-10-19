@@ -1,5 +1,5 @@
 use builder::Builder;
-use error::{FinalizationError, ParseError, FailedToCreateJITError};
+use error::{FinalizationError, ParseError, FailedToCreateJITError, TargetInitializationError};
 use expression::Expression;
 use parser;
 use translator::FunctionTranslator;
@@ -15,6 +15,7 @@ use scopeguard;
 
 use inkwell::{module,builder,context,execution_engine};
 use inkwell::OptimizationLevel;
+use inkwell::targets::{InitializationConfig, Target};
 
 type CompiledFunc = unsafe extern "C" fn() -> u64;
 
@@ -27,6 +28,7 @@ pub struct JIT {
 
 impl JIT {
     pub fn new() -> Result<Self, Error> {
+        Target::initialize_native(&InitializationConfig::default()).map_err(|message| TargetInitializationError { message })?;
 
         let context = context::Context::create();
         let module = Rc::new(context.create_module("expressi"));
