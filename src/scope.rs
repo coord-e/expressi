@@ -5,8 +5,9 @@ use std::collections::HashMap;
 
 use failure::Error;
 
+type VariableId = usize;
+
 pub struct Scope {
-    type VariableId = usize;
     variables: HashMap<String, VariableId>,
     variable_values: HashMap<VariableId, Value>,
     variable_pointers: HashMap<VariableId, PointerValue>
