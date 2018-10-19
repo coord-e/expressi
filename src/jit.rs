@@ -1,17 +1,13 @@
 use builder::Builder;
-use error::{FinalizationError, ParseError, FailedToCreateJITError, TargetInitializationError};
+use error::{ParseError, FailedToCreateJITError, TargetInitializationError};
 use expression::Expression;
 use parser;
 use translator::FunctionTranslator;
-use value::{Type, ValueStore};
-use scope::ScopeStack;
+use value::Type;
 
-use std::collections::HashMap;
 use std::rc::Rc;
 
 use failure::Error;
-
-use scopeguard;
 
 use inkwell::{module,builder,context,execution_engine};
 use inkwell::OptimizationLevel;

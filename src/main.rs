@@ -13,7 +13,6 @@ use expressi::jit;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
-use std::mem;
 
 fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
     let mut f = File::open(path).map_err(|_| NotFoundError {

@@ -1,4 +1,3 @@
-use inkwell::types;
 use value::Type;
 
 #[derive(Fail, Debug)]

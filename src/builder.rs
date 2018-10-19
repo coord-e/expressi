@@ -7,7 +7,6 @@ use failure::Error;
 
 use inkwell::{basic_block,builder,module,types,values,IntPredicate};
 
-use std::collections::HashMap;
 use std::rc::Rc;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
