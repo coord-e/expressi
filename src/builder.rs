@@ -1,6 +1,7 @@
 use error::{InvalidCastError, TypeError, ReleasedValueError, InvalidContextBranchError};
 use expression::Operator;
-use value::{Type, Value, ValueStore, ValueData};
+use value::{Value, ValueStore, ValueData};
+use value::Type;
 use scope::{Scope, ScopeStack};
 
 use failure::Error;
