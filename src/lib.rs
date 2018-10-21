@@ -6,7 +6,6 @@ pub mod jit;
 pub mod parser;
 pub mod translator;
 pub mod value;
-pub mod type_;
 pub mod scope;
 
 pub mod error;
