@@ -1,4 +1,4 @@
-use value::Type;
+use type_::Type;
 
 use std::str::FromStr;
 
