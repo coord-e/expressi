@@ -1,4 +1,5 @@
 use value::Value;
+use value::TypeID;
 use error::UnexpectedScopePopError;
 
 use std::collections::HashMap;
@@ -12,7 +13,8 @@ type VariableId = usize;
 pub struct Scope {
     variables: HashMap<String, VariableId>,
     variable_values: HashMap<VariableId, Value>,
-    variable_pointers: HashMap<VariableId, PointerValue>
+    variable_pointers: HashMap<VariableId, PointerValue>,
+    types: HashMap<String, TypeID>,
 }
 
 impl Default for Scope {
@@ -55,6 +57,10 @@ impl Scope {
 
     pub fn values(&self) -> impl Iterator<Item=(&String, &Value)> {
         self.variables.iter().map(move |(k, v)| (k, self.variable_values.get(&v).unwrap()))
+    }
+
+    pub fn resolve_type(&self, id: &str) -> Option<TypeID> {
+        self.types.get(id)
     }
 }
 

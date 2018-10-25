@@ -3,6 +3,7 @@ use expression::Expression;
 use builder::Builder;
 use error::{UndeclaredVariableError, TypeError};
 use value::{Value, ValueData};
+use value::type_store::{EnumValueData, TypeID};
 use scope::Scope;
 
 use failure::Error;

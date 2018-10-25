@@ -1,6 +1,6 @@
 use error::{InvalidCastError, TypeError, ReleasedValueError, InvalidContextBranchError};
 use expression::Operator;
-use value::{Value, ValueStore, ValueData, Type, TypeStore};
+use value::{Value, ValueStore, ValueData, Type, TypeStore, TypeID};
 use scope::{Scope, ScopeStack};
 
 use failure::Error;
@@ -62,6 +62,10 @@ impl<'a> Builder<'a> {
 
     pub fn type_store<'short>(&'short mut self) -> &'short mut TypeStore {
         &mut self.type_store
+    }
+
+    pub fn scope_stack<'short>(&'short mut self) -> &'short mut ScopeStack {
+        &mut self.scope_stack
     }
 
     pub fn number_constant(&mut self, v: i64) -> Result<Value, Error> {
