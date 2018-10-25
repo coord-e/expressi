@@ -11,14 +11,14 @@ pub enum Atom {
 }
 
 impl Atom {
-    fn expect_value(self) -> Result<Value, Error> {
+    pub fn expect_value(self) -> Result<Value, Error> {
         match self {
             Atom::Value(v) => Ok(v),
             _ => return Err(ValueExpectedError.into())
         }
     }
 
-    fn expect_type(self) -> Result<TypeID, Error> {
+    pub fn expect_type(self) -> Result<TypeID, Error> {
         match self {
             Atom::Type(v) => Ok(v),
             _ => return Err(TypeExpectedError.into())

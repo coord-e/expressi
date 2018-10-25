@@ -2,7 +2,7 @@ use expression::Expression;
 
 use builder::Builder;
 use error::{UndeclaredVariableError, UndeclaredTypeError, TypeError};
-use value::{Value, ValueData};
+use value::{Value, ValueData, Atom};
 use value::type_store::{EnumTypeData, TypeID};
 use scope::Scope;
 
@@ -13,16 +13,16 @@ pub struct FunctionTranslator<'a> {
 }
 
 impl<'a> FunctionTranslator<'a> {
-    pub fn translate_expr(&mut self, expr: Expression) -> Result<Value, Error> {
+    pub fn translate_expr(&mut self, expr: Expression) -> Result<Atom, Error> {
         Ok(match expr {
-            Expression::Number(number) => self.builder.number_constant(i64::from(number))?,
+            Expression::Number(number) => self.builder.number_constant(i64::from(number))?.into(),
 
-            Expression::Boolean(tf) => self.builder.boolean_constant(tf)?,
+            Expression::Boolean(tf) => self.builder.boolean_constant(tf)?.into(),
 
-            Expression::Empty => self.builder.value_store().new_value(ValueData::Empty),
+            Expression::Empty => self.builder.value_store().new_value(ValueData::Empty).into(),
 
             Expression::Array(expr) => {
-                let elements = expr.into_iter().map(|expr| self.translate_expr(*expr)).collect::<Result<Vec<_>, _>>()?;
+                let elements = expr.into_iter().map(|expr| self.translate_expr(*expr).and_then(|e| e.expect_value())).collect::<Result<Vec<_>, _>>()?;
                 let item_type = elements.last().unwrap().get_type();
                 let addr = self.builder.array_alloc(item_type, elements.len() as u32)?;
                 if elements.iter().any(|v| v.get_type() != item_type) {
@@ -31,7 +31,7 @@ impl<'a> FunctionTranslator<'a> {
                 for (idx, val) in elements.iter().enumerate() {
                     self.builder.store(*val, addr, (item_type.size() * idx) as u32)?;
                 }
-                self.builder.value_store().new_value(ValueData::array(addr, elements, item_type))
+                self.builder.value_store().new_value(ValueData::array(addr, elements, item_type)).into()
             }
 
             Expression::Type(expr) => {
@@ -44,13 +44,13 @@ impl<'a> FunctionTranslator<'a> {
                         params.into_iter().map(|type_ident| self.builder.scope_stack().resolve_type(&extract(type_ident)).ok_or(UndeclaredTypeError)).collect::<Result<Vec<TypeID>, _>>()?
                     ))).collect::<Result<EnumTypeData, Error>>()?;
                 self.builder.type_store().new_enum(typedata);
-                self.builder.value_store().new_value(ValueData::Empty)
+                self.builder.value_store().new_value(ValueData::Empty).into()
             }
 
             Expression::BinOp(op, lhs, rhs) => {
-                let lhs = self.translate_expr(*lhs)?;
-                let rhs = self.translate_expr(*rhs)?;
-                self.builder.apply_op(op, lhs, rhs)?
+                let lhs = self.translate_expr(*lhs)?.expect_value()?;
+                let rhs = self.translate_expr(*rhs)?.expect_value()?;
+                self.builder.apply_op(op, lhs, rhs)?.into()
             }
 
             Expression::Follow(lhs, rhs) => {
@@ -59,35 +59,35 @@ impl<'a> FunctionTranslator<'a> {
             }
 
             Expression::Assign(lhs, rhs) => {
-                let new_value = self.translate_expr(*rhs)?;
+                let new_value = self.translate_expr(*rhs)?.expect_value()?;
                 let name = match *lhs {
                     Expression::Identifier(name) => name,
                     _ => panic!("Non-identifier identifier"),
                 };
                 self.builder.set_var(&name, new_value)?;
-                new_value
+                new_value.into()
             }
 
             Expression::TypeIdentifier(_) => unimplemented!(),
 
             Expression::Identifier(name) => {
-                self.builder.get_var(&name).ok_or(UndeclaredVariableError)?
+                self.builder.get_var(&name).ok_or(UndeclaredVariableError)?.into()
             }
 
             Expression::Cast(lhs, ty) => {
-                let lhs = self.translate_expr(*lhs)?;
-                self.builder.cast_to(lhs, ty)?
+                let lhs = self.translate_expr(*lhs)?.expect_value()?;
+                self.builder.cast_to(lhs, ty)?.into()
             }
 
             Expression::Scope(expr) => {
                 self.builder.enter_scope(Scope::new());
-                let content = self.translate_expr(*expr)?;
+                let content = self.translate_expr(*expr)?.expect_value()?;
                 self.builder.exit_scope()?;
-                content
+                content.into()
             }
 
             Expression::IfElse(cond, then_expr, else_expr) => {
-                let condition_value = self.translate_expr(*cond)?;
+                let condition_value = self.translate_expr(*cond)?.expect_value()?;
 
                 let then_block = self.builder.create_block()?;
                 let else_block = self.builder.create_block()?;
@@ -96,7 +96,7 @@ impl<'a> FunctionTranslator<'a> {
                 let initial_block = self.builder.current_block()?;
 
                 self.builder.switch_to_block(&then_block);
-                let then_return = self.translate_expr(*then_expr)?;
+                let then_return = self.translate_expr(*then_expr)?.expect_value()?;
 
                 self.builder.switch_to_block(&initial_block);
                 let var_name = self.builder.declare_var("__cond", then_return.get_type(), true)?;
@@ -108,7 +108,7 @@ impl<'a> FunctionTranslator<'a> {
 
                 // Start writing 'else' block
                 self.builder.switch_to_block(&else_block);
-                let else_return = self.translate_expr(*else_expr)?;
+                let else_return = self.translate_expr(*else_expr)?.expect_value()?;
                 if then_return.get_type() != else_return.get_type() {
                     panic!("Using different type value in if-else")
                 }
@@ -118,7 +118,7 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.jump(&merge_block);
 
                 self.builder.switch_to_block(&merge_block);
-                self.builder.get_var(&var_name).unwrap()
+                self.builder.get_var(&var_name).unwrap().into()
             }
         })
     }

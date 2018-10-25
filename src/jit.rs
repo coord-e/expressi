@@ -65,7 +65,7 @@ impl JIT {
             builder
         };
 
-        let evaluated_value = trans.translate_expr(expr)?;
+        let evaluated_value = trans.translate_expr(expr)?.expect_value()?;
         let return_value = if evaluated_value.get_type() != Type::Number {
             trans.builder.cast_to(evaluated_value, Type::Number)?
         } else {
