@@ -39,11 +39,12 @@ impl<'a> FunctionTranslator<'a> {
                         Expression::TypeIdentifier(id) => id,
                         _ => unreachable!()
                     };
-                let typedata = expr.into_iter().map(|(ident, params)| (
+                let typedata = expr.into_iter().map(|(ident, params)| Ok((
                         extract(ident),
-                        params.into_iter().map(|type_ident| self.builder.scope_stack().resolve_type(extract(type_ident)).ok_or(UndeclaredTypeError)).collect::<Result<Vec<TypeID>, _>>()?
-                    )).collect::<Result<EnumTypeData, _>>()?;
-                self.builder.type_store().new_type(typedata)?
+                        params.into_iter().map(|type_ident| self.builder.scope_stack().resolve_type(&extract(type_ident)).ok_or(UndeclaredTypeError)).collect::<Result<Vec<TypeID>, _>>()?
+                    ))).collect::<Result<EnumTypeData, Error>>()?;
+                self.builder.type_store().new_enum(typedata);
+                self.builder.value_store().new_value(ValueData::Empty)
             }
 
             Expression::BinOp(op, lhs, rhs) => {
@@ -66,6 +67,8 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.set_var(&name, new_value)?;
                 new_value
             }
+
+            Expression::TypeIdentifier(_) => unimplemented!(),
 
             Expression::Identifier(name) => {
                 self.builder.get_var(&name).ok_or(UndeclaredVariableError)?

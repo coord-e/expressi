@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct TypeID(usize);
 
 pub type EnumTypeData = Vec<(String, Vec<TypeID>)>;
