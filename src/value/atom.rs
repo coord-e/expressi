@@ -1,17 +1,17 @@
 use error::{ValueExpectedError, TypeExpectedError};
-use value::Value;
+use value::value_store::ValueID;
 use value::type_store::TypeID;
 
 use failure::Error;
 
 #[derive(Debug)]
 pub enum Atom {
-    Value(Value),
+    Value(ValueID),
     Type(TypeID)
 }
 
 impl Atom {
-    pub fn expect_value(self) -> Result<Value, Error> {
+    pub fn expect_value(self) -> Result<ValueID, Error> {
         match self {
             Atom::Value(v) => Ok(v),
             _ => return Err(ValueExpectedError.into())
@@ -26,8 +26,8 @@ impl Atom {
     }
 }
 
-impl From<Value> for Atom {
-    fn from(v: Value) -> Self {
+impl From<ValueID> for Atom {
+    fn from(v: ValueID) -> Self {
         Atom::Value(v)
     }
 }
