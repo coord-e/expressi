@@ -25,3 +25,15 @@ impl Atom {
         }
     }
 }
+
+impl From<Value> for Atom {
+    fn from(v: Value) -> Self {
+        Atom::Value(v)
+    }
+}
+
+impl From<TypeID> for Atom {
+    fn from(v: TypeID) -> Self {
+        Atom::Type(v)
+    }
+}
