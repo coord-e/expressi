@@ -14,14 +14,14 @@ impl Atom {
     fn expect_value(self) -> Result<Value, Error> {
         match self {
             Atom::Value(v) => Ok(v),
-            _ => return ValueExpectedError
+            _ => return Err(ValueExpectedError.into())
         }
     }
 
     fn expect_type(self) -> Result<TypeID, Error> {
         match self {
             Atom::Type(v) => Ok(v),
-            _ => return TypeExpectedError
+            _ => return Err(TypeExpectedError.into())
         }
     }
 }
