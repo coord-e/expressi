@@ -9,6 +9,14 @@ pub struct UndeclaredVariableError;
 pub struct UndeclaredTypeError;
 
 #[derive(Fail, Debug)]
+#[fail(display = "Value is expected but found Type")]
+pub struct ValueExpectedError;
+
+#[derive(Fail, Debug)]
+#[fail(display = "Type is expected but found Value")]
+pub struct TypeExpectedError;
+
+#[derive(Fail, Debug)]
 #[fail(display = "LLVM Value is not available for this value")]
 pub struct LLVMValueNotAvailableError;
 
