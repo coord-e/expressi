@@ -1,7 +1,7 @@
 use expression::Expression;
 
 use builder::Builder;
-use error::{UndeclaredVariableError, TypeError};
+use error::{UndeclaredVariableError, UndeclaredTypeError, TypeError};
 use value::{Value, ValueData};
 use value::type_store::{EnumTypeData, TypeID};
 use scope::Scope;
