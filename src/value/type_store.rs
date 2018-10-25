@@ -3,7 +3,7 @@ use std::collections::HashMap;
 #[derive(Clone, Copy, Debug)]
 pub struct TypeID(usize);
 
-pub type EnumTypeData = Vec<String, Vec<TypeID>>;
+pub type EnumTypeData = Vec<(String, Vec<TypeID>)>;
 
 #[derive(Debug)]
 enum TypeData {
@@ -24,7 +24,7 @@ impl TypeStore {
 
     fn new_type(&mut self, data: TypeData) -> TypeID {
         let id = TypeID(self.types.len());
-        self.types.insert(id, TypeData);
+        self.types.insert(id, data);
         id
     }
 

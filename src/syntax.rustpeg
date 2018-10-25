@@ -69,7 +69,7 @@ type_ -> Expression
 type_identifier -> Expression
   = n:identifier { Expression::TypeIdentifier(n) }
 
-type_elem -> (Expression, Vec<Box<Expression>>)
-  = _ id:type_identifier _ "(" params:(type_identifier ** ",") _ ")" _ { (id, params.into_iter().map(Box::new).collect()) }
+type_elem -> (Expression, Vec<Expression>)
+  = _ id:type_identifier _ "(" params:(type_identifier ** ",") _ ")" _ { (id, params) }
 
 _ = [ \t\n]*

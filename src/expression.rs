@@ -60,7 +60,7 @@ pub enum Expression {
     IfElse(Box<Expression>, Box<Expression>, Box<Expression>),
     Cast(Box<Expression>, Type),
     Scope(Box<Expression>),
-    Type(Vec<(Expression, Vec<Box<Expression>>)>),
+    Type(Vec<(Expression, Vec<Expression>)>),
 }
 
 #[cfg(test)]
