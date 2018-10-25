@@ -6,7 +6,7 @@ pub type EnumTypeData = Vec<String, Vec<TypeID>>;
 #[derive(Debug)]
 enum TypeData {
     Number,
-    Enum(EnumValueData)
+    Enum(EnumTypeData)
 }
 
 pub struct TypeStore {

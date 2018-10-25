@@ -3,7 +3,7 @@ use expression::Expression;
 use builder::Builder;
 use error::{UndeclaredVariableError, TypeError};
 use value::{Value, ValueData};
-use value::type_store::{EnumValueData, TypeID};
+use value::type_store::{EnumTypeData, TypeID};
 use scope::Scope;
 
 use failure::Error;
@@ -42,7 +42,7 @@ impl<'a> FunctionTranslator<'a> {
                 let typedata = expr.into_iter().map(|(ident, params)| (
                         extract(ident),
                         params.into_iter().map(|type_ident| self.builder.scope_stack().resolve_type(extract(type_ident)).ok_or(UndeclaredTypeError)).collect::<Result<Vec<TypeID>, _>>()?
-                    )).collect::<Result<EnumValueData, _>>()?;
+                    )).collect::<Result<EnumTypeData, _>>()?;
                 self.builder.type_store().new_type(typedata)?
             }
 
