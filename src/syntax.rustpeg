@@ -44,6 +44,7 @@ atom -> Expression
   / boolean
   / array
   / identifier
+  / type_
   / "{" v:expression "}" { Expression::Scope(Box::new(v)) }
   / "(" v:expression ")" { v }
 
@@ -58,5 +59,11 @@ boolean -> Expression
 
 array -> Expression
   = "[" e:(expression ** ',') "]" { Expression::Array(e.into_iter().map(|v| Box::new(v)).collect()) }
+
+type_ -> Expression
+  = "<" e:(type_elem  ++ "|") ">" { Expression::Type(e) }
+
+type_elem -> (Expression, Vec<Box<Expression>>)
+  = _ id:identifier _ "(" params:(expression ** ",") _ ")" _ { (id, params.into_iter().map(Box::new).collect()) }
 
 _ = [ \t\n]*
