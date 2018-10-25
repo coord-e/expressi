@@ -15,7 +15,7 @@ pub struct TypeStore {
 }
 
 impl TypeStore {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let mut store = Self { types: HashMap::new() };
         store.new_type(TypeData::Number);
         store
@@ -27,7 +27,7 @@ impl TypeStore {
         id
     }
 
-    fn new_enum(&mut self, data: EnumTypeData) -> TypeID {
+    pub fn new_enum(&mut self, data: EnumTypeData) -> TypeID {
         self.new_type(TypeData::Enum(data))
     }
 }
