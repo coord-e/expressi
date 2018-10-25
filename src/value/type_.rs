@@ -90,12 +90,12 @@ pub struct TypeStore {
 
 impl TypeStore {
     pub fn new() -> Self {
-        let mut store = Self { types: HashMap::new() };
-        store.new_type(TypeData::Number);
-        store
+        Self {
+            types: HashMap::new()
+        }
     }
 
-    fn new_type(&mut self, data: TypeData) -> TypeID {
+    pub fn new_type(&mut self, data: TypeData) -> TypeID {
         let id = TypeID(self.types.len());
         self.types.insert(id, data);
         id

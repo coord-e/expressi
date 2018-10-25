@@ -13,10 +13,16 @@ pub struct ValueManager {
 
 impl ValueManager {
     pub fn new() -> Self {
-        Self {
+        let mut manager = Self {
             type_store: TypeStore::new(),
-            value_store: ValueStore::new()
-        }
+            value_store: ValueStore::new(),
+            primitive_types: HashMap::new()
+        };
+
+        let number_t_id = manager.type_store.new_type(TypeData::Number);
+        manager.primitive_types.insert(PrimitiveKind::Number, number_t_id);
+
+        manager
     }
 
     pub fn new_user_type(&mut self, data: EnumTypeData) -> TypeID {
