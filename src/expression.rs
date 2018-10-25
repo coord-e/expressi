@@ -52,6 +52,7 @@ pub enum Expression {
     Boolean(bool),
     Array(Vec<Box<Expression>>),
     Identifier(String),
+    TypeIdentifier(String),
     Empty,
     Assign(Box<Expression>, Box<Expression>),
     Follow(Box<Expression>, Box<Expression>),
