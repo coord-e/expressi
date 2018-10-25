@@ -1,8 +1,7 @@
 #[derive(Clone, Copy, Debug)]
 pub struct TypeID(usize);
 
-#[derive(Debug)]
-pub type EnumTypeData = Vec<String, Vec<TypeID>>
+pub type EnumTypeData = Vec<String, Vec<TypeID>>;
 
 #[derive(Debug)]
 enum TypeData {
