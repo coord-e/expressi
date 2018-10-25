@@ -7,24 +7,24 @@ use inkwell::values::{BasicValueEnum, PointerValue};
 use inkwell::types::BasicTypeEnum;
 
 #[derive(Debug)]
-enum ValueDataInternal {
+enum ValueData {
     Primitive { internal_value: BasicValueEnum },
     Array { addr: PointerValue, elements: Vec<ValueID> },
     Empty
 }
 
 #[derive(Debug)]
-pub struct ValueData(TypeID, ValueDataInternal)
+pub struct TypedValueData(TypeID, ValueData)
 
-impl ValueData {
+impl TypedValueData {
     pub fn get_type(&self) -> TypeID {
-        let ValueData(type_id, ..) = self;
+        let TypedValueData(type_id, ..) = self;
         return type_id;
     }
 
     pub fn primitive<V>(v: V, t: TypeID) -> Self
         where BasicValueEnum: From<V> {
-        ValueData(t, ValueDataInternal::Primitive {
+        TypedValueData(t, ValueData::Primitive {
             internal_value: BasicValueEnum::from(v),
         })
     }
@@ -58,7 +58,7 @@ pub struct ValueID(usize);
 /// Stores ValueData
 #[derive(Debug)]
 pub struct ValueStore {
-    data: HashMap<ValueID, ValueData>
+    data: HashMap<ValueID, TypedValueData>
 }
 
 impl ValueStore {
@@ -68,13 +68,13 @@ impl ValueStore {
         }
     }
 
-    pub fn new_value(&mut self, data: ValueData) -> ValueID {
+    pub fn new_value(&mut self, t: TypeID, data: ValueData) -> ValueID {
         let id = ValueID(self.data.len());
-        self.data.insert(id, data);
+        self.data.insert(id, TypedValueData(t, data));
         id
     }
 
-    pub fn get(&self, id: ValueID) -> Option<&ValueData> {
+    pub fn get(&self, id: ValueID) -> Option<&TypedValueData> {
         self.data.get(id)
     }
 
