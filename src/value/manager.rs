@@ -1,9 +1,14 @@
 use value::type_::TypeStore;
 use value::value::ValueStore;
 
+pub enum PrimitiveKind {
+    Number
+}
+
 pub struct ValueManager {
     type_store: TypeStore,
-    value_store: ValueStore
+    value_store: ValueStore,
+    primitive_types: HashMap<PrimitiveKind, TypeID>
 }
 
 impl ValueManager {
@@ -22,4 +27,16 @@ impl ValueManager {
         self.value_store.new_value(t, data)
     }
 
+    fn primitive_type(t: BasicTypeEnum) -> TypeID {
+        match t {
+            IntType(_) => self.primitive_types.get(PrimitiveKind::Number).unwrap(),
+            _ => unimplemented!()
+        }
+    }
+
+    pub fn new_value_from_llvm<V, T>(v: V, t: T) -> Result<Self, Error>
+        where BasicValueEnum: From<V>, BasicTypeEnum: From<T> {
+        let t = self.primitive_type(BasicTypeEnum::from(t))?;
+        self.new_value(t, ValueData::Primitive { internal_value: BasicValueEnum::from(v) })
+    }
 }
