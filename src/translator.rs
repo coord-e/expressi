@@ -34,6 +34,18 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.value_store().new_value(ValueData::array(addr, elements, item_type))
             }
 
+            Expression::Type(expr) => {
+                let extract = |ident| match ident {
+                        Expression::TypeIdentifier(id) => id,
+                        _ => unreachable!()
+                    };
+                let typedata = expr.into_iter().map(|(ident, params)| (
+                        extract(ident),
+                        params.into_iter().map(|type_ident| self.builder.scope_stack().resolve_type(extract(type_ident)).ok_or(UndeclaredTypeError)).collect::<Result<Vec<TypeID>, _>>()?
+                    )).collect::<Result<EnumValueData, _>>()?;
+                self.builder.type_store().new_type(typedata)?
+            }
+
             Expression::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?;
                 let rhs = self.translate_expr(*rhs)?;
