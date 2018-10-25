@@ -5,6 +5,18 @@ use value::Type;
 pub struct UndeclaredVariableError;
 
 #[derive(Fail, Debug)]
+#[fail(display = "Use of undeclared type identifier")]
+pub struct UndeclaredTypeError;
+
+#[derive(Fail, Debug)]
+#[fail(display = "Value is expected but found Type")]
+pub struct ValueExpectedError;
+
+#[derive(Fail, Debug)]
+#[fail(display = "Type is expected but found Value")]
+pub struct TypeExpectedError;
+
+#[derive(Fail, Debug)]
 #[fail(display = "LLVM Value is not available for this value")]
 pub struct LLVMValueNotAvailableError;
 

@@ -1,7 +1,6 @@
 use error::{InvalidCastError, TypeError, ReleasedValueError, InvalidContextBranchError};
 use expression::Operator;
-use value::{Value, ValueStore, ValueData};
-use value::Type;
+use value::{Value, ValueStore, ValueData, Type, TypeStore, TypeID};
 use scope::{Scope, ScopeStack};
 
 use failure::Error;
@@ -32,6 +31,7 @@ impl Block {
 
 pub struct Builder<'a> {
     value_store: ValueStore,
+    type_store: TypeStore,
     inst_builder: &'a mut builder::Builder,
     module: Rc<module::Module>,
     scope_stack: ScopeStack
@@ -43,6 +43,7 @@ impl<'a> Builder<'a> {
             inst_builder,
             module,
             value_store: ValueStore::new(),
+            type_store: TypeStore::new(),
             scope_stack: ScopeStack::new()
         }
     }
@@ -57,6 +58,14 @@ impl<'a> Builder<'a> {
 
     pub fn value_store<'short>(&'short mut self) -> &'short mut ValueStore {
         &mut self.value_store
+    }
+
+    pub fn type_store<'short>(&'short mut self) -> &'short mut TypeStore {
+        &mut self.type_store
+    }
+
+    pub fn scope_stack<'short>(&'short mut self) -> &'short mut ScopeStack {
+        &mut self.scope_stack
     }
 
     pub fn number_constant(&mut self, v: i64) -> Result<Value, Error> {

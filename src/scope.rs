@@ -1,4 +1,5 @@
 use value::Value;
+use value::TypeID;
 use error::UnexpectedScopePopError;
 
 use std::collections::HashMap;
@@ -12,7 +13,8 @@ type VariableId = usize;
 pub struct Scope {
     variables: HashMap<String, VariableId>,
     variable_values: HashMap<VariableId, Value>,
-    variable_pointers: HashMap<VariableId, PointerValue>
+    variable_pointers: HashMap<VariableId, PointerValue>,
+    types: HashMap<String, TypeID>,
 }
 
 impl Default for Scope {
@@ -26,7 +28,8 @@ impl Scope {
         Scope {
             variables: HashMap::new(),
             variable_values: HashMap::new(),
-            variable_pointers: HashMap::new()
+            variable_pointers: HashMap::new(),
+            types: HashMap::new()
         }
     }
 
@@ -55,6 +58,14 @@ impl Scope {
 
     pub fn values(&self) -> impl Iterator<Item=(&String, &Value)> {
         self.variables.iter().map(move |(k, v)| (k, self.variable_values.get(&v).unwrap()))
+    }
+
+    pub fn types(&self) -> impl Iterator<Item=(&String, &TypeID)> {
+        self.types.iter()
+    }
+
+    pub fn resolve_type(&self, id: &str) -> Option<TypeID> {
+        self.types.get(id).cloned()
     }
 }
 
@@ -88,6 +99,10 @@ impl ScopeStack {
         self.scopes.iter().flat_map(|it| it.values())
     }
 
+    pub fn types(&self) -> impl Iterator<Item=(&String, &TypeID)> {
+        self.scopes.iter().flat_map(|it| it.types())
+    }
+
     pub fn add(&mut self, s: &str, val: Value, var: PointerValue) {
         self.scopes.last_mut().unwrap().add(s, val, var)
     }
@@ -108,5 +123,9 @@ impl ScopeStack {
     pub fn unique_name(&self, s: &str) -> String {
         let num_vars = self.variables().count();
         format!("{}.{}", s, num_vars)
+    }
+
+    pub fn resolve_type(&self, id: &str) -> Option<TypeID> {
+        self.types().find(|(k, _)| k == &id).map(|(_, v)| v).cloned()
     }
 }

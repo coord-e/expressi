@@ -52,6 +52,7 @@ pub enum Expression {
     Boolean(bool),
     Array(Vec<Box<Expression>>),
     Identifier(String),
+    TypeIdentifier(String),
     Empty,
     Assign(Box<Expression>, Box<Expression>),
     Follow(Box<Expression>, Box<Expression>),
@@ -59,6 +60,7 @@ pub enum Expression {
     IfElse(Box<Expression>, Box<Expression>, Box<Expression>),
     Cast(Box<Expression>, Type),
     Scope(Box<Expression>),
+    Type(Vec<(Expression, Vec<Expression>)>),
 }
 
 #[cfg(test)]
