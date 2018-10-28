@@ -210,13 +210,13 @@ impl<'a> Builder<'a> {
         Ok(val)
     }
 
-    pub fn get_var(&mut self, name: &str) -> Option<ValueID> {
-        self.scope_stack.get_var(name).map(|var| {
+    pub fn get_var(&mut self, name: &str) -> Result<Option<ValueID>, Error> {
+        self.scope_stack.get_var(name).map_or(Ok(None), |var| {
             let value = self.scope_stack.get(name).unwrap();
             let t = self.manager.type_of(value)?;
             let llvm_type = self.manager.llvm_type(t)?;
             let loaded = self.inst_builder.build_load(var, "load_var");
-            self.manager.new_value_from_llvm(loaded, llvm_type)
+            self.manager.new_value_from_llvm(loaded, llvm_type).map(Some)
         })
     }
 
