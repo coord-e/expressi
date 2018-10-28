@@ -60,7 +60,7 @@ impl<'a> FunctionTranslator<'a> {
             Expression::TypeIdentifier(id) => self.builder.scope_stack().resolve_type(&id).ok_or(UndeclaredTypeError)?.into(),
 
             Expression::Identifier(name) => {
-                self.builder.get_var(&name).and_then(|v| v.ok_or(UndeclaredVariableError))?.into()
+                self.builder.get_var(&name).and_then(|v| v.ok_or(UndeclaredVariableError.into()))?.into()
             }
 
             Expression::Cast(lhs, ty) => {
