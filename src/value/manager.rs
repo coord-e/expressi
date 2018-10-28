@@ -61,4 +61,8 @@ impl ValueManager {
         let t = self.primitive_type_llvm(BasicTypeEnum::from(t))?;
         self.new_value(t, ValueData::Primitive { internal_value: BasicValueEnum::from(v) })
     }
+
+    pub fn llvm_value(&self, v: ValueID) -> Result<BasicValueEnum, Error> {
+        self.value_store.get(v).ok_or(InvalidValueIDError.into()).and_then(|v| v.cl_value())
+    }
 }

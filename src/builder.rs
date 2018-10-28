@@ -47,10 +47,6 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn to_cl(&self, v: ValueID) -> Result<values::BasicValueEnum, Error> {
-        self.value_store.get(v).ok_or(ReleasedValueError.into()).and_then(|v| v.cl_value())
-    }
-
     pub fn inst_builder<'short>(&'short mut self) -> &'short mut builder::Builder {
         self.inst_builder
     }
