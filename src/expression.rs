@@ -1,4 +1,4 @@
-use value::Type;
+use value::TypeID;
 
 use std::str::FromStr;
 
@@ -58,7 +58,7 @@ pub enum Expression {
     Follow(Box<Expression>, Box<Expression>),
     BinOp(Operator, Box<Expression>, Box<Expression>),
     IfElse(Box<Expression>, Box<Expression>, Box<Expression>),
-    Cast(Box<Expression>, Type),
+    Cast(Box<Expression>, TypeID),
     Scope(Box<Expression>),
     Type(Vec<(Expression, Vec<Expression>)>),
 }

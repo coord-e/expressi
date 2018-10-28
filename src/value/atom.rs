@@ -1,6 +1,5 @@
 use error::{ValueExpectedError, TypeExpectedError};
-use value::value_store::ValueID;
-use value::type_store::TypeID;
+use value::{ValueID, TypeID};
 
 use failure::Error;
 

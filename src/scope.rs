@@ -1,4 +1,4 @@
-use value::{Value, ValueManager, TypeID};
+use value::{ValueID, ValueManager, TypeID};
 use error::UnexpectedScopePopError;
 
 use std::collections::HashMap;

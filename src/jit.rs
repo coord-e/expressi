@@ -3,7 +3,7 @@ use error::{FunctionVerificationError, ModuleVerificationError, ParseError, Fail
 use expression::Expression;
 use parser;
 use translator::FunctionTranslator;
-use value::Type;
+use value::TypeID;
 
 use std::rc::Rc;
 

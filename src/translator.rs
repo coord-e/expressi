@@ -2,8 +2,8 @@ use expression::Expression;
 
 use builder::Builder;
 use error::{UndeclaredVariableError, UndeclaredTypeError, TypeError};
-use value::{Value, ValueData, Atom};
-use value::type_store::{EnumTypeData, TypeID};
+use value::{ValueID, ValueData, Atom};
+use value::type_::{EnumTypeData, TypeID};
 use scope::Scope;
 
 use failure::Error;

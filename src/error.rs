@@ -1,4 +1,4 @@
-use value::Type;
+use value::TypeID;
 
 #[derive(Fail, Debug)]
 #[fail(display = "Use of undeclared variable")]
