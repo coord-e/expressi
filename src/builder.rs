@@ -293,6 +293,11 @@ impl<'a> Builder<'a> {
         })
     }
 
+    pub fn enter_new_scope(&mut self) {
+        let scope = self.scope_stack.new_scope();
+        self.enter_scope(scope);
+    }
+
     pub fn enter_scope(&mut self, sc: Scope) {
         self.scope_stack.push(sc);
     }

@@ -14,22 +14,16 @@ pub struct Scope {
     variables: HashMap<String, VariableId>,
     variable_values: HashMap<VariableId, Value>,
     variable_pointers: HashMap<VariableId, PointerValue>,
-    types: HashMap<String, TypeID>,
-}
-
-impl Default for Scope {
-    fn default() -> Scope {
-        Scope::new()
-    }
+    manager: Rc<ValueManager>
 }
 
 impl Scope {
-    pub fn new() -> Self {
+    pub fn new(manager: Rc<ValueManager>) -> Self {
         Scope {
             variables: HashMap::new(),
             variable_values: HashMap::new(),
             variable_pointers: HashMap::new(),
-            types: HashMap::new()
+            manager
         }
     }
 
@@ -76,10 +70,15 @@ pub struct ScopeStack {
 
 impl ScopeStack {
     pub fn new() -> Self {
+        let manager = Rc::new(ValueManager::new());
         ScopeStack {
-            scopes: vec![Scope::default()],
-            manager: Rc::new(ValueManager::new())
+            scopes: vec![Scope::new(manager.clone())],
+            manager
         }
+    }
+
+    pub fn new_scope(&self) -> Scope {
+        Scope::new(self.manager.clone())
     }
 
     pub fn push(&mut self, sc: Scope) {
