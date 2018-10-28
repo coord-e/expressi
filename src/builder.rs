@@ -1,4 +1,4 @@
-use error::{InvalidCastError, TypeError, ReleasedValueError, InvalidContextBranchError};
+use error::{InvalidCastError, TypeError, InvalidContextBranchError};
 use expression::Operator;
 use value::{ValueID, ValueStore, ValueData, TypeStore, TypeID, ValueManager};
 use value::type_::EnumTypeData;

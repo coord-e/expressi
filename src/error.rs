@@ -45,7 +45,7 @@ pub struct InvalidContextBranchError;
 pub struct FailedToCreateJITError;
 
 #[derive(Fail, Debug)]
-#[fail(display = "Invalid Cast from {} to {}", from, to)]
+#[fail(display = "Invalid Cast from {:?} to {:?}", from, to)]
 pub struct InvalidCastError {
     pub from: TypeID,
     pub to: TypeID,
