@@ -22,16 +22,7 @@ impl<'a> FunctionTranslator<'a> {
             Expression::Empty => self.builder.value_store().new_value(ValueData::Empty).into(),
 
             Expression::Array(expr) => {
-                let elements = expr.into_iter().map(|expr| self.translate_expr(*expr).and_then(|e| e.expect_value())).collect::<Result<Vec<_>, _>>()?;
-                let item_type = elements.last().unwrap().get_type();
-                let addr = self.builder.array_alloc(item_type, elements.len() as u32)?;
-                if elements.iter().any(|v| v.get_type() != item_type) {
-                    return Err(TypeError.into());
-                }
-                for (idx, val) in elements.iter().enumerate() {
-                    self.builder.store(*val, addr, (item_type.size() * idx) as u32)?;
-                }
-                self.builder.value_store().new_value(ValueData::array(addr, elements, item_type)).into()
+                unimplemented!()
             }
 
             Expression::Type(expr) => {

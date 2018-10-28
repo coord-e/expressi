@@ -183,29 +183,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn index(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        match lhs.get_type() {
-            Type::Array(..) => {},
-            _ => return Err(TypeError.into())
-        }
-        if rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
-
-        let byte = self.number_constant(8)?;
-        let offset = self.mul(rhs, byte)?;
-        let offset_cl = self.manager.llvm_value(offset)?.into_int_value();
-        let data = {
-            let lhs_data = self.value_store.get(lhs).ok_or(ReleasedValueError)?;
-            if let ValueData::Array { elements, addr, item_type, ..} = lhs_data {
-                // TODO: Safety check
-                let ptr = unsafe { self.inst_builder.build_in_bounds_gep(*addr, &[offset_cl], "idx_offset") };
-                let loaded = self.inst_builder.build_load(ptr, "idx_load");
-                ValueData::primitive(loaded, *item_type)
-            } else {
-                return Err(TypeError.into());
-            }
-        };
-        Ok(self.value_store.new_value(data))
+        unimplemented!()
     }
 
     pub fn declare_var(&mut self, name: &str, t: Type, unique: bool) -> Result<String, Error> {
