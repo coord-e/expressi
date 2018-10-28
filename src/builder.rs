@@ -34,17 +34,20 @@ pub struct Builder<'a> {
     type_store: TypeStore,
     inst_builder: &'a mut builder::Builder,
     module: Rc<module::Module>,
+    manager: Rc<ValueManager>,
     scope_stack: ScopeStack
 }
 
 impl<'a> Builder<'a> {
     pub fn new(inst_builder: &'a mut builder::Builder, module: Rc<module::Module>) -> Self {
+        let manager = Rc::new(ValueManager::new());
         Builder {
             inst_builder,
             module,
             value_store: ValueStore::new(),
             type_store: TypeStore::new(),
-            scope_stack: ScopeStack::new()
+            manager,
+            scope_stack: ScopeStack::new(manager.clone())
         }
     }
 

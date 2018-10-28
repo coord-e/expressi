@@ -69,8 +69,7 @@ pub struct ScopeStack {
 }
 
 impl ScopeStack {
-    pub fn new() -> Self {
-        let manager = Rc::new(ValueManager::new());
+    pub fn new(manager: Rc<ValueManager>) -> Self {
         ScopeStack {
             scopes: vec![Scope::new(manager.clone())],
             manager
