@@ -66,17 +66,7 @@ impl JIT {
         };
 
         let evaluated_value = trans.translate_expr(expr)?.expect_value()?;
-        let return_value = if evaluated_value.get_type() != Type::Number {
-            trans.builder.cast_to(evaluated_value, Type::Number)?
-        } else {
-            evaluated_value
-        };
-        // Emit the return instruction.
-        let cl = trans.builder.to_cl(return_value)?.into_int_value();
-        trans
-            .builder
-            .inst_builder()
-            .build_return(Some(&cl));
+        trans.builder.ret_int(evaluated_value)?;
 
         if !function.verify(true) {
             eprintln!(""); // function.verify print results to stderr directory but it doesn't contain \n on the end

@@ -308,4 +308,19 @@ impl<'a> Builder<'a> {
             .ok_or(InvalidContextBranchError.into())
             .map(|ebb| Block { ebb })
     }
+
+    pub fn ret_int(&self, v: ValueID) -> Result<(), Error> {
+        // TODO: Generic return
+        let number_type = self.manager.primitive_type(PrimitiveKind::Number);
+        let return_value = if self.manager.type_of(evaluated_value) != number_type {
+            trans.builder.cast_to(evaluated_value, number_type)?
+        } else {
+            evaluated_value
+        };
+        // Emit the return instruction.
+        let cl = self.manager.llvm_value(return_value)?.into_int_value();
+        self.inst_builder
+            .build_return(Some(&cl));
+    }
+
 }
