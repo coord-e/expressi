@@ -87,19 +87,19 @@ impl FromStr for TypeData {
 }
 
 pub struct TypeStore {
-    types: HashMap<TypeID, TypeData>
+    data: HashMap<TypeID, TypeData>
 }
 
 impl TypeStore {
     pub fn new() -> Self {
         Self {
-            types: HashMap::new()
+            data: HashMap::new()
         }
     }
 
     pub fn new_type(&mut self, data: TypeData) -> TypeID {
-        let id = TypeID(self.types.len());
-        self.types.insert(id, data);
+        let id = TypeID(self.data.len());
+        self.data.insert(id, data);
         id
     }
 
@@ -108,6 +108,6 @@ impl TypeStore {
     }
 
     pub fn get(&self, id: TypeID) -> Option<&TypeData> {
-        self.types.get(id)
+        self.data.get(id)
     }
 }
