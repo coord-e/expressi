@@ -22,8 +22,8 @@ pub enum TypeData {
     Enum(EnumTypeData)
 }
 
-unsafe impl Send for Type {}
-unsafe impl Sync for Type {}
+unsafe impl Send for TypeID {}
+unsafe impl Sync for TypeID {}
 
 impl TypeData {
     pub fn from_cl(t: BasicTypeEnum) -> Result<Self, LLVMTypeConversionError> {
