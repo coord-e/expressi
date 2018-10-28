@@ -186,17 +186,20 @@ impl<'a> Builder<'a> {
         unimplemented!()
     }
 
-    pub fn declare_var(&mut self, name: &str, t: Type, unique: bool) -> Result<String, Error> {
+    pub fn declare_var(&mut self, name: &str, t: TypeID, unique: bool) -> Result<String, Error> {
         let real_name = if unique { self.scope_stack.unique_name(name) } else { name.to_string() };
-        let variable = self.inst_builder.build_alloca(t.cl_type()?, &real_name);
-        let empty = self.value_store.new_value(ValueData::Empty);
+        let llvm_type = self.manager.llvm_type(t)?;
+        let variable = self.inst_builder.build_alloca(llvm_type, &real_name);
+        let empty = self.manager.empty_value();
         self.scope_stack.add(&real_name, empty, variable); // TODO: TypeValue
         Ok(real_name)
     }
 
     pub fn set_var(&mut self, name: &str, val: ValueID) -> Result<ValueID, Error> {
         let variable = self.scope_stack.get_var(name).ok_or(()).or_else(|_| -> Result<values::PointerValue, Error> {
-            let variable = self.inst_builder.build_alloca(val.get_type().cl_type()?, name);
+            let t = self.manager.type_of(val)?;
+            let llvm_type = self.manager.llvm_type(t)?;
+            let variable = self.inst_builder.build_alloca(llvm_type, name);
             self.scope_stack.add(name, val, variable);
             Ok(variable)
         })?;
@@ -210,8 +213,10 @@ impl<'a> Builder<'a> {
     pub fn get_var(&mut self, name: &str) -> Option<ValueID> {
         self.scope_stack.get_var(name).map(|var| {
             let value = self.scope_stack.get(name).unwrap();
-            let data = ValueData::primitive(self.inst_builder.build_load(var, "load_var"), value.get_type());
-            self.value_store.new_value(data)
+            let t = self.manager.type_of(value)?;
+            let llvm_type = self.manager.llvm_type(t)?;
+            let loaded = self.inst_builder.build_load(var, "load_var");
+            self.manager.new_value_from_llvm(loaded, llvm_type)
         })
     }
 
@@ -235,7 +240,7 @@ impl<'a> Builder<'a> {
             (bool_type, number_type) => {
                 let cl = self.manager.llvm_value(v)?;
                 let to_llvm_type = self.manager.llvm_type(to_type)?;
-                self.manager.new_value_from_llvm(self.inst_builder.build_int_cast(cl.into_int_value(), to_llvm_type.into_int_type(), "b2i"), t)
+                self.manager.new_value_from_llvm(self.inst_builder.build_int_cast(cl.into_int_value(), to_llvm_type.into_int_type(), "b2i"), to_llvm_type)
             },
             _ => {
                 return Err(InvalidCastError {
@@ -312,10 +317,10 @@ impl<'a> Builder<'a> {
     pub fn ret_int(&self, v: ValueID) -> Result<(), Error> {
         // TODO: Generic return
         let number_type = self.manager.primitive_type(PrimitiveKind::Number);
-        let return_value = if self.manager.type_of(evaluated_value) != number_type {
-            trans.builder.cast_to(evaluated_value, number_type)?
+        let return_value = if self.manager.type_of(v) != number_type {
+            self.cast_to(v, number_type)?
         } else {
-            evaluated_value
+            v
         };
         // Emit the return instruction.
         let cl = self.manager.llvm_value(return_value)?.into_int_value();
