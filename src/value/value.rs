@@ -33,7 +33,7 @@ impl TypedValueData {
 }
 
 /// The lightweight and copyable reference to ValueData
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct ValueID(usize);
 
 /// Stores ValueData
