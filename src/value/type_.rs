@@ -43,7 +43,7 @@ impl TypeData {
         Ok(match self {
             TypeData::Number => IntType::i64_type(),
             TypeData::Boolean => IntType::bool_type(),
-            _ => return Err(InternalTypeConversionError { from: *self }.into()),
+            _ => return Err(InternalTypeConversionError { type_description: format!("{:?}", self) }.into()),
         }.into())
     }
 

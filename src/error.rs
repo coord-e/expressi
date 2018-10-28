@@ -72,10 +72,11 @@ pub struct LLVMTypeConversionError {
 #[derive(Fail, Debug)]
 #[fail(
     display = "Attempt to convert incompatible llvm type {} to expressi's type representation",
-    from
+    type_description
 )]
 pub struct InternalTypeConversionError {
-    pub from: TypeID,
+    // TODO: Use better representation than string
+    pub type_description: String,
 }
 
 #[derive(Fail, Debug)]
