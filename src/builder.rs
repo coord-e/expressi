@@ -57,6 +57,10 @@ impl<'a> Builder<'a> {
         &mut self.scope_stack
     }
 
+    pub fn type_of(&self, v: ValueID) -> Result<TypeID, Error> {
+        self.manager.type_of(v)
+    }
+
     pub fn number_constant(&mut self, v: i64) -> Result<ValueID, Error> {
         let t = types::IntType::i64_type();
         self.manager.new_value_from_llvm(values::BasicValueEnum::IntValue(t.const_int(v.abs() as u64, v < 0)), t)

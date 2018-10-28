@@ -88,7 +88,8 @@ impl<'a> FunctionTranslator<'a> {
                 let then_return = self.translate_expr(*then_expr)?.expect_value()?;
 
                 self.builder.switch_to_block(&initial_block);
-                let var_name = self.builder.declare_var("__cond", then_return.get_type(), true)?;
+                let then_type = self.builder.type_of(then_return)?;
+                let var_name = self.builder.declare_var("__cond", then_type, true)?;
                 self.builder.brz(condition_value, &then_block, &else_block)?;
 
                 self.builder.switch_to_block(&then_block);
@@ -98,7 +99,8 @@ impl<'a> FunctionTranslator<'a> {
                 // Start writing 'else' block
                 self.builder.switch_to_block(&else_block);
                 let else_return = self.translate_expr(*else_expr)?.expect_value()?;
-                if then_return.get_type() != else_return.get_type() {
+                let else_type = self.builder.type_of(else_return)?;
+                if then_type != else_type {
                     panic!("Using different type value in if-else")
                 }
                 self.builder.set_var(&var_name, else_return)?;
