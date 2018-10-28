@@ -61,7 +61,7 @@ impl Scope {
     }
 
     pub fn resolve_type(&self, id: &str) -> Option<TypeID> {
-        self.types.get(id)
+        self.types.get(id).cloned()
     }
 }
 
