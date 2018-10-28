@@ -104,68 +104,62 @@ impl<'a> Builder<'a> {
 
     pub fn sub(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         self.check_numeric_args(lhs, rhs)?;
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
+        let lhs_cl = self.manager.llvm_value(lhs)?;
+        let rhs_cl = self.manager.llvm_value(rhs)?;
         let res = self
             .inst_builder
             .build_int_sub(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "sub");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+        self.manager.new_value_from_llvm(res, types::IntType::i64_type())
     }
 
     pub fn mul(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         self.check_numeric_args(lhs, rhs)?;
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
+        let lhs_cl = self.manager.llvm_value(lhs)?;
+        let rhs_cl = self.manager.llvm_value(rhs)?;
         let res = self
             .inst_builder
             .build_int_mul(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "mul");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+        self.manager.new_value_from_llvm(res, types::IntType::i64_type())
     }
 
     pub fn div(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         self.check_numeric_args(lhs, rhs)?;
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
+        let lhs_cl = self.manager.llvm_value(lhs)?;
+        let rhs_cl = self.manager.llvm_value(rhs)?;
         let res = self
             .inst_builder
             .build_int_unsigned_div(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "div");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+        self.manager.new_value_from_llvm(res, types::IntType::i64_type())
     }
 
     pub fn bit_and(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         self.check_numeric_args(lhs, rhs)?;
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
+        let lhs_cl = self.manager.llvm_value(lhs)?;
+        let rhs_cl = self.manager.llvm_value(rhs)?;
         let res = self
             .inst_builder
             .build_and(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "and");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+        self.manager.new_value_from_llvm(res, types::IntType::i64_type())
     }
 
     pub fn bit_or(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         self.check_numeric_args(lhs, rhs)?;
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
+        let lhs_cl = self.manager.llvm_value(lhs)?;
+        let rhs_cl = self.manager.llvm_value(rhs)?;
         let res = self
             .inst_builder
             .build_or(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "or");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+        self.manager.new_value_from_llvm(res, types::IntType::i64_type())
     }
 
     pub fn bit_xor(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         self.check_numeric_args(lhs, rhs)?;
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
+        let lhs_cl = self.manager.llvm_value(lhs)?;
+        let rhs_cl = self.manager.llvm_value(rhs)?;
         let res = self
             .inst_builder
             .build_xor(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "xor");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+        self.manager.new_value_from_llvm(res, types::IntType::i64_type())
     }
 
     pub fn cmp(&mut self, cmp_type: CondCode, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
@@ -179,13 +173,12 @@ impl<'a> Builder<'a> {
             CondCode::LessThanOrEqual    => IntPredicate::SLE,
         };
 
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
+        let lhs_cl = self.manager.llvm_value(lhs)?;
+        let rhs_cl = self.manager.llvm_value(rhs)?;
         let res = self
             .inst_builder
             .build_int_compare(cc, lhs_cl.into_int_value(), rhs_cl.into_int_value(), "cmp");
-        let data = ValueData::from_cl(res, types::IntType::bool_type())?;
-        Ok(self.value_store.new_value(data))
+        self.manager.new_value_from_llvm(res, types::IntType::bool_type())
     }
 
     pub fn index(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
@@ -199,7 +192,7 @@ impl<'a> Builder<'a> {
 
         let byte = self.number_constant(8)?;
         let offset = self.mul(rhs, byte)?;
-        let offset_cl = self.to_cl(offset)?.into_int_value();
+        let offset_cl = self.manager.llvm_value(offset)?.into_int_value();
         let data = {
             let lhs_data = self.value_store.get(lhs).ok_or(ReleasedValueError)?;
             if let ValueData::Array { elements, addr, item_type, ..} = lhs_data {
@@ -228,7 +221,7 @@ impl<'a> Builder<'a> {
             self.scope_stack.add(name, val, variable);
             Ok(variable)
         })?;
-        if let Ok(val) = self.to_cl(val) {
+        if let Ok(val) = self.manager.llvm_value(val) {
             self.inst_builder.build_store(variable, val);
         }
         self.scope_stack.set(name, val);
@@ -256,7 +249,7 @@ impl<'a> Builder<'a> {
                 self.cmp(CondCode::NotEqual, v, zero)?
             }
             (Type::Boolean, Type::Number) => {
-                let cl = self.to_cl(v)?;
+                let cl = self.manager.llvm_value(v)?;
                 let data = ValueData::primitive(self.inst_builder.build_int_cast(cl.into_int_value(), t.cl_type()?.into_int_type(), "b2i"), t);
                 self.value_store.new_value(data)
             },
@@ -289,7 +282,7 @@ impl<'a> Builder<'a> {
     pub fn store(&mut self, v: ValueID, addr: values::PointerValue, offset: u32) -> Result<(), Error> {
         // TODO: Safety check
         let ptr = unsafe { self.inst_builder.build_in_bounds_gep(addr, &[types::IntType::i32_type().const_int(offset as u64, false)], "store") };
-        let cl = self.to_cl(v)?;
+        let cl = self.manager.llvm_value(v)?;
         self.inst_builder.build_store(ptr, cl);
         Ok(())
     }
@@ -297,8 +290,7 @@ impl<'a> Builder<'a> {
     pub fn load(&mut self, t: Type, addr: values::PointerValue, offset: u32) -> Result<ValueID, Error> {
         // TODO: Safety check
         let ptr = unsafe { self.inst_builder.build_in_bounds_gep(addr, &[types::IntType::i32_type().const_int(offset as u64, false)], "store") };
-        let data = ValueData::from_cl(self.inst_builder.build_load(ptr, "load"), t.cl_type()?)?;
-        Ok(self.value_store.new_value(data))
+        self.manager.new_value_from_llvm(self.inst_builder.build_load(ptr, "load"), t.cl_type()?)
     }
 
     pub fn create_block(&mut self) -> Result<Block, Error> {
@@ -311,7 +303,7 @@ impl<'a> Builder<'a> {
         if condition.get_type() != Type::Boolean {
             return Err(TypeError.into());
         }
-        let cl = self.to_cl(condition)?;
+        let cl = self.manager.llvm_value(condition)?;
         self.inst_builder
             .build_conditional_branch(cl.into_int_value(), then_block.cl_ebb(), else_block.cl_ebb());
         Ok(())
