@@ -1,5 +1,6 @@
 use value::type_::{TypeID, TypeStore, TypeData, EnumTypeData};
 use value::value::{ValueID, ValueStore, ValueData};
+use error::InvalidValueIDError;
 
 use inkwell::types::BasicTypeEnum;
 use inkwell::values::BasicValueEnum;
@@ -38,6 +39,10 @@ impl ValueManager {
 
     pub fn new_value(&mut self, t: TypeID, data: ValueData) -> ValueID {
         self.value_store.new_value(t, data)
+    }
+
+    pub fn type_of(&self, v: ValueID) -> Result<TypeID, Error> {
+        self.value_store.get(v).map(|data| data.get_type()).ok_or(InvalidValueIDError)
     }
 
     fn primitive_type(&self, t: BasicTypeEnum) -> TypeID {

@@ -33,6 +33,10 @@ pub struct UnexpectedScopePopError;
 pub struct ReleasedValueError;
 
 #[derive(Fail, Debug)]
+#[fail(display = "Internal Error; Use of invalid value ID")]
+pub struct InvalidValueIDError;
+
+#[derive(Fail, Debug)]
 #[fail(display = "Attempt to create a new branch in an invalid context")]
 pub struct InvalidContextBranchError;
 
