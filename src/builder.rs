@@ -1,6 +1,7 @@
 use error::{InvalidCastError, TypeError, ReleasedValueError, InvalidContextBranchError};
 use expression::Operator;
 use value::{ValueID, ValueStore, ValueData, TypeStore, TypeID, ValueManager};
+use value::type_::EnumTypeData;
 use value::manager::PrimitiveKind;
 use scope::{Scope, ScopeStack};
 
@@ -68,6 +69,10 @@ impl<'a> Builder<'a> {
 
     pub fn empty_constant(&self) -> ValueID {
         self.manager.empty_value()
+    }
+
+    pub fn register_type(&mut self, data: EnumTypeData) -> TypeID {
+        self.manager.new_user_type(data)
     }
 
     pub fn apply_op(&mut self, op: Operator, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {

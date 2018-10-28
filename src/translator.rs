@@ -33,7 +33,7 @@ impl<'a> FunctionTranslator<'a> {
                         },
                         params.into_iter().map(|t| self.translate_expr(t).and_then(|e| e.expect_type())).collect::<Result<Vec<TypeID>, _>>()?
                     ))).collect::<Result<EnumTypeData, Error>>()?;
-                self.builder.type_store().new_enum(typedata).into()
+                self.builder.register_type(typedata).into()
             }
 
             Expression::BinOp(op, lhs, rhs) => {
