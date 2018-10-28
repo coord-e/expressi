@@ -7,6 +7,7 @@ use inkwell::types::{BasicTypeEnum, IntType};
 use std::fmt;
 use std::ptr::NonNull;
 use std::str::FromStr;
+use std::collections::HashMap;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct TypeID(usize);

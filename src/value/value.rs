@@ -1,5 +1,7 @@
 use error::LLVMValueNotAvailableError;
-use value::Type;
+use value::TypeID;
+
+use std::collections::HashMap;
 
 use failure::Error;
 
@@ -7,7 +9,7 @@ use inkwell::values::{BasicValueEnum, PointerValue};
 use inkwell::types::BasicTypeEnum;
 
 #[derive(Debug)]
-enum ValueData {
+pub enum ValueData {
     Primitive { internal_value: BasicValueEnum },
     Array { addr: PointerValue, elements: Vec<ValueID> },
     Empty

@@ -1,8 +1,8 @@
-use value::Value;
-use value::TypeID;
+use value::{Value, ValueManager, TypeID};
 use error::UnexpectedScopePopError;
 
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use failure::Error;
 
