@@ -57,14 +57,12 @@ impl<'a> Builder<'a> {
 
     pub fn number_constant(&mut self, v: i64) -> Result<ValueID, Error> {
         let t = types::IntType::i64_type();
-        let data = ValueData::from_cl(values::BasicValueEnum::IntValue(t.const_int(v.abs() as u64, v < 0)), t)?;
-        Ok(self.value_store.new_value(data))
+        self.manager.new_value_from_llvm(values::BasicValueEnum::IntValue(t.const_int(v.abs() as u64, v < 0)), t)
     }
 
     pub fn boolean_constant(&mut self, v: bool) -> Result<ValueID, Error> {
         let t = types::IntType::bool_type();
-        let data = ValueData::from_cl(values::BasicValueEnum::IntValue(t.const_int(v as u64, false)), t)?;
-        Ok(self.value_store.new_value(data))
+        self.manager.new_value_from_llvm(values::BasicValueEnum::IntValue(t.const_int(v as u64, false)), t)
     }
 
     pub fn apply_op(&mut self, op: Operator, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
@@ -87,16 +85,16 @@ impl<'a> Builder<'a> {
     }
 
     pub fn add(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
+        let number_type = self.manager.primitive_type(PrimitiveKind::Number);
+        if self.manager.type_of(lhs) != number_type || self.manager.type_of(rhs) != number_type {
             return Err(TypeError.into());
         }
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
+        let lhs_cl = self.manager.llvm_value(lhs)?;
+        let rhs_cl = self.manager.llvm_value(lhs)?;
         let res = self
             .inst_builder
             .build_int_add(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "add");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+        self.manager.new_value_from_llvm(res, types::IntType::i64_type())
     }
 
     pub fn sub(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
