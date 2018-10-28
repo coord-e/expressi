@@ -14,7 +14,8 @@ pub struct Scope {
     variables: HashMap<String, VariableId>,
     variable_values: HashMap<VariableId, ValueID>,
     variable_pointers: HashMap<VariableId, PointerValue>,
-    manager: Rc<ValueManager>
+    manager: Rc<ValueManager>,
+    types: HashMap<String, TypeID>,
 }
 
 impl Scope {
@@ -23,6 +24,7 @@ impl Scope {
             variables: HashMap::new(),
             variable_values: HashMap::new(),
             variable_pointers: HashMap::new(),
+            types: HashMap::new(),
             manager
         }
     }
