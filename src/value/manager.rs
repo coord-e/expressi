@@ -16,7 +16,9 @@ pub enum PrimitiveKind {
 pub struct ValueManager {
     type_store: TypeStore,
     value_store: ValueStore,
-    primitive_types: HashMap<PrimitiveKind, TypeID>
+    primitive_types: HashMap<PrimitiveKind, TypeID>,
+    // TODO: Remove `Option` with better initialization
+    empty_value: Option<ValueID>
 }
 
 impl ValueManager {
@@ -24,11 +26,14 @@ impl ValueManager {
         let mut manager = Self {
             type_store: TypeStore::new(),
             value_store: ValueStore::new(),
-            primitive_types: HashMap::new()
+            primitive_types: HashMap::new(),
+            empty_value: None
         };
 
         let number_t_id = manager.type_store.new_type(TypeData::Number);
         manager.primitive_types.insert(PrimitiveKind::Number, number_t_id);
+
+        manager.empty_value = Some(manager.new_value(empty_t_id, ValueData::Empty));
 
         manager
     }
@@ -39,6 +44,10 @@ impl ValueManager {
 
     pub fn new_value(&mut self, t: TypeID, data: ValueData) -> ValueID {
         self.value_store.new_value(t, data)
+    }
+
+    pub fn empty_value(&self) -> ValueID {
+        self.empty_value.unwrap()
     }
 
     pub fn type_of(&self, v: ValueID) -> Result<TypeID, Error> {
