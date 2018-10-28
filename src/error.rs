@@ -37,6 +37,10 @@ pub struct ReleasedValueError;
 pub struct InvalidValueIDError;
 
 #[derive(Fail, Debug)]
+#[fail(display = "Internal Error; Use of invalid type ID")]
+pub struct InvalidTypeIDError;
+
+#[derive(Fail, Debug)]
 #[fail(display = "Attempt to create a new branch in an invalid context")]
 pub struct InvalidContextBranchError;
 

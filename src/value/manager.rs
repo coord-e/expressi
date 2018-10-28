@@ -1,6 +1,6 @@
 use value::type_::{TypeID, TypeStore, TypeData, EnumTypeData};
 use value::value::{ValueID, ValueStore, ValueData};
-use error::InvalidValueIDError;
+use error::{InvalidValueIDError, InvalidTypeIDError};
 
 use inkwell::types::BasicTypeEnum;
 use inkwell::values::BasicValueEnum;
@@ -64,5 +64,9 @@ impl ValueManager {
 
     pub fn llvm_value(&self, v: ValueID) -> Result<BasicValueEnum, Error> {
         self.value_store.get(v).ok_or(InvalidValueIDError.into()).and_then(|v| v.cl_value())
+    }
+
+    pub fn llvm_type(&self, v: TypeID) -> Result<BasicTypeEnum, Error> {
+        self.type_store.get(v).ok_or(InvalidTypeIDError.into()).and_then(|v| v.cl_type())
     }
 }
