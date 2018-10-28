@@ -10,7 +10,9 @@ use std::collections::HashMap;
 use failure::Error;
 
 pub enum PrimitiveKind {
-    Number
+    Number,
+    Boolean,
+    Empty
 }
 
 pub struct ValueManager {
@@ -31,7 +33,12 @@ impl ValueManager {
         };
 
         let number_t_id = manager.type_store.new_type(TypeData::Number);
+        let boolean_t_id = manager.type_store.new_type(TypeData::Boolean);
+        let empty_t_id = manager.type_store.new_type(TypeData::Empty);
+
         manager.primitive_types.insert(PrimitiveKind::Number, number_t_id);
+        manager.primitive_types.insert(PrimitiveKind::Boolean, boolean_t_id);
+        manager.primitive_types.insert(PrimitiveKind::Empty, empty_t_id);
 
         manager.empty_value = Some(manager.new_value(empty_t_id, ValueData::Empty));
 
