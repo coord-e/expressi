@@ -51,14 +51,6 @@ impl<'a> Builder<'a> {
         self.inst_builder
     }
 
-    pub fn value_store<'short>(&'short mut self) -> &'short mut ValueStore {
-        &mut self.value_store
-    }
-
-    pub fn type_store<'short>(&'short mut self) -> &'short mut TypeStore {
-        &mut self.type_store
-    }
-
     pub fn scope_stack<'short>(&'short mut self) -> &'short mut ScopeStack {
         &mut self.scope_stack
     }
