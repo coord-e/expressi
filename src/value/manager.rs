@@ -56,7 +56,7 @@ impl ValueManager {
         }
     }
 
-    pub fn new_value_from_llvm<V, T>(&mut self, v: V, t: T) -> Result<Self, Error>
+    pub fn new_value_from_llvm<V, T>(&mut self, v: V, t: T) -> Result<ValueID, Error>
         where BasicValueEnum: From<V>, BasicTypeEnum: From<T> {
         let t = self.primitive_type_llvm(BasicTypeEnum::from(t))?;
         self.new_value(t, ValueData::Primitive { internal_value: BasicValueEnum::from(v) })
