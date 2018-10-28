@@ -70,13 +70,15 @@ impl Scope {
 }
 
 pub struct ScopeStack {
-    scopes: Vec<Scope>
+    scopes: Vec<Scope>,
+    manager: Rc<ValueManager>
 }
 
 impl ScopeStack {
     pub fn new() -> Self {
         ScopeStack {
-            scopes: vec![Scope::default()]
+            scopes: vec![Scope::default()],
+            manager: Rc::new(ValueManager::new())
         }
     }
 
