@@ -3,6 +3,7 @@ use error::{
 };
 
 use inkwell::types::{BasicTypeEnum, IntType};
+use failure::Error;
 
 use std::fmt;
 use std::ptr::NonNull;
@@ -27,22 +28,22 @@ unsafe impl Send for TypeID {}
 unsafe impl Sync for TypeID {}
 
 impl TypeData {
-    pub fn from_cl(t: BasicTypeEnum) -> Result<Self, LLVMTypeConversionError> {
+    pub fn from_cl(t: BasicTypeEnum) -> Result<Self, Error> {
         Ok(match t {
             BasicTypeEnum::IntType(int) => match int.get_bit_width() {
                 1  => TypeData::Boolean,
                 64 => TypeData::Number,
                 _  => unimplemented!()
             },
-            _ => return Err(LLVMTypeConversionError { from: format!("{:?}", t) }),
+            _ => return Err(LLVMTypeConversionError { from: format!("{:?}", t) }.into()),
         })
     }
 
-    pub fn cl_type(&self) -> Result<BasicTypeEnum, InternalTypeConversionError> {
+    pub fn cl_type(&self) -> Result<BasicTypeEnum, Error> {
         Ok(match self {
             TypeData::Number => IntType::i64_type(),
             TypeData::Boolean => IntType::bool_type(),
-            _ => return Err(InternalTypeConversionError { from: *self }),
+            _ => return Err(InternalTypeConversionError { from: *self }.into()),
         }.into())
     }
 
