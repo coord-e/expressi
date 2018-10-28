@@ -87,7 +87,7 @@ impl<'a> Builder<'a> {
 
     fn check_numeric_args(&self, lhs: ValueID, rhs: ValueID) -> Result<(), Error> {
         let number_type = self.manager.primitive_type(PrimitiveKind::Number);
-        if self.manager.type_of(lhs) != number_type || self.manager.type_of(rhs) != number_type {
+        if self.manager.type_of(lhs)? != number_type || self.manager.type_of(rhs)? != number_type {
             return Err(TypeError.into());
         }
         Ok(())
@@ -221,7 +221,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn cast_to(&mut self, v: ValueID, to_type: TypeID) -> Result<ValueID, Error> {
-        let from_type = self.manager.type_of(v);
+        let from_type = self.manager.type_of(v)?;
         if from_type == to_type {
             return Err(InvalidCastError {
                 from: from_type,
@@ -291,7 +291,7 @@ impl<'a> Builder<'a> {
 
     pub fn brz(&mut self, condition: ValueID, then_block: &Block, else_block: &Block) -> Result<(), Error> {
         let bool_type = self.manager.primitive_type(PrimitiveKind::Boolean);
-        if self.manager.type_of(condition) != bool_type {
+        if self.manager.type_of(condition)? != bool_type {
             return Err(TypeError.into());
         }
         let cl = self.manager.llvm_value(condition)?;
@@ -317,7 +317,7 @@ impl<'a> Builder<'a> {
     pub fn ret_int(&self, v: ValueID) -> Result<(), Error> {
         // TODO: Generic return
         let number_type = self.manager.primitive_type(PrimitiveKind::Number);
-        let return_value = if self.manager.type_of(v) != number_type {
+        let return_value = if self.manager.type_of(v)? != number_type {
             self.cast_to(v, number_type)?
         } else {
             v
