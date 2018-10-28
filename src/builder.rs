@@ -48,7 +48,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn to_cl(&self, v: Value) -> Result<values::BasicValueEnum, Error> {
+    pub fn to_cl(&self, v: ValueID) -> Result<values::BasicValueEnum, Error> {
         self.value_store.get(v).ok_or(ReleasedValueError.into()).and_then(|v| v.cl_value())
     }
 
@@ -68,19 +68,19 @@ impl<'a> Builder<'a> {
         &mut self.scope_stack
     }
 
-    pub fn number_constant(&mut self, v: i64) -> Result<Value, Error> {
+    pub fn number_constant(&mut self, v: i64) -> Result<ValueID, Error> {
         let t = types::IntType::i64_type();
         let data = ValueData::from_cl(values::BasicValueEnum::IntValue(t.const_int(v.abs() as u64, v < 0)), t)?;
         Ok(self.value_store.new_value(data))
     }
 
-    pub fn boolean_constant(&mut self, v: bool) -> Result<Value, Error> {
+    pub fn boolean_constant(&mut self, v: bool) -> Result<ValueID, Error> {
         let t = types::IntType::bool_type();
         let data = ValueData::from_cl(values::BasicValueEnum::IntValue(t.const_int(v as u64, false)), t)?;
         Ok(self.value_store.new_value(data))
     }
 
-    pub fn apply_op(&mut self, op: Operator, lhs: Value, rhs: Value) -> Result<Value, Error> {
+    pub fn apply_op(&mut self, op: Operator, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         match op {
             Operator::Add => self.add(lhs, rhs),
             Operator::Sub => self.sub(lhs, rhs),
@@ -99,7 +99,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn add(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+    pub fn add(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
@@ -112,7 +112,7 @@ impl<'a> Builder<'a> {
         Ok(self.value_store.new_value(data))
     }
 
-    pub fn sub(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+    pub fn sub(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
@@ -125,7 +125,7 @@ impl<'a> Builder<'a> {
         Ok(self.value_store.new_value(data))
     }
 
-    pub fn mul(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+    pub fn mul(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
@@ -138,7 +138,7 @@ impl<'a> Builder<'a> {
         Ok(self.value_store.new_value(data))
     }
 
-    pub fn div(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+    pub fn div(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
@@ -151,7 +151,7 @@ impl<'a> Builder<'a> {
         Ok(self.value_store.new_value(data))
     }
 
-    pub fn bit_and(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+    pub fn bit_and(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
@@ -164,7 +164,7 @@ impl<'a> Builder<'a> {
         Ok(self.value_store.new_value(data))
     }
 
-    pub fn bit_or(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+    pub fn bit_or(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
@@ -177,7 +177,7 @@ impl<'a> Builder<'a> {
         Ok(self.value_store.new_value(data))
     }
 
-    pub fn bit_xor(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+    pub fn bit_xor(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
@@ -190,7 +190,7 @@ impl<'a> Builder<'a> {
         Ok(self.value_store.new_value(data))
     }
 
-    pub fn cmp(&mut self, cmp_type: CondCode, lhs: Value, rhs: Value) -> Result<Value, Error> {
+    pub fn cmp(&mut self, cmp_type: CondCode, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
             return Err(TypeError.into());
         }
@@ -212,7 +212,7 @@ impl<'a> Builder<'a> {
         Ok(self.value_store.new_value(data))
     }
 
-    pub fn index(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
+    pub fn index(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         match lhs.get_type() {
             Type::Array(..) => {},
             _ => return Err(TypeError.into())
@@ -246,7 +246,7 @@ impl<'a> Builder<'a> {
         Ok(real_name)
     }
 
-    pub fn set_var(&mut self, name: &str, val: Value) -> Result<Value, Error> {
+    pub fn set_var(&mut self, name: &str, val: ValueID) -> Result<ValueID, Error> {
         let variable = self.scope_stack.get_var(name).ok_or(()).or_else(|_| -> Result<values::PointerValue, Error> {
             let variable = self.inst_builder.build_alloca(val.get_type().cl_type()?, name);
             self.scope_stack.add(name, val, variable);
@@ -259,7 +259,7 @@ impl<'a> Builder<'a> {
         Ok(val)
     }
 
-    pub fn get_var(&mut self, name: &str) -> Option<Value> {
+    pub fn get_var(&mut self, name: &str) -> Option<ValueID> {
         self.scope_stack.get_var(name).map(|var| {
             let value = self.scope_stack.get(name).unwrap();
             let data = ValueData::primitive(self.inst_builder.build_load(var, "load_var"), value.get_type());
@@ -267,7 +267,7 @@ impl<'a> Builder<'a> {
         })
     }
 
-    pub fn cast_to(&mut self, v: Value, t: Type) -> Result<Value, Error> {
+    pub fn cast_to(&mut self, v: ValueID, t: Type) -> Result<ValueID, Error> {
         if v.get_type() == t {
             return Err(InvalidCastError {
                 from: v.get_type(),
@@ -310,7 +310,7 @@ impl<'a> Builder<'a> {
         Ok(self.inst_builder.build_array_alloca(t.cl_type()?, types::IntType::i32_type().const_int(size as u64, false), "array_alloc"))
     }
 
-    pub fn store(&mut self, v: Value, addr: values::PointerValue, offset: u32) -> Result<(), Error> {
+    pub fn store(&mut self, v: ValueID, addr: values::PointerValue, offset: u32) -> Result<(), Error> {
         // TODO: Safety check
         let ptr = unsafe { self.inst_builder.build_in_bounds_gep(addr, &[types::IntType::i32_type().const_int(offset as u64, false)], "store") };
         let cl = self.to_cl(v)?;
@@ -318,7 +318,7 @@ impl<'a> Builder<'a> {
         Ok(())
     }
 
-    pub fn load(&mut self, t: Type, addr: values::PointerValue, offset: u32) -> Result<Value, Error> {
+    pub fn load(&mut self, t: Type, addr: values::PointerValue, offset: u32) -> Result<ValueID, Error> {
         // TODO: Safety check
         let ptr = unsafe { self.inst_builder.build_in_bounds_gep(addr, &[types::IntType::i32_type().const_int(offset as u64, false)], "store") };
         let data = ValueData::from_cl(self.inst_builder.build_load(ptr, "load"), t.cl_type()?)?;
@@ -331,7 +331,7 @@ impl<'a> Builder<'a> {
         Ok(Block { ebb: block })
     }
 
-    pub fn brz(&mut self, condition: Value, then_block: &Block, else_block: &Block) -> Result<(), Error> {
+    pub fn brz(&mut self, condition: ValueID, then_block: &Block, else_block: &Block) -> Result<(), Error> {
         if condition.get_type() != Type::Boolean {
             return Err(TypeError.into());
         }
