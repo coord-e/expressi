@@ -21,12 +21,13 @@ pub struct TypedValueData(TypeID, ValueData);
 impl TypedValueData {
     pub fn get_type(&self) -> TypeID {
         let TypedValueData(type_id, ..) = self;
-        return type_id;
+        return type_id.clone();
     }
 
     pub fn cl_value(&self) -> Result<BasicValueEnum, Error> {
-        Ok(match *self {
-            ValueData::Primitive {internal_value, ..} => internal_value,
+        let TypedValueData(_, data) = self;
+        Ok(match data {
+            ValueData::Primitive {internal_value, ..} => internal_value.clone(),
             _ => return Err(LLVMValueNotAvailableError.into())
         })
     }
@@ -56,7 +57,7 @@ impl ValueStore {
     }
 
     pub fn get(&self, id: ValueID) -> Option<&TypedValueData> {
-        self.data.get(id)
+        self.data.get(&id)
     }
 }
 

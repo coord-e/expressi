@@ -59,24 +59,24 @@ impl ValueManager {
     }
 
     pub fn type_of(&self, v: ValueID) -> Result<TypeID, Error> {
-        self.value_store.get(v).map(|data| data.get_type()).ok_or(InvalidValueIDError)
+        self.value_store.get(v).map(|data| data.get_type()).ok_or(InvalidValueIDError.into())
     }
 
     pub fn primitive_type(&self, kind: PrimitiveKind) -> TypeID {
-        self.primitive_types.get(kind).unwrap()
+        self.primitive_types.get(&kind).unwrap().clone()
     }
 
     fn primitive_type_llvm(&self, t: BasicTypeEnum) -> TypeID {
         match t {
-            BasicTypeEnum::IntType(_) => self.primitive_types.get(PrimitiveKind::Number).unwrap(),
+            BasicTypeEnum::IntType(_) => self.primitive_type(PrimitiveKind::Number),
             _ => unimplemented!()
         }
     }
 
     pub fn new_value_from_llvm<V, T>(&mut self, v: V, t: T) -> Result<ValueID, Error>
         where BasicValueEnum: From<V>, BasicTypeEnum: From<T> {
-        let t = self.primitive_type_llvm(BasicTypeEnum::from(t))?;
-        self.new_value(t, ValueData::Primitive { internal_value: BasicValueEnum::from(v) })
+        let t = self.primitive_type_llvm(BasicTypeEnum::from(t));
+        Ok(self.new_value(t, ValueData::Primitive { internal_value: BasicValueEnum::from(v) }))
     }
 
     pub fn llvm_value(&self, v: ValueID) -> Result<BasicValueEnum, Error> {

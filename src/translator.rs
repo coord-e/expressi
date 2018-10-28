@@ -109,7 +109,7 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.jump(&merge_block);
 
                 self.builder.switch_to_block(&merge_block);
-                self.builder.get_var(&var_name).unwrap().into()
+                self.builder.get_var(&var_name)?.unwrap().into()
             }
         })
     }

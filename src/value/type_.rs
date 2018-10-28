@@ -108,6 +108,6 @@ impl TypeStore {
     }
 
     pub fn get(&self, id: TypeID) -> Option<&TypeData> {
-        self.data.get(id)
+        self.data.get(&id)
     }
 }
