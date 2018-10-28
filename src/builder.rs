@@ -30,8 +30,6 @@ impl Block {
 }
 
 pub struct Builder<'a> {
-    value_store: ValueStore,
-    type_store: TypeStore,
     inst_builder: &'a mut builder::Builder,
     module: Rc<module::Module>,
     manager: Rc<ValueManager>,
@@ -44,8 +42,6 @@ impl<'a> Builder<'a> {
         Builder {
             inst_builder,
             module,
-            value_store: ValueStore::new(),
-            type_store: TypeStore::new(),
             manager,
             scope_stack: ScopeStack::new(manager.clone())
         }
