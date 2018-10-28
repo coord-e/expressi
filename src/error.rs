@@ -29,10 +29,6 @@ pub struct TypeError;
 pub struct UnexpectedScopePopError;
 
 #[derive(Fail, Debug)]
-#[fail(display = "Internal Error; Use of released value")]
-pub struct ReleasedValueError;
-
-#[derive(Fail, Debug)]
 #[fail(display = "Internal Error; Use of invalid value ID")]
 pub struct InvalidValueIDError;
 
