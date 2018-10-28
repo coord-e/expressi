@@ -19,7 +19,7 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Boolean(tf) => self.builder.boolean_constant(tf)?.into(),
 
-            Expression::Empty => self.builder.value_store().new_value(ValueData::Empty).into(),
+            Expression::Empty => self.builder.empty_constant().into(),
 
             Expression::Array(expr) => {
                 unimplemented!()

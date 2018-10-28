@@ -66,6 +66,10 @@ impl<'a> Builder<'a> {
         self.manager.new_value_from_llvm(values::BasicValueEnum::IntValue(t.const_int(v as u64, false)), t)
     }
 
+    pub fn empty_constant(&self) -> ValueID {
+        self.manager.empty_value()
+    }
+
     pub fn apply_op(&mut self, op: Operator, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         match op {
             Operator::Add => self.add(lhs, rhs),
