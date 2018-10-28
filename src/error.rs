@@ -51,8 +51,8 @@ pub struct FailedToCreateJITError;
 #[derive(Fail, Debug)]
 #[fail(display = "Invalid Cast from {} to {}", from, to)]
 pub struct InvalidCastError {
-    pub from: Type,
-    pub to: Type,
+    pub from: TypeID,
+    pub to: TypeID,
 }
 
 #[derive(Fail, Debug)]
@@ -79,7 +79,7 @@ pub struct LLVMTypeConversionError {
     from
 )]
 pub struct InternalTypeConversionError {
-    pub from: Type,
+    pub from: TypeID,
 }
 
 #[derive(Fail, Debug)]
