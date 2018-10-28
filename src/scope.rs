@@ -12,7 +12,7 @@ type VariableId = usize;
 
 pub struct Scope {
     variables: HashMap<String, VariableId>,
-    variable_values: HashMap<VariableId, Value>,
+    variable_values: HashMap<VariableId, ValueID>,
     variable_pointers: HashMap<VariableId, PointerValue>,
     manager: Rc<ValueManager>
 }
@@ -27,7 +27,7 @@ impl Scope {
         }
     }
 
-    pub fn get(&self, s: &str) -> Option<Value> {
+    pub fn get(&self, s: &str) -> Option<ValueID> {
         self.variables.get(s).and_then(|var| self.variable_values.get(var)).cloned()
     }
 
@@ -35,11 +35,11 @@ impl Scope {
         self.variables.get(s).and_then(|var| self.variable_pointers.get(var)).cloned()
     }
 
-    pub fn set(&mut self, s: &str, val: Value) {
+    pub fn set(&mut self, s: &str, val: ValueID) {
         self.variable_values.insert(*self.variables.get(s).unwrap(), val);
     }
 
-    pub fn add(&mut self, s: &str, val: Value, var: PointerValue) {
+    pub fn add(&mut self, s: &str, val: ValueID, var: PointerValue) {
         let idx = self.variables.len();
         self.variables.insert(s.to_string(), idx);
         self.variable_values.insert(idx, val);
@@ -50,7 +50,7 @@ impl Scope {
         self.variables.iter().map(move |(k, v)| (k, self.variable_pointers.get(&v).cloned().unwrap()))
     }
 
-    pub fn values(&self) -> impl Iterator<Item=(&String, &Value)> {
+    pub fn values(&self) -> impl Iterator<Item=(&String, &ValueID)> {
         self.variables.iter().map(move |(k, v)| (k, self.variable_values.get(&v).unwrap()))
     }
 
@@ -96,7 +96,7 @@ impl ScopeStack {
         self.scopes.iter().flat_map(|it| it.variables())
     }
 
-    pub fn values(&self) -> impl Iterator<Item=(&String, &Value)> {
+    pub fn values(&self) -> impl Iterator<Item=(&String, &ValueID)> {
         self.scopes.iter().flat_map(|it| it.values())
     }
 
@@ -104,11 +104,11 @@ impl ScopeStack {
         self.scopes.iter().flat_map(|it| it.types())
     }
 
-    pub fn add(&mut self, s: &str, val: Value, var: PointerValue) {
+    pub fn add(&mut self, s: &str, val: ValueID, var: PointerValue) {
         self.scopes.last_mut().unwrap().add(s, val, var)
     }
 
-    pub fn get(&self, s: &str) -> Option<&Value> {
+    pub fn get(&self, s: &str) -> Option<&ValueID> {
         self.values().find(|(k, _)| k == &s).map(|(_, v)| v)
     }
 
@@ -116,7 +116,7 @@ impl ScopeStack {
         self.variables().find(|(k, _)| k == &s).map(|(_, v)| v)
     }
 
-    pub fn set(&mut self, s: &str, val: Value) {
+    pub fn set(&mut self, s: &str, val: ValueID) {
         let mut it = self.scopes.iter_mut();
         it.find(|sc| sc.get(s).is_some()).or(it.last()).unwrap().set(s, val)
     }
