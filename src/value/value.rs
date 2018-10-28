@@ -58,9 +58,5 @@ impl ValueStore {
     pub fn get(&self, id: ValueID) -> Option<&TypedValueData> {
         self.data.get(id)
     }
-
-    pub fn release(&mut self) {
-        self.data.clear()
-    }
 }
 
