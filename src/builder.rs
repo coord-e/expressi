@@ -259,8 +259,8 @@ impl<'a> Builder<'a> {
         self.scope_stack.pop()
     }
 
-    pub fn array_alloc(&mut self, t: Type, size: u32) -> Result<values::PointerValue, Error> {
-        Ok(self.inst_builder.build_array_alloca(t.cl_type()?, types::IntType::i32_type().const_int(size as u64, false), "array_alloc"))
+    pub fn array_alloc(&mut self, t: TypeID, size: u32) -> Result<values::PointerValue, Error> {
+        unimplemented!()
     }
 
     pub fn store(&mut self, v: ValueID, addr: values::PointerValue, offset: u32) -> Result<(), Error> {
@@ -271,10 +271,11 @@ impl<'a> Builder<'a> {
         Ok(())
     }
 
-    pub fn load(&mut self, t: Type, addr: values::PointerValue, offset: u32) -> Result<ValueID, Error> {
+    pub fn load(&mut self, t: TypeID, addr: values::PointerValue, offset: u32) -> Result<ValueID, Error> {
         // TODO: Safety check
         let ptr = unsafe { self.inst_builder.build_in_bounds_gep(addr, &[types::IntType::i32_type().const_int(offset as u64, false)], "store") };
-        self.manager.new_value_from_llvm(self.inst_builder.build_load(ptr, "load"), t.cl_type()?)
+        let llvm_type = self.manager.llvm_type(t)?;
+        self.manager.new_value_from_llvm(self.inst_builder.build_load(ptr, "load"), llvm_type)
     }
 
     pub fn create_block(&mut self) -> Result<Block, Error> {
@@ -284,7 +285,8 @@ impl<'a> Builder<'a> {
     }
 
     pub fn brz(&mut self, condition: ValueID, then_block: &Block, else_block: &Block) -> Result<(), Error> {
-        if condition.get_type() != Type::Boolean {
+        let bool_type = self.manager.primitive_type(PrimitiveKind::Boolean);
+        if self.manager.type_of(condition) != bool_type {
             return Err(TypeError.into());
         }
         let cl = self.manager.llvm_value(condition)?;
