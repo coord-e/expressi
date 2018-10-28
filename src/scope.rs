@@ -52,16 +52,16 @@ impl Scope {
         self.variables.iter().map(move |(k, v)| (k, self.variable_pointers.get(&v).cloned().unwrap()))
     }
 
-    pub fn values(&self) -> impl Iterator<Item=(&String, &ValueID)> {
-        self.variables.iter().map(move |(k, v)| (k, self.variable_values.get(&v).unwrap()))
+    pub fn values(&self) -> impl Iterator<Item=(&String, ValueID)> {
+        self.variables.iter().map(move |(k, v)| (k, self.variable_values.get(&v).unwrap().clone()))
     }
 
-    pub fn types(&self) -> impl Iterator<Item=(&String, &TypeID)> {
-        self.types.iter()
+    pub fn types(&self) -> impl Iterator<Item=(&String, TypeID)> {
+        self.types.iter().map(|(k, v)| (k, v.clone()))
     }
 
     pub fn resolve_type(&self, id: &str) -> Option<TypeID> {
-        self.types.get(id).cloned()
+        self.types.get(id)
     }
 }
 
@@ -97,11 +97,11 @@ impl ScopeStack {
         self.scopes.iter().flat_map(|it| it.variables())
     }
 
-    pub fn values(&self) -> impl Iterator<Item=(&String, &ValueID)> {
+    pub fn values(&self) -> impl Iterator<Item=(&String, ValueID)> {
         self.scopes.iter().flat_map(|it| it.values())
     }
 
-    pub fn types(&self) -> impl Iterator<Item=(&String, &TypeID)> {
+    pub fn types(&self) -> impl Iterator<Item=(&String, TypeID)> {
         self.scopes.iter().flat_map(|it| it.types())
     }
 
@@ -109,7 +109,7 @@ impl ScopeStack {
         self.scopes.last_mut().unwrap().add(s, val, var)
     }
 
-    pub fn get(&self, s: &str) -> Option<&ValueID> {
+    pub fn get(&self, s: &str) -> Option<ValueID> {
         self.values().find(|(k, _)| k == &s).map(|(_, v)| v)
     }
 
@@ -128,6 +128,6 @@ impl ScopeStack {
     }
 
     pub fn resolve_type(&self, id: &str) -> Option<TypeID> {
-        self.types().find(|(k, _)| k == &id).map(|(_, v)| v).cloned()
+        self.types().find(|(k, _)| k == &id).map(|(_, v)| v)
     }
 }
