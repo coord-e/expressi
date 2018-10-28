@@ -240,7 +240,7 @@ impl<'a> Builder<'a> {
             (bool_type, number_type) => {
                 let cl = self.manager.llvm_value(v)?;
                 let to_llvm_type = self.manager.llvm_type(to_type)?;
-                self.manager.new_value_from_llvm(self.inst_builder.build_int_cast(cl.into_int_value(), to_llvm_type.into_int_type(), "b2i"), to_llvm_type)
+                self.manager.new_value_from_llvm(self.inst_builder.build_int_cast(cl.into_int_value(), to_llvm_type.into_int_type(), "b2i"), to_llvm_type)?
             },
             _ => {
                 return Err(InvalidCastError {
@@ -326,6 +326,7 @@ impl<'a> Builder<'a> {
         let cl = self.manager.llvm_value(return_value)?.into_int_value();
         self.inst_builder
             .build_return(Some(&cl));
+        Ok(())
     }
 
 }
