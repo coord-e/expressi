@@ -45,7 +45,11 @@ impl ValueManager {
         self.value_store.get(v).map(|data| data.get_type()).ok_or(InvalidValueIDError)
     }
 
-    fn primitive_type(&self, t: BasicTypeEnum) -> TypeID {
+    pub fn primitive_type(&self, kind: PrimitiveKind) -> TypeID {
+        self.primitive_types.get(kind).unwrap()
+    }
+
+    fn primitive_type_llvm(&self, t: BasicTypeEnum) -> TypeID {
         match t {
             BasicTypeEnum::IntType(_) => self.primitive_types.get(PrimitiveKind::Number).unwrap(),
             _ => unimplemented!()
@@ -54,7 +58,7 @@ impl ValueManager {
 
     pub fn new_value_from_llvm<V, T>(&mut self, v: V, t: T) -> Result<Self, Error>
         where BasicValueEnum: From<V>, BasicTypeEnum: From<T> {
-        let t = self.primitive_type(BasicTypeEnum::from(t))?;
+        let t = self.primitive_type_llvm(BasicTypeEnum::from(t))?;
         self.new_value(t, ValueData::Primitive { internal_value: BasicValueEnum::from(v) })
     }
 }
