@@ -14,7 +14,7 @@ enum ValueData {
 }
 
 #[derive(Debug)]
-pub struct TypedValueData(TypeID, ValueData)
+pub struct TypedValueData(TypeID, ValueData);
 
 impl TypedValueData {
     pub fn get_type(&self) -> TypeID {
