@@ -84,11 +84,16 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn add(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
+    fn check_numeric_args(&self, lhs: ValueID, rhs: ValueID) -> Result<(), Error> {
         let number_type = self.manager.primitive_type(PrimitiveKind::Number);
         if self.manager.type_of(lhs) != number_type || self.manager.type_of(rhs) != number_type {
             return Err(TypeError.into());
         }
+        Ok(())
+    }
+
+    pub fn add(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
+        self.check_numeric_args(lhs, rhs)?;
         let lhs_cl = self.manager.llvm_value(lhs)?;
         let rhs_cl = self.manager.llvm_value(lhs)?;
         let res = self
@@ -98,9 +103,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn sub(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
+        self.check_numeric_args(lhs, rhs)?;
         let lhs_cl = self.to_cl(lhs)?;
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
@@ -111,9 +114,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn mul(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
+        self.check_numeric_args(lhs, rhs)?;
         let lhs_cl = self.to_cl(lhs)?;
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
@@ -124,9 +125,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn div(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
+        self.check_numeric_args(lhs, rhs)?;
         let lhs_cl = self.to_cl(lhs)?;
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
@@ -137,9 +136,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn bit_and(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
+        self.check_numeric_args(lhs, rhs)?;
         let lhs_cl = self.to_cl(lhs)?;
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
@@ -150,9 +147,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn bit_or(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
+        self.check_numeric_args(lhs, rhs)?;
         let lhs_cl = self.to_cl(lhs)?;
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
@@ -163,9 +158,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn bit_xor(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
+        self.check_numeric_args(lhs, rhs)?;
         let lhs_cl = self.to_cl(lhs)?;
         let rhs_cl = self.to_cl(rhs)?;
         let res = self
@@ -176,9 +169,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn cmp(&mut self, cmp_type: CondCode, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
+        self.check_numeric_args(lhs, rhs)?;
         let cc = match cmp_type {
             CondCode::Equal              => IntPredicate::EQ,
             CondCode::NotEqual           => IntPredicate::NE,
