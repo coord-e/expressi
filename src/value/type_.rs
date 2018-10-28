@@ -105,4 +105,8 @@ impl TypeStore {
     pub fn new_enum(&mut self, data: EnumTypeData) -> TypeID {
         self.new_type(TypeData::Enum(data))
     }
+
+    pub fn get(&self, id: TypeID) -> Option<&TypeData> {
+        self.types.get(id)
+    }
 }
