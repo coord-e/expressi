@@ -215,27 +215,32 @@ impl<'a> Builder<'a> {
         })
     }
 
-    pub fn cast_to(&mut self, v: ValueID, t: Type) -> Result<ValueID, Error> {
-        if v.get_type() == t {
+    pub fn cast_to(&mut self, v: ValueID, to_type: TypeID) -> Result<ValueID, Error> {
+        let from_type = self.manager.type_of(v);
+        if from_type == to_type {
             return Err(InvalidCastError {
-                from: v.get_type(),
-                to: t,
+                from: from_type,
+                to: to_type,
             }.into());
         }
-        Ok(match (v.get_type(), t) {
-            (Type::Number, Type::Boolean) => {
+
+        let bool_type = self.manager.primitive_type(PrimitiveKind::Boolean);
+        let number_type = self.manager.primitive_type(PrimitiveKind::Number);
+
+        Ok(match (from_type, to_type) {
+            (number_type, bool_type) => {
                 let zero = self.number_constant(0)?;
                 self.cmp(CondCode::NotEqual, v, zero)?
             }
-            (Type::Boolean, Type::Number) => {
+            (bool_type, number_type) => {
                 let cl = self.manager.llvm_value(v)?;
-                let data = ValueData::primitive(self.inst_builder.build_int_cast(cl.into_int_value(), t.cl_type()?.into_int_type(), "b2i"), t);
-                self.value_store.new_value(data)
+                let to_llvm_type = self.manager.llvm_type(to_type)?;
+                self.manager.new_value_from_llvm(self.inst_builder.build_int_cast(cl.into_int_value(), to_llvm_type.into_int_type(), "b2i"), t)
             },
             _ => {
                 return Err(InvalidCastError {
-                    from: v.get_type(),
-                    to: t,
+                    from: from_type,
+                    to: to_type,
                 }.into())
             }
         })
