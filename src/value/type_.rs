@@ -1,14 +1,12 @@
-use error::{
-    LLVMTypeConversionError, InternalTypeConversionError,
-};
+use error::{InternalTypeConversionError, LLVMTypeConversionError};
 
-use inkwell::types::{BasicTypeEnum, IntType};
 use failure::Error;
+use inkwell::types::{BasicTypeEnum, IntType};
 
+use std::collections::HashMap;
 use std::fmt;
 use std::ptr::NonNull;
 use std::str::FromStr;
-use std::collections::HashMap;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct TypeID(usize);
@@ -21,7 +19,7 @@ pub enum TypeData {
     Boolean,
     Array(NonNull<TypeData>, usize),
     Empty,
-    Enum(EnumTypeData)
+    Enum(EnumTypeData),
 }
 
 unsafe impl Send for TypeID {}
@@ -31,11 +29,15 @@ impl TypeData {
     pub fn from_cl(t: BasicTypeEnum) -> Result<Self, Error> {
         Ok(match t {
             BasicTypeEnum::IntType(int) => match int.get_bit_width() {
-                1  => TypeData::Boolean,
+                1 => TypeData::Boolean,
                 64 => TypeData::Number,
-                _  => unimplemented!()
+                _ => unimplemented!(),
             },
-            _ => return Err(LLVMTypeConversionError { from: format!("{:?}", t) }.into()),
+            _ => {
+                return Err(LLVMTypeConversionError {
+                    from: format!("{:?}", t),
+                }.into())
+            }
         })
     }
 
@@ -43,7 +45,11 @@ impl TypeData {
         Ok(match self {
             TypeData::Number => IntType::i64_type(),
             TypeData::Boolean => IntType::bool_type(),
-            _ => return Err(InternalTypeConversionError { type_description: format!("{:?}", self) }.into()),
+            _ => {
+                return Err(InternalTypeConversionError {
+                    type_description: format!("{:?}", self),
+                }.into())
+            }
         }.into())
     }
 
@@ -53,7 +59,7 @@ impl TypeData {
             TypeData::Boolean => 1,
             TypeData::Array(_, _) => unimplemented!(),
             TypeData::Empty => 0,
-            TypeData::Enum(_) => unimplemented!()
+            TypeData::Enum(_) => unimplemented!(),
         }
     }
 }
@@ -65,7 +71,7 @@ impl fmt::Display for TypeData {
             TypeData::Boolean => "Boolean".to_string(),
             TypeData::Array(_, _) => unimplemented!(),
             TypeData::Empty => "Empty".to_string(),
-            TypeData::Enum(data) => format!("{:?}", data)
+            TypeData::Enum(data) => format!("{:?}", data),
         };
 
         write!(f, "{}", rep)
@@ -89,13 +95,13 @@ impl FromStr for TypeData {
 }
 
 pub struct TypeStore {
-    data: HashMap<TypeID, TypeData>
+    data: HashMap<TypeID, TypeData>,
 }
 
 impl TypeStore {
     pub fn new() -> Self {
         Self {
-            data: HashMap::new()
+            data: HashMap::new(),
         }
     }
 

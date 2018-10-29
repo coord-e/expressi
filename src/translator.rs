@@ -1,10 +1,10 @@
 use expression::Expression;
 
 use builder::Builder;
-use error::{UndeclaredVariableError, UndeclaredTypeError, TypeError};
-use value::{ValueID, ValueData, Atom};
-use value::type_::{EnumTypeData, TypeID};
+use error::{TypeError, UndeclaredTypeError, UndeclaredVariableError};
 use scope::Scope;
+use value::type_::{EnumTypeData, TypeID};
+use value::{Atom, ValueData, ValueID};
 
 use failure::Error;
 
@@ -21,18 +21,23 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Empty => self.builder.empty_constant()?.into(),
 
-            Expression::Array(expr) => {
-                unimplemented!()
-            }
+            Expression::Array(expr) => unimplemented!(),
 
             Expression::Type(expr) => {
-                let typedata = expr.into_iter().map(|(ident, params)| Ok((
-                        match ident {
-                            Expression::TypeIdentifier(id) => id,
-                            _ => unreachable!()
-                        },
-                        params.into_iter().map(|t| self.translate_expr(t).and_then(|e| e.expect_type())).collect::<Result<Vec<TypeID>, _>>()?
-                    ))).collect::<Result<EnumTypeData, Error>>()?;
+                let typedata = expr
+                    .into_iter()
+                    .map(|(ident, params)| {
+                        Ok((
+                            match ident {
+                                Expression::TypeIdentifier(id) => id,
+                                _ => unreachable!(),
+                            },
+                            params
+                                .into_iter()
+                                .map(|t| self.translate_expr(t).and_then(|e| e.expect_type()))
+                                .collect::<Result<Vec<TypeID>, _>>()?,
+                        ))
+                    }).collect::<Result<EnumTypeData, Error>>()?;
                 self.builder.register_type(typedata)?.into()
             }
 
@@ -57,11 +62,18 @@ impl<'a> FunctionTranslator<'a> {
                 new_value.into()
             }
 
-            Expression::TypeIdentifier(id) => self.builder.scope_stack().resolve_type(&id).ok_or(UndeclaredTypeError)?.into(),
+            Expression::TypeIdentifier(id) => self
+                .builder
+                .scope_stack()
+                .resolve_type(&id)
+                .ok_or(UndeclaredTypeError)?
+                .into(),
 
-            Expression::Identifier(name) => {
-                self.builder.get_var(&name).and_then(|v| v.ok_or(UndeclaredVariableError.into()))?.into()
-            }
+            Expression::Identifier(name) => self
+                .builder
+                .get_var(&name)
+                .and_then(|v| v.ok_or(UndeclaredVariableError.into()))?
+                .into(),
 
             Expression::Cast(lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?.expect_value()?;
@@ -91,7 +103,8 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.switch_to_block(&initial_block);
                 let then_type = self.builder.type_of(then_return)?;
                 let var_name = self.builder.declare_var("__cond", then_type, true)?;
-                self.builder.brz(condition_value, &then_block, &else_block)?;
+                self.builder
+                    .brz(condition_value, &then_block, &else_block)?;
 
                 self.builder.switch_to_block(&then_block);
                 self.builder.set_var(&var_name, then_return)?;

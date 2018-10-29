@@ -4,9 +4,9 @@ pub mod builder;
 pub mod expression;
 pub mod jit;
 pub mod parser;
+pub mod scope;
 pub mod translator;
 pub mod value;
-pub mod scope;
 
 pub mod error;
 

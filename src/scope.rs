@@ -1,5 +1,5 @@
-use value::{ValueID, ValueManagerRef, TypeID};
 use error::UnexpectedScopePopError;
+use value::{TypeID, ValueID, ValueManagerRef};
 
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -25,20 +25,27 @@ impl Scope {
             variable_values: HashMap::new(),
             variable_pointers: HashMap::new(),
             types: HashMap::new(),
-            manager
+            manager,
         }
     }
 
     pub fn get(&self, s: &str) -> Option<ValueID> {
-        self.variables.get(s).and_then(|var| self.variable_values.get(var)).cloned()
+        self.variables
+            .get(s)
+            .and_then(|var| self.variable_values.get(var))
+            .cloned()
     }
 
     pub fn get_var(&self, s: &str) -> Option<PointerValue> {
-        self.variables.get(s).and_then(|var| self.variable_pointers.get(var)).cloned()
+        self.variables
+            .get(s)
+            .and_then(|var| self.variable_pointers.get(var))
+            .cloned()
     }
 
     pub fn set(&mut self, s: &str, val: ValueID) {
-        self.variable_values.insert(*self.variables.get(s).unwrap(), val);
+        self.variable_values
+            .insert(*self.variables.get(s).unwrap(), val);
     }
 
     pub fn add(&mut self, s: &str, val: ValueID, var: PointerValue) {
@@ -48,15 +55,19 @@ impl Scope {
         self.variable_pointers.insert(idx, var);
     }
 
-    pub fn variables(&self) -> impl Iterator<Item=(&String, PointerValue)> {
-        self.variables.iter().map(move |(k, v)| (k, self.variable_pointers.get(&v).cloned().unwrap()))
+    pub fn variables(&self) -> impl Iterator<Item = (&String, PointerValue)> {
+        self.variables
+            .iter()
+            .map(move |(k, v)| (k, self.variable_pointers.get(&v).cloned().unwrap()))
     }
 
-    pub fn values(&self) -> impl Iterator<Item=(&String, ValueID)> {
-        self.variables.iter().map(move |(k, v)| (k, self.variable_values.get(&v).unwrap().clone()))
+    pub fn values(&self) -> impl Iterator<Item = (&String, ValueID)> {
+        self.variables
+            .iter()
+            .map(move |(k, v)| (k, self.variable_values.get(&v).unwrap().clone()))
     }
 
-    pub fn types(&self) -> impl Iterator<Item=(&String, TypeID)> {
+    pub fn types(&self) -> impl Iterator<Item = (&String, TypeID)> {
         self.types.iter().map(|(k, v)| (k, v.clone()))
     }
 
@@ -71,14 +82,14 @@ impl Scope {
 
 pub struct ScopeStack {
     scopes: Vec<Scope>,
-    manager: ValueManagerRef
+    manager: ValueManagerRef,
 }
 
 impl ScopeStack {
     pub fn new(manager: ValueManagerRef) -> Self {
         ScopeStack {
             scopes: vec![Scope::new(manager.clone())],
-            manager
+            manager,
         }
     }
 
@@ -97,15 +108,15 @@ impl ScopeStack {
         self.scopes.pop().ok_or(UnexpectedScopePopError.into())
     }
 
-    pub fn variables(&self) -> impl Iterator<Item=(&String, PointerValue)> {
+    pub fn variables(&self) -> impl Iterator<Item = (&String, PointerValue)> {
         self.scopes.iter().flat_map(|it| it.variables())
     }
 
-    pub fn values(&self) -> impl Iterator<Item=(&String, ValueID)> {
+    pub fn values(&self) -> impl Iterator<Item = (&String, ValueID)> {
         self.scopes.iter().flat_map(|it| it.values())
     }
 
-    pub fn types(&self) -> impl Iterator<Item=(&String, TypeID)> {
+    pub fn types(&self) -> impl Iterator<Item = (&String, TypeID)> {
         self.scopes.iter().flat_map(|it| it.types())
     }
 
@@ -123,7 +134,10 @@ impl ScopeStack {
 
     pub fn set(&mut self, s: &str, val: ValueID) {
         let mut it = self.scopes.iter_mut();
-        it.find(|sc| sc.get(s).is_some()).or(it.last()).unwrap().set(s, val)
+        it.find(|sc| sc.get(s).is_some())
+            .or(it.last())
+            .unwrap()
+            .set(s, val)
     }
 
     pub fn unique_name(&self, s: &str) -> String {

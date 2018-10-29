@@ -52,10 +52,7 @@ pub struct InvalidCastError {
 }
 
 #[derive(Fail, Debug)]
-#[fail(
-    display = "Failed to initialize the target: {}",
-    message
-)]
+#[fail(display = "Failed to initialize the target: {}", message)]
 pub struct TargetInitializationError {
     pub message: String,
 }

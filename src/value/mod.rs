@@ -1,9 +1,9 @@
-pub mod value;
-pub mod type_;
-pub mod manager;
 pub mod atom;
+pub mod manager;
+pub mod type_;
+pub mod value;
 
-pub use value::value::{ValueID, ValueStore, ValueData};
-pub use value::type_::{TypeStore, TypeID};
 pub use value::atom::Atom;
 pub use value::manager::{ValueManager, ValueManagerRef};
+pub use value::type_::{TypeID, TypeStore};
+pub use value::value::{ValueData, ValueID, ValueStore};
