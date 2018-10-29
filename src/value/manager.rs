@@ -72,7 +72,12 @@ impl ValueManager {
 
     fn primitive_type_llvm(&self, t: BasicTypeEnum) -> TypeID {
         match t {
-            BasicTypeEnum::IntType(_) => self.primitive_type(PrimitiveKind::Number),
+            BasicTypeEnum::IntType(t) =>
+                match t.get_bit_width() {
+                    1 => self.primitive_type(PrimitiveKind::Boolean),
+                    64 => self.primitive_type(PrimitiveKind::Number),
+                    _ => unimplemented!()
+                },
             _ => unimplemented!()
         }
     }
