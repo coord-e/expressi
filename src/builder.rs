@@ -258,23 +258,23 @@ impl<'a> Builder<'a> {
         let bool_type = self.manager.borrow().primitive_type(PrimitiveKind::Boolean);
         let number_type = self.manager.borrow().primitive_type(PrimitiveKind::Number);
 
-        Ok(match (from_type, to_type) {
-            (number_type, bool_type) => {
+        // TODO: more elegant way to match types
+        if from_type == number_type {
+            if to_type == bool_type {
                 let zero = self.number_constant(0)?;
-                self.cmp(CondCode::NotEqual, v, zero)?
+                return self.cmp(CondCode::NotEqual, v, zero);
             }
-            (bool_type, number_type) => {
+        } else if from_type == bool_type {
+            if to_type == number_type {
                 let cl = self.manager.borrow().llvm_value(v)?;
                 let to_llvm_type = self.manager.borrow().llvm_type(to_type)?;
-                self.manager.borrow_mut().new_value_from_llvm(self.inst_builder.build_int_cast(cl.into_int_value(), to_llvm_type.into_int_type(), "b2i"), to_llvm_type)?
-            },
-            _ => {
-                return Err(InvalidCastError {
-                    from: from_type,
-                    to: to_type,
-                }.into())
+                return self.manager.borrow_mut().new_value_from_llvm(self.inst_builder.build_int_cast(cl.into_int_value(), to_llvm_type.into_int_type(), "b2i"), to_llvm_type);
             }
-        })
+        }
+        Err(InvalidCastError {
+            from: from_type,
+            to: to_type,
+        }.into())
     }
 
     pub fn enter_new_scope(&mut self) {
