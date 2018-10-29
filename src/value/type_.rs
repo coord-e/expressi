@@ -52,7 +52,8 @@ impl TypeData {
             TypeData::Number => 8,
             TypeData::Boolean => 1,
             TypeData::Array(t, length) => unsafe {*t.as_ptr()}.size() * length,
-            TypeData::Empty => 0
+            TypeData::Empty => 0,
+            TypeData::Enum(_) => unimplemented!()
         }
     }
 }
@@ -64,6 +65,7 @@ impl fmt::Display for TypeData {
             TypeData::Boolean => "Boolean".to_string(),
             TypeData::Array(t, length) => format!("[{}; {}]", unsafe {*t.as_ptr()}, length),
             TypeData::Empty => "Empty".to_string(),
+            TypeData::Enum(data) => format!("{:?}", data)
         };
 
         write!(f, "{}", rep)
