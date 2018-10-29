@@ -63,6 +63,10 @@ impl Scope {
     pub fn resolve_type(&self, id: &str) -> Option<TypeID> {
         self.types.get(id).cloned()
     }
+
+    pub fn add_type(&mut self, name: &str, id: TypeID) {
+        self.types.insert(name.to_string(), id);
+    }
 }
 
 pub struct ScopeStack {
@@ -129,5 +133,9 @@ impl ScopeStack {
 
     pub fn resolve_type(&self, id: &str) -> Option<TypeID> {
         self.types().find(|(k, _)| k == &id).map(|(_, v)| v)
+    }
+
+    pub fn add_type(&mut self, name: &str, id: TypeID) {
+        self.scopes.last_mut().unwrap().add_type(name, id);
     }
 }
