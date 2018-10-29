@@ -1,4 +1,4 @@
-use value::Type;
+use value::TypeID;
 
 #[derive(Fail, Debug)]
 #[fail(display = "Use of undeclared variable")]
@@ -29,8 +29,12 @@ pub struct TypeError;
 pub struct UnexpectedScopePopError;
 
 #[derive(Fail, Debug)]
-#[fail(display = "Internal Error; Use of released value")]
-pub struct ReleasedValueError;
+#[fail(display = "Internal Error; Use of invalid value ID")]
+pub struct InvalidValueIDError;
+
+#[derive(Fail, Debug)]
+#[fail(display = "Internal Error; Use of invalid type ID")]
+pub struct InvalidTypeIDError;
 
 #[derive(Fail, Debug)]
 #[fail(display = "Attempt to create a new branch in an invalid context")]
@@ -41,17 +45,14 @@ pub struct InvalidContextBranchError;
 pub struct FailedToCreateJITError;
 
 #[derive(Fail, Debug)]
-#[fail(display = "Invalid Cast from {} to {}", from, to)]
+#[fail(display = "Invalid Cast from {:?} to {:?}", from, to)]
 pub struct InvalidCastError {
-    pub from: Type,
-    pub to: Type,
+    pub from: TypeID,
+    pub to: TypeID,
 }
 
 #[derive(Fail, Debug)]
-#[fail(
-    display = "Failed to initialize the target: {}",
-    message
-)]
+#[fail(display = "Failed to initialize the target: {}", message)]
 pub struct TargetInitializationError {
     pub message: String,
 }
@@ -68,10 +69,11 @@ pub struct LLVMTypeConversionError {
 #[derive(Fail, Debug)]
 #[fail(
     display = "Attempt to convert incompatible llvm type {} to expressi's type representation",
-    from
+    type_description
 )]
 pub struct InternalTypeConversionError {
-    pub from: Type,
+    // TODO: Use better representation than string
+    pub type_description: String,
 }
 
 #[derive(Fail, Debug)]

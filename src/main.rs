@@ -39,7 +39,11 @@ fn repl(jit: &mut jit::JIT, line_count: u32) -> Result<(), Error> {
     })?;
 
     let func = jit.compile(&format!("repl_{}", line_count), &buffer.trim())?;
-    println!("{}{}", Blue.paint("-> "), Blue.paint(unsafe { func() }.to_string()));
+    println!(
+        "{}{}",
+        Blue.paint("-> "),
+        Blue.paint(unsafe { func() }.to_string())
+    );
     Ok(())
 }
 
@@ -51,8 +55,7 @@ fn main() {
             Arg::with_name("INPUT")
                 .help("Sets the input file to use")
                 .index(1),
-        )
-        .get_matches();
+        ).get_matches();
 
     let mut jit = jit::JIT::new().unwrap();
 

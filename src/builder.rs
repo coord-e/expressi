@@ -1,12 +1,15 @@
-use error::{InvalidCastError, TypeError, ReleasedValueError, InvalidContextBranchError};
+use error::{InvalidCastError, InvalidContextBranchError, TypeError};
 use expression::Operator;
-use value::{Value, ValueStore, ValueData, Type, TypeStore, TypeID};
 use scope::{Scope, ScopeStack};
+use value::manager::PrimitiveKind;
+use value::type_::EnumTypeData;
+use value::{TypeID, TypeStore, ValueData, ValueID, ValueManager, ValueManagerRef, ValueStore};
 
 use failure::Error;
 
-use inkwell::{basic_block,builder,module,types,values,IntPredicate};
+use inkwell::{basic_block, builder, module, types, values, IntPredicate};
 
+use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -30,57 +33,81 @@ impl Block {
 }
 
 pub struct Builder<'a> {
-    value_store: ValueStore,
-    type_store: TypeStore,
     inst_builder: &'a mut builder::Builder,
     module: Rc<module::Module>,
-    scope_stack: ScopeStack
+    manager: ValueManagerRef,
+    scope_stack: ScopeStack,
 }
 
 impl<'a> Builder<'a> {
     pub fn new(inst_builder: &'a mut builder::Builder, module: Rc<module::Module>) -> Self {
+        let manager = Rc::new(RefCell::new(ValueManager::new()));
+        let mut scope_stack = ScopeStack::new(manager.clone());
+
+        scope_stack.add_type(
+            "Number",
+            manager.borrow().primitive_type(PrimitiveKind::Number),
+        );
+        scope_stack.add_type(
+            "Boolean",
+            manager.borrow().primitive_type(PrimitiveKind::Boolean),
+        );
+        scope_stack.add_type(
+            "Empty",
+            manager.borrow().primitive_type(PrimitiveKind::Empty),
+        );
+
         Builder {
             inst_builder,
             module,
-            value_store: ValueStore::new(),
-            type_store: TypeStore::new(),
-            scope_stack: ScopeStack::new()
+            scope_stack,
+            manager,
         }
-    }
-
-    pub fn to_cl(&self, v: Value) -> Result<values::BasicValueEnum, Error> {
-        self.value_store.get(v).ok_or(ReleasedValueError.into()).and_then(|v| v.cl_value())
     }
 
     pub fn inst_builder<'short>(&'short mut self) -> &'short mut builder::Builder {
         self.inst_builder
     }
 
-    pub fn value_store<'short>(&'short mut self) -> &'short mut ValueStore {
-        &mut self.value_store
-    }
-
-    pub fn type_store<'short>(&'short mut self) -> &'short mut TypeStore {
-        &mut self.type_store
-    }
-
     pub fn scope_stack<'short>(&'short mut self) -> &'short mut ScopeStack {
         &mut self.scope_stack
     }
 
-    pub fn number_constant(&mut self, v: i64) -> Result<Value, Error> {
+    pub fn type_of(&self, v: ValueID) -> Result<TypeID, Error> {
+        self.manager.try_borrow()?.type_of(v)
+    }
+
+    pub fn number_constant(&mut self, v: i64) -> Result<ValueID, Error> {
         let t = types::IntType::i64_type();
-        let data = ValueData::from_cl(values::BasicValueEnum::IntValue(t.const_int(v.abs() as u64, v < 0)), t)?;
-        Ok(self.value_store.new_value(data))
+        self.manager.try_borrow_mut()?.new_value_from_llvm(
+            values::BasicValueEnum::IntValue(t.const_int(v.abs() as u64, v < 0)),
+            t,
+        )
     }
 
-    pub fn boolean_constant(&mut self, v: bool) -> Result<Value, Error> {
+    pub fn boolean_constant(&mut self, v: bool) -> Result<ValueID, Error> {
         let t = types::IntType::bool_type();
-        let data = ValueData::from_cl(values::BasicValueEnum::IntValue(t.const_int(v as u64, false)), t)?;
-        Ok(self.value_store.new_value(data))
+        self.manager.try_borrow_mut()?.new_value_from_llvm(
+            values::BasicValueEnum::IntValue(t.const_int(v as u64, false)),
+            t,
+        )
     }
 
-    pub fn apply_op(&mut self, op: Operator, lhs: Value, rhs: Value) -> Result<Value, Error> {
+    pub fn empty_constant(&self) -> Result<ValueID, Error> {
+        self.manager
+            .try_borrow()
+            .map_err(Into::into)
+            .map(|manager| manager.empty_value())
+    }
+
+    pub fn register_type(&mut self, data: EnumTypeData) -> Result<TypeID, Error> {
+        self.manager
+            .try_borrow_mut()
+            .map_err(Into::into)
+            .map(|mut manager| manager.new_user_type(data))
+    }
+
+    pub fn apply_op(&mut self, op: Operator, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         match op {
             Operator::Add => self.add(lhs, rhs),
             Operator::Sub => self.sub(lhs, rhs),
@@ -99,198 +126,232 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn add(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
+    fn check_numeric_args(&self, lhs: ValueID, rhs: ValueID) -> Result<(), Error> {
+        let manager = self.manager.try_borrow()?;
+        let number_type = manager.primitive_type(PrimitiveKind::Number);
+        if manager.type_of(lhs)? != number_type || manager.type_of(rhs)? != number_type {
             return Err(TypeError.into());
         }
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
-        let res = self
-            .inst_builder
-            .build_int_add(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "add");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+        Ok(())
     }
 
-    pub fn sub(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
-        let res = self
-            .inst_builder
-            .build_int_sub(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "sub");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+    pub fn add(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
+        self.check_numeric_args(lhs, rhs)?;
+        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
+        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
+        let res = self.inst_builder.build_int_add(
+            lhs_cl.into_int_value(),
+            rhs_cl.into_int_value(),
+            "add",
+        );
+        self.manager
+            .try_borrow_mut()?
+            .new_value_from_llvm(res, types::IntType::i64_type())
     }
 
-    pub fn mul(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
-        let res = self
-            .inst_builder
-            .build_int_mul(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "mul");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+    pub fn sub(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
+        self.check_numeric_args(lhs, rhs)?;
+        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
+        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
+        let res = self.inst_builder.build_int_sub(
+            lhs_cl.into_int_value(),
+            rhs_cl.into_int_value(),
+            "sub",
+        );
+        self.manager
+            .try_borrow_mut()?
+            .new_value_from_llvm(res, types::IntType::i64_type())
     }
 
-    pub fn div(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
-        let res = self
-            .inst_builder
-            .build_int_unsigned_div(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "div");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+    pub fn mul(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
+        self.check_numeric_args(lhs, rhs)?;
+        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
+        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
+        let res = self.inst_builder.build_int_mul(
+            lhs_cl.into_int_value(),
+            rhs_cl.into_int_value(),
+            "mul",
+        );
+        self.manager
+            .try_borrow_mut()?
+            .new_value_from_llvm(res, types::IntType::i64_type())
     }
 
-    pub fn bit_and(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
-        let res = self
-            .inst_builder
-            .build_and(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "and");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+    pub fn div(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
+        self.check_numeric_args(lhs, rhs)?;
+        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
+        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
+        let res = self.inst_builder.build_int_unsigned_div(
+            lhs_cl.into_int_value(),
+            rhs_cl.into_int_value(),
+            "div",
+        );
+        self.manager
+            .try_borrow_mut()?
+            .new_value_from_llvm(res, types::IntType::i64_type())
     }
 
-    pub fn bit_or(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
-        let res = self
-            .inst_builder
-            .build_or(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "or");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+    pub fn bit_and(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
+        self.check_numeric_args(lhs, rhs)?;
+        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
+        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
+        let res =
+            self.inst_builder
+                .build_and(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "and");
+        self.manager
+            .try_borrow_mut()?
+            .new_value_from_llvm(res, types::IntType::i64_type())
     }
 
-    pub fn bit_xor(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
-        let res = self
-            .inst_builder
-            .build_xor(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "xor");
-        let data = ValueData::from_cl(res, types::IntType::i64_type())?;
-        Ok(self.value_store.new_value(data))
+    pub fn bit_or(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
+        self.check_numeric_args(lhs, rhs)?;
+        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
+        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
+        let res =
+            self.inst_builder
+                .build_or(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "or");
+        self.manager
+            .try_borrow_mut()?
+            .new_value_from_llvm(res, types::IntType::i64_type())
     }
 
-    pub fn cmp(&mut self, cmp_type: CondCode, lhs: Value, rhs: Value) -> Result<Value, Error> {
-        if lhs.get_type() != Type::Number || rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
+    pub fn bit_xor(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
+        self.check_numeric_args(lhs, rhs)?;
+        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
+        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
+        let res =
+            self.inst_builder
+                .build_xor(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "xor");
+        self.manager
+            .try_borrow_mut()?
+            .new_value_from_llvm(res, types::IntType::i64_type())
+    }
+
+    pub fn cmp(
+        &mut self,
+        cmp_type: CondCode,
+        lhs: ValueID,
+        rhs: ValueID,
+    ) -> Result<ValueID, Error> {
+        self.check_numeric_args(lhs, rhs)?;
         let cc = match cmp_type {
-            CondCode::Equal              => IntPredicate::EQ,
-            CondCode::NotEqual           => IntPredicate::NE,
-            CondCode::LessThan           => IntPredicate::SLT,
+            CondCode::Equal => IntPredicate::EQ,
+            CondCode::NotEqual => IntPredicate::NE,
+            CondCode::LessThan => IntPredicate::SLT,
             CondCode::GreaterThanOrEqual => IntPredicate::SGE,
-            CondCode::GreaterThan        => IntPredicate::SGT,
-            CondCode::LessThanOrEqual    => IntPredicate::SLE,
+            CondCode::GreaterThan => IntPredicate::SGT,
+            CondCode::LessThanOrEqual => IntPredicate::SLE,
         };
 
-        let lhs_cl = self.to_cl(lhs)?;
-        let rhs_cl = self.to_cl(rhs)?;
-        let res = self
-            .inst_builder
-            .build_int_compare(cc, lhs_cl.into_int_value(), rhs_cl.into_int_value(), "cmp");
-        let data = ValueData::from_cl(res, types::IntType::bool_type())?;
-        Ok(self.value_store.new_value(data))
+        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
+        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
+        let res = self.inst_builder.build_int_compare(
+            cc,
+            lhs_cl.into_int_value(),
+            rhs_cl.into_int_value(),
+            "cmp",
+        );
+        self.manager
+            .try_borrow_mut()?
+            .new_value_from_llvm(res, types::IntType::bool_type())
     }
 
-    pub fn index(&mut self, lhs: Value, rhs: Value) -> Result<Value, Error> {
-        match lhs.get_type() {
-            Type::Array(..) => {},
-            _ => return Err(TypeError.into())
-        }
-        if rhs.get_type() != Type::Number {
-            return Err(TypeError.into());
-        }
+    pub fn index(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
+        unimplemented!()
+    }
 
-        let byte = self.number_constant(8)?;
-        let offset = self.mul(rhs, byte)?;
-        let offset_cl = self.to_cl(offset)?.into_int_value();
-        let data = {
-            let lhs_data = self.value_store.get(lhs).ok_or(ReleasedValueError)?;
-            if let ValueData::Array { elements, addr, item_type, ..} = lhs_data {
-                // TODO: Safety check
-                let ptr = unsafe { self.inst_builder.build_in_bounds_gep(*addr, &[offset_cl], "idx_offset") };
-                let loaded = self.inst_builder.build_load(ptr, "idx_load");
-                ValueData::primitive(loaded, *item_type)
-            } else {
-                return Err(TypeError.into());
-            }
+    pub fn declare_var(&mut self, name: &str, t: TypeID, unique: bool) -> Result<String, Error> {
+        let manager = self.manager.try_borrow()?;
+        let real_name = if unique {
+            self.scope_stack.unique_name(name)
+        } else {
+            name.to_string()
         };
-        Ok(self.value_store.new_value(data))
-    }
-
-    pub fn declare_var(&mut self, name: &str, t: Type, unique: bool) -> Result<String, Error> {
-        let real_name = if unique { self.scope_stack.unique_name(name) } else { name.to_string() };
-        let variable = self.inst_builder.build_alloca(t.cl_type()?, &real_name);
-        let empty = self.value_store.new_value(ValueData::Empty);
+        let llvm_type = manager.llvm_type(t)?;
+        let variable = self.inst_builder.build_alloca(llvm_type, &real_name);
+        let empty = manager.empty_value();
         self.scope_stack.add(&real_name, empty, variable); // TODO: TypeValue
         Ok(real_name)
     }
 
-    pub fn set_var(&mut self, name: &str, val: Value) -> Result<Value, Error> {
-        let variable = self.scope_stack.get_var(name).ok_or(()).or_else(|_| -> Result<values::PointerValue, Error> {
-            let variable = self.inst_builder.build_alloca(val.get_type().cl_type()?, name);
-            self.scope_stack.add(name, val, variable);
-            Ok(variable)
-        })?;
-        if let Ok(val) = self.to_cl(val) {
+    pub fn set_var(&mut self, name: &str, val: ValueID) -> Result<ValueID, Error> {
+        let variable = self.scope_stack.get_var(name).ok_or(()).or_else(
+            |_| -> Result<values::PointerValue, Error> {
+                let manager = self.manager.try_borrow()?;
+                let t = manager.type_of(val)?;
+                let llvm_type = manager.llvm_type(t)?;
+                let variable = self.inst_builder.build_alloca(llvm_type, name);
+                self.scope_stack.add(name, val, variable);
+                Ok(variable)
+            },
+        )?;
+        if let Ok(val) = self.manager.try_borrow()?.llvm_value(val) {
             self.inst_builder.build_store(variable, val);
         }
         self.scope_stack.set(name, val);
         Ok(val)
     }
 
-    pub fn get_var(&mut self, name: &str) -> Option<Value> {
-        self.scope_stack.get_var(name).map(|var| {
+    pub fn get_var(&mut self, name: &str) -> Result<Option<ValueID>, Error> {
+        self.scope_stack.get_var(name).map_or(Ok(None), |var| {
             let value = self.scope_stack.get(name).unwrap();
-            let data = ValueData::primitive(self.inst_builder.build_load(var, "load_var"), value.get_type());
-            self.value_store.new_value(data)
+            let t = self.manager.try_borrow()?.type_of(value)?;
+            let llvm_type = self.manager.try_borrow()?.llvm_type(t)?;
+            let loaded = self.inst_builder.build_load(var, "load_var");
+            self.manager
+                .try_borrow_mut()?
+                .new_value_from_llvm(loaded, llvm_type)
+                .map(Some)
         })
     }
 
-    pub fn cast_to(&mut self, v: Value, t: Type) -> Result<Value, Error> {
-        if v.get_type() == t {
+    pub fn cast_to(&mut self, v: ValueID, to_type: TypeID) -> Result<ValueID, Error> {
+        let from_type = self.manager.try_borrow()?.type_of(v)?;
+        if from_type == to_type {
             return Err(InvalidCastError {
-                from: v.get_type(),
-                to: t,
+                from: from_type,
+                to: to_type,
             }.into());
         }
-        Ok(match (v.get_type(), t) {
-            (Type::Number, Type::Boolean) => {
+
+        let bool_type = self
+            .manager
+            .try_borrow()?
+            .primitive_type(PrimitiveKind::Boolean);
+        let number_type = self
+            .manager
+            .try_borrow()?
+            .primitive_type(PrimitiveKind::Number);
+
+        // TODO: more elegant way to match types
+        if from_type == number_type {
+            if to_type == bool_type {
                 let zero = self.number_constant(0)?;
-                self.cmp(CondCode::NotEqual, v, zero)?
+                return self.cmp(CondCode::NotEqual, v, zero);
             }
-            (Type::Boolean, Type::Number) => {
-                let cl = self.to_cl(v)?;
-                let data = ValueData::primitive(self.inst_builder.build_int_cast(cl.into_int_value(), t.cl_type()?.into_int_type(), "b2i"), t);
-                self.value_store.new_value(data)
-            },
-            _ => {
-                return Err(InvalidCastError {
-                    from: v.get_type(),
-                    to: t,
-                }.into())
+        } else if from_type == bool_type {
+            if to_type == number_type {
+                let cl = self.manager.try_borrow()?.llvm_value(v)?;
+                let to_llvm_type = self.manager.try_borrow()?.llvm_type(to_type)?;
+                return self.manager.try_borrow_mut()?.new_value_from_llvm(
+                    self.inst_builder.build_int_z_extend(
+                        cl.into_int_value(),
+                        to_llvm_type.into_int_type(),
+                        "b2i",
+                    ),
+                    to_llvm_type,
+                );
             }
-        })
+        }
+        Err(InvalidCastError {
+            from: from_type,
+            to: to_type,
+        }.into())
+    }
+
+    pub fn enter_new_scope(&mut self) {
+        let scope = self.scope_stack.new_scope();
+        self.enter_scope(scope);
     }
 
     pub fn enter_scope(&mut self, sc: Scope) {
@@ -301,38 +362,76 @@ impl<'a> Builder<'a> {
         self.scope_stack.pop()
     }
 
-    pub fn array_alloc(&mut self, t: Type, size: u32) -> Result<values::PointerValue, Error> {
-        Ok(self.inst_builder.build_array_alloca(t.cl_type()?, types::IntType::i32_type().const_int(size as u64, false), "array_alloc"))
+    pub fn array_alloc(&mut self, t: TypeID, size: u32) -> Result<values::PointerValue, Error> {
+        unimplemented!()
     }
 
-    pub fn store(&mut self, v: Value, addr: values::PointerValue, offset: u32) -> Result<(), Error> {
+    pub fn store(
+        &mut self,
+        v: ValueID,
+        addr: values::PointerValue,
+        offset: u32,
+    ) -> Result<(), Error> {
         // TODO: Safety check
-        let ptr = unsafe { self.inst_builder.build_in_bounds_gep(addr, &[types::IntType::i32_type().const_int(offset as u64, false)], "store") };
-        let cl = self.to_cl(v)?;
+        let ptr = unsafe {
+            self.inst_builder.build_in_bounds_gep(
+                addr,
+                &[types::IntType::i32_type().const_int(offset as u64, false)],
+                "store",
+            )
+        };
+        let cl = self.manager.try_borrow()?.llvm_value(v)?;
         self.inst_builder.build_store(ptr, cl);
         Ok(())
     }
 
-    pub fn load(&mut self, t: Type, addr: values::PointerValue, offset: u32) -> Result<Value, Error> {
+    pub fn load(
+        &mut self,
+        t: TypeID,
+        addr: values::PointerValue,
+        offset: u32,
+    ) -> Result<ValueID, Error> {
         // TODO: Safety check
-        let ptr = unsafe { self.inst_builder.build_in_bounds_gep(addr, &[types::IntType::i32_type().const_int(offset as u64, false)], "store") };
-        let data = ValueData::from_cl(self.inst_builder.build_load(ptr, "load"), t.cl_type()?)?;
-        Ok(self.value_store.new_value(data))
+        let ptr = unsafe {
+            self.inst_builder.build_in_bounds_gep(
+                addr,
+                &[types::IntType::i32_type().const_int(offset as u64, false)],
+                "store",
+            )
+        };
+        let llvm_type = self.manager.try_borrow()?.llvm_type(t)?;
+        self.manager
+            .try_borrow_mut()?
+            .new_value_from_llvm(self.inst_builder.build_load(ptr, "load"), llvm_type)
     }
 
     pub fn create_block(&mut self) -> Result<Block, Error> {
-        let parent = self.inst_builder.get_insert_block().and_then(|b| b.get_parent()).ok_or(InvalidContextBranchError)?;
+        let parent = self
+            .inst_builder
+            .get_insert_block()
+            .and_then(|b| b.get_parent())
+            .ok_or(InvalidContextBranchError)?;
         let block = self.module.get_context().append_basic_block(&parent, "");
         Ok(Block { ebb: block })
     }
 
-    pub fn brz(&mut self, condition: Value, then_block: &Block, else_block: &Block) -> Result<(), Error> {
-        if condition.get_type() != Type::Boolean {
+    pub fn brz(
+        &mut self,
+        condition: ValueID,
+        then_block: &Block,
+        else_block: &Block,
+    ) -> Result<(), Error> {
+        let manager = self.manager.try_borrow()?;
+        let bool_type = manager.primitive_type(PrimitiveKind::Boolean);
+        if manager.type_of(condition)? != bool_type {
             return Err(TypeError.into());
         }
-        let cl = self.to_cl(condition)?;
-        self.inst_builder
-            .build_conditional_branch(cl.into_int_value(), then_block.cl_ebb(), else_block.cl_ebb());
+        let cl = manager.llvm_value(condition)?;
+        self.inst_builder.build_conditional_branch(
+            cl.into_int_value(),
+            then_block.cl_ebb(),
+            else_block.cl_ebb(),
+        );
         Ok(())
     }
 
@@ -345,8 +444,30 @@ impl<'a> Builder<'a> {
     }
 
     pub fn current_block(&self) -> Result<Block, Error> {
-        self.inst_builder.get_insert_block()
+        self.inst_builder
+            .get_insert_block()
             .ok_or(InvalidContextBranchError.into())
             .map(|ebb| Block { ebb })
+    }
+
+    pub fn ret_int(&mut self, v: ValueID) -> Result<(), Error> {
+        // TODO: Generic return
+        let number_type = self
+            .manager
+            .try_borrow()?
+            .primitive_type(PrimitiveKind::Number);
+        let return_value = if self.manager.try_borrow()?.type_of(v)? != number_type {
+            self.cast_to(v, number_type)?
+        } else {
+            v
+        };
+        // Emit the return instruction.
+        let cl = self
+            .manager
+            .try_borrow()?
+            .llvm_value(return_value)?
+            .into_int_value();
+        self.inst_builder.build_return(Some(&cl));
+        Ok(())
     }
 }
