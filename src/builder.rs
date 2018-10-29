@@ -247,8 +247,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn cast_to(&mut self, v: ValueID, to_type: TypeID) -> Result<ValueID, Error> {
-        let manager = self.manager.borrow();
-        let from_type = manager.type_of(v)?;
+        let from_type = self.manager.borrow().type_of(v)?;
         if from_type == to_type {
             return Err(InvalidCastError {
                 from: from_type,
@@ -256,8 +255,8 @@ impl<'a> Builder<'a> {
             }.into());
         }
 
-        let bool_type = manager.primitive_type(PrimitiveKind::Boolean);
-        let number_type = manager.primitive_type(PrimitiveKind::Number);
+        let bool_type = self.manager.borrow().primitive_type(PrimitiveKind::Boolean);
+        let number_type = self.manager.borrow().primitive_type(PrimitiveKind::Number);
 
         Ok(match (from_type, to_type) {
             (number_type, bool_type) => {
@@ -265,8 +264,8 @@ impl<'a> Builder<'a> {
                 self.cmp(CondCode::NotEqual, v, zero)?
             }
             (bool_type, number_type) => {
-                let cl = manager.llvm_value(v)?;
-                let to_llvm_type = manager.llvm_type(to_type)?;
+                let cl = self.manager.borrow().llvm_value(v)?;
+                let to_llvm_type = self.manager.borrow().llvm_type(to_type)?;
                 self.manager.borrow_mut().new_value_from_llvm(self.inst_builder.build_int_cast(cl.into_int_value(), to_llvm_type.into_int_type(), "b2i"), to_llvm_type)?
             },
             _ => {
