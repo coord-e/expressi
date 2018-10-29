@@ -6,6 +6,8 @@ use inkwell::types::BasicTypeEnum;
 use inkwell::values::BasicValueEnum;
 
 use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use failure::Error;
 
@@ -23,6 +25,8 @@ pub struct ValueManager {
     // TODO: Remove `Option` with better initialization
     empty_value: Option<ValueID>
 }
+
+pub type ValueManagerRef = Rc<RefCell<ValueManager>>;
 
 impl ValueManager {
     pub fn new() -> Self {

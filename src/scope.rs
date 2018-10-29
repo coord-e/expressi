@@ -1,4 +1,4 @@
-use value::{ValueID, ValueManager, TypeID};
+use value::{ValueID, ValueManagerRef, TypeID};
 use error::UnexpectedScopePopError;
 
 use std::collections::HashMap;
@@ -14,12 +14,12 @@ pub struct Scope {
     variables: HashMap<String, VariableId>,
     variable_values: HashMap<VariableId, ValueID>,
     variable_pointers: HashMap<VariableId, PointerValue>,
-    manager: Rc<ValueManager>,
+    manager: ValueManagerRef,
     types: HashMap<String, TypeID>,
 }
 
 impl Scope {
-    pub fn new(manager: Rc<ValueManager>) -> Self {
+    pub fn new(manager: ValueManagerRef) -> Self {
         Scope {
             variables: HashMap::new(),
             variable_values: HashMap::new(),
@@ -67,11 +67,11 @@ impl Scope {
 
 pub struct ScopeStack {
     scopes: Vec<Scope>,
-    manager: Rc<ValueManager>
+    manager: ValueManagerRef
 }
 
 impl ScopeStack {
-    pub fn new(manager: Rc<ValueManager>) -> Self {
+    pub fn new(manager: ValueManagerRef) -> Self {
         ScopeStack {
             scopes: vec![Scope::new(manager.clone())],
             manager
