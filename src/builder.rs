@@ -42,10 +42,16 @@ pub struct Builder<'a> {
 impl<'a> Builder<'a> {
     pub fn new(inst_builder: &'a mut builder::Builder, module: Rc<module::Module>) -> Self {
         let manager = Rc::new(RefCell::new(ValueManager::new()));
+        let mut scope_stack = ScopeStack::new(manager.clone());
+
+        scope_stack.add_type("Number", manager.borrow().primitive_type(PrimitiveKind::Number));
+        scope_stack.add_type("Boolean", manager.borrow().primitive_type(PrimitiveKind::Boolean));
+        scope_stack.add_type("Empty", manager.borrow().primitive_type(PrimitiveKind::Empty));
+
         Builder {
             inst_builder,
             module,
-            scope_stack: ScopeStack::new(manager.clone()),
+            scope_stack,
             manager
         }
     }
