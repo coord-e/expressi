@@ -110,9 +110,8 @@ impl<'a> Builder<'a> {
 
     pub fn add(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         self.check_numeric_args(lhs, rhs)?;
-        let manager = self.manager.borrow();
-        let lhs_cl = manager.llvm_value(lhs)?;
-        let rhs_cl = manager.llvm_value(lhs)?;
+        let lhs_cl = self.manager.borrow().llvm_value(lhs)?;
+        let rhs_cl = self.manager.borrow().llvm_value(lhs)?;
         let res = self
             .inst_builder
             .build_int_add(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "add");
@@ -121,9 +120,8 @@ impl<'a> Builder<'a> {
 
     pub fn sub(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         self.check_numeric_args(lhs, rhs)?;
-        let manager = self.manager.borrow();
-        let lhs_cl = manager.llvm_value(lhs)?;
-        let rhs_cl = manager.llvm_value(lhs)?;
+        let lhs_cl = self.manager.borrow().llvm_value(lhs)?;
+        let rhs_cl = self.manager.borrow().llvm_value(lhs)?;
         let res = self
             .inst_builder
             .build_int_sub(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "sub");
@@ -132,9 +130,8 @@ impl<'a> Builder<'a> {
 
     pub fn mul(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         self.check_numeric_args(lhs, rhs)?;
-        let manager = self.manager.borrow();
-        let lhs_cl = manager.llvm_value(lhs)?;
-        let rhs_cl = manager.llvm_value(lhs)?;
+        let lhs_cl = self.manager.borrow().llvm_value(lhs)?;
+        let rhs_cl = self.manager.borrow().llvm_value(lhs)?;
         let res = self
             .inst_builder
             .build_int_mul(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "mul");
@@ -143,9 +140,8 @@ impl<'a> Builder<'a> {
 
     pub fn div(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         self.check_numeric_args(lhs, rhs)?;
-        let manager = self.manager.borrow();
-        let lhs_cl = manager.llvm_value(lhs)?;
-        let rhs_cl = manager.llvm_value(lhs)?;
+        let lhs_cl = self.manager.borrow().llvm_value(lhs)?;
+        let rhs_cl = self.manager.borrow().llvm_value(lhs)?;
         let res = self
             .inst_builder
             .build_int_unsigned_div(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "div");
@@ -154,9 +150,8 @@ impl<'a> Builder<'a> {
 
     pub fn bit_and(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         self.check_numeric_args(lhs, rhs)?;
-        let manager = self.manager.borrow();
-        let lhs_cl = manager.llvm_value(lhs)?;
-        let rhs_cl = manager.llvm_value(lhs)?;
+        let lhs_cl = self.manager.borrow().llvm_value(lhs)?;
+        let rhs_cl = self.manager.borrow().llvm_value(lhs)?;
         let res = self
             .inst_builder
             .build_and(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "and");
@@ -165,9 +160,8 @@ impl<'a> Builder<'a> {
 
     pub fn bit_or(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         self.check_numeric_args(lhs, rhs)?;
-        let manager = self.manager.borrow();
-        let lhs_cl = manager.llvm_value(lhs)?;
-        let rhs_cl = manager.llvm_value(lhs)?;
+        let lhs_cl = self.manager.borrow().llvm_value(lhs)?;
+        let rhs_cl = self.manager.borrow().llvm_value(lhs)?;
         let res = self
             .inst_builder
             .build_or(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "or");
@@ -176,9 +170,8 @@ impl<'a> Builder<'a> {
 
     pub fn bit_xor(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
         self.check_numeric_args(lhs, rhs)?;
-        let manager = self.manager.borrow();
-        let lhs_cl = manager.llvm_value(lhs)?;
-        let rhs_cl = manager.llvm_value(lhs)?;
+        let lhs_cl = self.manager.borrow().llvm_value(lhs)?;
+        let rhs_cl = self.manager.borrow().llvm_value(lhs)?;
         let res = self
             .inst_builder
             .build_xor(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "xor");
@@ -196,9 +189,8 @@ impl<'a> Builder<'a> {
             CondCode::LessThanOrEqual    => IntPredicate::SLE,
         };
 
-        let manager = self.manager.borrow();
-        let lhs_cl = manager.llvm_value(lhs)?;
-        let rhs_cl = manager.llvm_value(lhs)?;
+        let lhs_cl = self.manager.borrow().llvm_value(lhs)?;
+        let rhs_cl = self.manager.borrow().llvm_value(lhs)?;
         let res = self
             .inst_builder
             .build_int_compare(cc, lhs_cl.into_int_value(), rhs_cl.into_int_value(), "cmp");
@@ -237,10 +229,9 @@ impl<'a> Builder<'a> {
 
     pub fn get_var(&mut self, name: &str) -> Result<Option<ValueID>, Error> {
         self.scope_stack.get_var(name).map_or(Ok(None), |var| {
-            let manager = self.manager.borrow();
             let value = self.scope_stack.get(name).unwrap();
-            let t = manager.type_of(value)?;
-            let llvm_type = manager.llvm_type(t)?;
+            let t = self.manager.borrow().type_of(value)?;
+            let llvm_type = self.manager.borrow().llvm_type(t)?;
             let loaded = self.inst_builder.build_load(var, "load_var");
             self.manager.borrow_mut().new_value_from_llvm(loaded, llvm_type).map(Some)
         })
