@@ -269,7 +269,7 @@ impl<'a> Builder<'a> {
             if to_type == number_type {
                 let cl = self.manager.try_borrow()?.llvm_value(v)?;
                 let to_llvm_type = self.manager.try_borrow()?.llvm_type(to_type)?;
-                return self.manager.try_borrow_mut()?.new_value_from_llvm(self.inst_builder.build_int_cast(cl.into_int_value(), to_llvm_type.into_int_type(), "b2i"), to_llvm_type);
+                return self.manager.try_borrow_mut()?.new_value_from_llvm(self.inst_builder.build_int_z_extend(cl.into_int_value(), to_llvm_type.into_int_type(), "b2i"), to_llvm_type);
             }
         }
         Err(InvalidCastError {
