@@ -341,17 +341,16 @@ impl<'a> Builder<'a> {
             .map(|ebb| Block { ebb })
     }
 
-    pub fn ret_int(&self, v: ValueID) -> Result<(), Error> {
+    pub fn ret_int(&mut self, v: ValueID) -> Result<(), Error> {
         // TODO: Generic return
-        let manager = self.manager.borrow();
-        let number_type = manager.primitive_type(PrimitiveKind::Number);
-        let return_value = if manager.type_of(v)? != number_type {
+        let number_type = self.manager.borrow().primitive_type(PrimitiveKind::Number);
+        let return_value = if self.manager.borrow().type_of(v)? != number_type {
             self.cast_to(v, number_type)?
         } else {
             v
         };
         // Emit the return instruction.
-        let cl = manager.llvm_value(return_value)?.into_int_value();
+        let cl = self.manager.borrow().llvm_value(return_value)?.into_int_value();
         self.inst_builder
             .build_return(Some(&cl));
         Ok(())
