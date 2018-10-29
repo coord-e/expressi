@@ -51,7 +51,7 @@ impl TypeData {
         match self {
             TypeData::Number => 8,
             TypeData::Boolean => 1,
-            TypeData::Array(t, length) => unsafe {*t.as_ptr()}.size() * length,
+            TypeData::Array(_, _) => unimplemented!(),
             TypeData::Empty => 0,
             TypeData::Enum(_) => unimplemented!()
         }
@@ -63,7 +63,7 @@ impl fmt::Display for TypeData {
         let rep: String = match self {
             TypeData::Number => "Number".to_string(),
             TypeData::Boolean => "Boolean".to_string(),
-            TypeData::Array(t, length) => format!("[{}; {}]", unsafe {*t.as_ptr()}, length),
+            TypeData::Array(_, _) => unimplemented!(),
             TypeData::Empty => "Empty".to_string(),
             TypeData::Enum(data) => format!("{:?}", data)
         };
