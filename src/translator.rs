@@ -19,7 +19,7 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Boolean(tf) => self.builder.boolean_constant(tf)?.into(),
 
-            Expression::Empty => self.builder.empty_constant().into(),
+            Expression::Empty => self.builder.empty_constant()?.into(),
 
             Expression::Array(expr) => {
                 unimplemented!()
@@ -33,7 +33,7 @@ impl<'a> FunctionTranslator<'a> {
                         },
                         params.into_iter().map(|t| self.translate_expr(t).and_then(|e| e.expect_type())).collect::<Result<Vec<TypeID>, _>>()?
                     ))).collect::<Result<EnumTypeData, Error>>()?;
-                self.builder.register_type(typedata).into()
+                self.builder.register_type(typedata)?.into()
             }
 
             Expression::BinOp(op, lhs, rhs) => {
