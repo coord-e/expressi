@@ -1,5 +1,3 @@
-use value::TypeID;
-
 use std::str::FromStr;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -58,7 +56,7 @@ pub enum Expression {
     Follow(Box<Expression>, Box<Expression>),
     BinOp(Operator, Box<Expression>, Box<Expression>),
     IfElse(Box<Expression>, Box<Expression>, Box<Expression>),
-    Cast(Box<Expression>, TypeID),
+    Cast(Box<Expression>, Box<Expression>),
     Scope(Box<Expression>),
     Type(Vec<(Expression, Vec<Expression>)>),
 }

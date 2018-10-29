@@ -63,9 +63,10 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.get_var(&name).and_then(|v| v.ok_or(UndeclaredVariableError.into()))?.into()
             }
 
-            Expression::Cast(lhs, ty) => {
+            Expression::Cast(lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?.expect_value()?;
-                self.builder.cast_to(lhs, ty)?.into()
+                let rhs = self.translate_expr(*rhs)?.expect_type()?;
+                self.builder.cast_to(lhs, rhs)?.into()
             }
 
             Expression::Scope(expr) => {
