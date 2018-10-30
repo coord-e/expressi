@@ -23,6 +23,8 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Array(expr) => unimplemented!(),
 
+            Expression::Function(args, expr) => unimplemented!(),
+
             Expression::Type(expr) => {
                 let typedata = expr
                     .into_iter()

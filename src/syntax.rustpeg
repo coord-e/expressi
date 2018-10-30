@@ -43,6 +43,7 @@ atom -> Expression
   = number
   / boolean
   / array
+  / function
   / value_identifier
   / type_
   / "{" v:expression "}" { Expression::Scope(Box::new(v)) }
@@ -62,6 +63,9 @@ boolean -> Expression
 
 array -> Expression
   = "[" e:(expression ** ',') "]" { Expression::Array(e.into_iter().map(|v| Box::new(v)).collect()) }
+
+function -> Expression
+  = "(" args:( value_identifier ** ',' ) ")" "->" e:expression { Expression::Function(args, Box::new(e)) }
 
 type_ -> Expression
   = "<" e:(type_elem  ++ "|") ">" { Expression::Type(e) }
