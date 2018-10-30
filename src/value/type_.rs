@@ -108,10 +108,17 @@ pub struct TypeStore {
 
 impl TypeStore {
     pub fn new() -> Self {
+        let mut data = HashMap::new();
+        data.insert(TypeID(0), TypeData::Unknown);
+
         Self {
-            data: HashMap::new(),
+            data,
             substores: HashMap::new(),
         }
+    }
+
+    fn unknown_type(&self) -> TypeID {
+        TypeID(0)
     }
 
     pub fn new_type(&mut self, data: TypeData) -> TypeID {
