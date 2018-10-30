@@ -100,12 +100,14 @@ impl FromStr for TypeData {
 
 pub struct TypeStore {
     data: HashMap<TypeID, TypeData>,
+    substores: HashMap<TypeID, Box<TypeStore>>
 }
 
 impl TypeStore {
     pub fn new() -> Self {
         Self {
             data: HashMap::new(),
+            substores: HashMap::new(),
         }
     }
 
@@ -117,6 +119,10 @@ impl TypeStore {
 
     pub fn new_enum(&mut self, data: EnumTypeData) -> TypeID {
         self.new_type(TypeData::Enum(data))
+    }
+
+    pub fn get_substore(&mut self, owner: TypeID) -> &TypeStore {
+        self.substores.entry(owner).or_insert(Box::new(TypeStore::new()))
     }
 
     pub fn get(&self, id: TypeID) -> Option<&TypeData> {
