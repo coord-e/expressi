@@ -1,5 +1,6 @@
 use error::LLVMValueNotAvailableError;
 use value::TypeID;
+use expression::Expression;
 
 use std::collections::HashMap;
 
@@ -12,6 +13,10 @@ use inkwell::values::{BasicValueEnum, PointerValue};
 pub enum ValueData {
     Primitive {
         internal_value: BasicValueEnum,
+    },
+    Function {
+        arguments: Vec<String>,
+        content: Expression
     },
     Array {
         addr: PointerValue,

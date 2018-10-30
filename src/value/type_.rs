@@ -18,6 +18,7 @@ pub enum TypeData {
     Number,
     Boolean,
     Array(NonNull<TypeData>, usize),
+    Function(Vec<TypeID>, TypeID),
     Empty,
     Enum(EnumTypeData),
 }
@@ -58,6 +59,8 @@ impl TypeData {
             TypeData::Number => 8,
             TypeData::Boolean => 1,
             TypeData::Array(_, _) => unimplemented!(),
+            // TODO: Architecture-independent pointer size
+            TypeData::Function(_, _) => 8,
             TypeData::Empty => 0,
             TypeData::Enum(_) => unimplemented!(),
         }
@@ -70,6 +73,7 @@ impl fmt::Display for TypeData {
             TypeData::Number => "Number".to_string(),
             TypeData::Boolean => "Boolean".to_string(),
             TypeData::Array(_, _) => unimplemented!(),
+            TypeData::Function(args, ret) => format!("({:?}) -> {:?}", args, ret),
             TypeData::Empty => "Empty".to_string(),
             TypeData::Enum(data) => format!("{:?}", data),
         };
