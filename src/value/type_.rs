@@ -21,6 +21,7 @@ pub enum TypeData {
     Function(Vec<TypeID>, TypeID),
     Empty,
     Enum(EnumTypeData),
+    Unknown,
 }
 
 unsafe impl Send for TypeID {}
@@ -63,6 +64,7 @@ impl TypeData {
             TypeData::Function(_, _) => 8,
             TypeData::Empty => 0,
             TypeData::Enum(_) => unimplemented!(),
+            TypeData::Unknown => unimplemented!(),
         }
     }
 }
@@ -76,6 +78,7 @@ impl fmt::Display for TypeData {
             TypeData::Function(args, ret) => format!("({:?}) -> {:?}", args, ret),
             TypeData::Empty => "Empty".to_string(),
             TypeData::Enum(data) => format!("{:?}", data),
+            TypeData::Unknown => "Unknown".to_string(),
         };
 
         write!(f, "{}", rep)
