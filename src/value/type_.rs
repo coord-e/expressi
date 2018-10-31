@@ -21,7 +21,7 @@ pub enum TypeData {
     Function(Vec<TypeID>, TypeID),
     Empty,
     Enum(EnumTypeData),
-    Unknown,
+    Variable(Option<TypeID>)
 }
 
 unsafe impl Send for TypeID {}
@@ -64,7 +64,7 @@ impl TypeData {
             TypeData::Function(_, _) => 8,
             TypeData::Empty => 0,
             TypeData::Enum(_) => unimplemented!(),
-            TypeData::Unknown => unimplemented!(),
+            TypeData::Variable(v) => unimplemented!()
         }
     }
 }
@@ -78,7 +78,7 @@ impl fmt::Display for TypeData {
             TypeData::Function(args, ret) => format!("({:?}) -> {:?}", args, ret),
             TypeData::Empty => "Empty".to_string(),
             TypeData::Enum(data) => format!("{:?}", data),
-            TypeData::Unknown => "Unknown".to_string(),
+            TypeData::Variable(v) => format!("v({:?})", v)
         };
 
         write!(f, "{}", rep)
@@ -102,23 +102,21 @@ impl FromStr for TypeData {
 }
 
 pub struct TypeStore {
-    data: HashMap<TypeID, TypeData>,
-    substores: HashMap<TypeID, Box<TypeStore>>
+    data: HashMap<TypeID, TypeData>
 }
 
 impl TypeStore {
     pub fn new() -> Self {
-        let mut data = HashMap::new();
-        data.insert(TypeID(0), TypeData::Unknown);
-
         Self {
-            data,
-            substores: HashMap::new(),
+            data: HashMap::new()
         }
     }
 
-    fn unknown_type(&self) -> TypeID {
-        TypeID(0)
+    pub fn new_function_type(&mut self, num_args: usize) -> TypeID {
+        let args: Vec<TypeID> = (0..num_args).map(|_| self.new_type(TypeData::Variable(None))).collect();
+        let ret = self.new_type(TypeData::Variable(None));
+        let data = TypeData::Function(args, ret);
+        self.new_type(data)
     }
 
     pub fn new_type(&mut self, data: TypeData) -> TypeID {
@@ -129,10 +127,6 @@ impl TypeStore {
 
     pub fn new_enum(&mut self, data: EnumTypeData) -> TypeID {
         self.new_type(TypeData::Enum(data))
-    }
-
-    pub fn get_substore(&mut self, owner: TypeID) -> &TypeStore {
-        self.substores.entry(owner).or_insert(Box::new(TypeStore::new()))
     }
 
     pub fn get(&self, id: TypeID) -> Option<&TypeData> {
