@@ -4,6 +4,7 @@ use scope::{Scope, ScopeStack};
 use value::manager::PrimitiveKind;
 use value::type_::EnumTypeData;
 use value::{TypeID, TypeStore, ValueData, ValueID, ValueManager, ValueManagerRef, ValueStore};
+use expression::Expression;
 
 use failure::Error;
 
@@ -98,6 +99,12 @@ impl<'a> Builder<'a> {
             .try_borrow()
             .map_err(Into::into)
             .map(|manager| manager.empty_value())
+    }
+
+    pub fn function_constant(&self, arguments: Vec<String>, content: Expression) -> Result<ValueID, Error> {
+        let mut manager_mut = self.manager.try_borrow_mut()?;
+        let ty = manager_mut.new_function_type(arguments.len());
+        Ok(manager_mut.new_value(ty, ValueData::Function { arguments, content }))
     }
 
     pub fn register_type(&mut self, data: EnumTypeData) -> Result<TypeID, Error> {

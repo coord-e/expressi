@@ -23,7 +23,16 @@ impl<'a> FunctionTranslator<'a> {
 
             Expression::Array(expr) => unimplemented!(),
 
-            Expression::Function(args, expr) => unimplemented!(),
+            Expression::Function(args, expr) => self
+                .builder
+                .function_constant(
+                    args.into_iter()
+                        .map(|id| match id {
+                            Expression::Identifier(id) => id,
+                            _ => unreachable!(),
+                        }).collect(),
+                    *expr,
+                )?.into(),
 
             Expression::Type(expr) => {
                 let typedata = expr

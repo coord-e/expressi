@@ -1,6 +1,6 @@
 use error::LLVMValueNotAvailableError;
-use value::TypeID;
 use expression::Expression;
+use value::TypeID;
 
 use std::collections::HashMap;
 
@@ -16,7 +16,7 @@ pub enum ValueData {
     },
     Function {
         arguments: Vec<String>,
-        content: Expression
+        content: Expression,
     },
     Array {
         addr: PointerValue,
