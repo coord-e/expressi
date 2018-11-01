@@ -18,10 +18,11 @@ pub enum TypeData {
     Number,
     Boolean,
     Array(NonNull<TypeData>, usize),
-    Function(Vec<TypeID>, TypeID),
+    Function(Vec<TypeID>),
     Empty,
     Enum(EnumTypeData),
-    Variable(Option<TypeID>)
+    Depends(Box<TypeData>, Vec<TypeID>),
+    Unresolved
 }
 
 unsafe impl Send for TypeID {}
@@ -61,10 +62,11 @@ impl TypeData {
             TypeData::Boolean => 1,
             TypeData::Array(_, _) => unimplemented!(),
             // TODO: Architecture-independent pointer size
-            TypeData::Function(_, _) => 8,
+            TypeData::Function(_) => 8,
+            TypeData::Depends(sub, _) => sub.size(),
             TypeData::Empty => 0,
             TypeData::Enum(_) => unimplemented!(),
-            TypeData::Variable(v) => unimplemented!()
+            TypeData::Unresolved => unimplemented!()
         }
     }
 }
@@ -75,10 +77,11 @@ impl fmt::Display for TypeData {
             TypeData::Number => "Number".to_string(),
             TypeData::Boolean => "Boolean".to_string(),
             TypeData::Array(_, _) => unimplemented!(),
-            TypeData::Function(args, ret) => format!("({:?}) -> {:?}", args, ret),
+            TypeData::Function(args) => format!("Fn({:?})", args),
             TypeData::Empty => "Empty".to_string(),
             TypeData::Enum(data) => format!("{:?}", data),
-            TypeData::Variable(v) => format!("v({:?})", v)
+            TypeData::Depends(subject, on) => format!("{:?} => {}", on, *subject),
+            TypeData::Unresolved => "Unresolved".to_string()
         };
 
         write!(f, "{}", rep)
@@ -113,10 +116,11 @@ impl TypeStore {
     }
 
     pub fn new_function_type(&mut self, num_args: usize) -> TypeID {
-        let args: Vec<TypeID> = (0..num_args).map(|_| self.new_type(TypeData::Variable(None))).collect();
-        let ret = self.new_type(TypeData::Variable(None));
-        let data = TypeData::Function(args, ret);
-        self.new_type(data)
+        let args: Vec<TypeID> = (0..num_args).map(|_| self.new_type(TypeData::Unresolved)).collect();
+        let dep_args = args.clone();
+        let data = Box::new(TypeData::Function(args));
+        let with_dep = TypeData::Depends(data, dep_args);
+        self.new_type(with_dep)
     }
 
     pub fn new_type(&mut self, data: TypeData) -> TypeID {
