@@ -36,7 +36,7 @@ impl Scope {
     pub fn get(&self, s: &str) -> Option<Atom> {
         self.bindings
             .get(s)
-            .map(|b| b.atom)
+            .map(|b| b.atom.clone())
     }
 
     pub fn get_var(&self, s: &str) -> Option<PointerValue> {
@@ -62,7 +62,7 @@ impl Scope {
     pub fn bindings(&self) -> impl Iterator<Item = (&String, Atom)> {
         self.bindings
             .iter()
-            .map(|(k, v)| (k, v.atom))
+            .map(|(k, v)| (k, v.atom.clone()))
     }
 }
 

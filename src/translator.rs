@@ -52,6 +52,16 @@ impl<'a> FunctionTranslator<'a> {
                 self.translate_expr(*rhs)?
             }
 
+            Expression::Bind(lhs, rhs) => {
+                let new_value = self.translate_expr(*rhs)?.expect_value()?;
+                let name = match *lhs {
+                    Expression::Identifier(name) => name,
+                    _ => panic!("Non-identifier identifier"),
+                };
+                self.builder.set_var(&name, new_value)?;
+                new_value.into()
+            }
+
             Expression::Assign(lhs, rhs) => {
                 let new_value = self.translate_expr(*rhs)?.expect_value()?;
                 let name = match *lhs {
@@ -65,8 +75,9 @@ impl<'a> FunctionTranslator<'a> {
             Expression::TypeIdentifier(id) => self
                 .builder
                 .scope_stack()
-                .resolve_type(&id)
-                .ok_or(UndeclaredTypeError)?
+                .get(&id)
+                .ok_or(UndeclaredTypeError.into())
+                .and_then(|v| v.expect_type())?
                 .into(),
 
             Expression::Identifier(name) => self
