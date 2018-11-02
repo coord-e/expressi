@@ -6,11 +6,11 @@ expression -> Expression
   = follow
 
 follow -> Expression
-  = bind ";" r:follow? { Expression::Follow(Box::new(l), Box::new(r.unwrap_or(Expression::Empty))) }
+  = l:bind ";" r:follow? { Expression::Follow(Box::new(l), Box::new(r.unwrap_or(Expression::Empty))) }
     / bind
 
 bind -> Expression
-  = "let" l:bin_op "=" bind { Expression::Bind(Box::new(l), Box::new(r)) }
+  = "let" l:bin_op "=" r:bind { Expression::Bind(Box::new(l), Box::new(r)) }
     / bin_op
 
 bin_op -> Expression
