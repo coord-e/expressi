@@ -53,6 +53,7 @@ pub enum Expression {
     TypeIdentifier(String),
     Empty,
     Assign(Box<Expression>, Box<Expression>),
+    Bind(Box<Expression>, Box<Expression>),
     Follow(Box<Expression>, Box<Expression>),
     BinOp(Operator, Box<Expression>, Box<Expression>),
     IfElse(Box<Expression>, Box<Expression>, Box<Expression>),

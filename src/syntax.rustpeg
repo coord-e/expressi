@@ -6,15 +6,16 @@ expression -> Expression
   = follow
 
 follow -> Expression
-  = l:assign ";" r:follow? { Expression::Follow(Box::new(l), Box::new(r.unwrap_or(Expression::Empty))) }
-    / assign
+  = bind ";" r:follow? { Expression::Follow(Box::new(l), Box::new(r.unwrap_or(Expression::Empty))) }
+    / bind
 
-assign -> Expression
-  = "let" l:bin_op "=" r:assign { Expression::Assign(Box::new(l), Box::new(r)) }
+bind -> Expression
+  = "let" l:bin_op "=" bind { Expression::Bind(Box::new(l), Box::new(r)) }
     / bin_op
 
 bin_op -> Expression
   = #infix<spaced_atom> {
+  #R x "=" y { Expression::Assign(Box::new(x), Box::new(y)) }
   #L x "|" y { Expression::BinOp(Operator::BitOr, Box::new(x), Box::new(y)) }
      x "^" y { Expression::BinOp(Operator::BitXor, Box::new(x), Box::new(y)) }
      x "&" y { Expression::BinOp(Operator::BitAnd, Box::new(x), Box::new(y)) }
