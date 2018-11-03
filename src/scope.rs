@@ -115,8 +115,11 @@ impl ScopeStack {
     }
 
     pub fn bind(&mut self, s: &str, val: Atom, kind: BindingKind) {
+        let len = self.scopes.len();
         let mut it = self.scopes.iter_mut();
-        it.find(|sc| sc.get(s).is_some())
+        it.by_ref()
+            .take(len - 1) // not to consume all elements
+            .find(|sc| sc.get(s).is_some())
             .or(it.last())
             .unwrap()
             .bind(s, val, kind)
