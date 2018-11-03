@@ -5,6 +5,10 @@ use value::TypeID;
 pub struct UndeclaredVariableError;
 
 #[derive(Fail, Debug)]
+#[fail(display = "Cannot assign twice to immutable variable")]
+pub struct ImmutableAssignError;
+
+#[derive(Fail, Debug)]
 #[fail(display = "Use of undeclared type identifier")]
 pub struct UndeclaredTypeError;
 

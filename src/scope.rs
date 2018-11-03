@@ -1,4 +1,4 @@
-use error::UnexpectedScopePopError;
+use error::{ImmutableAssignError, UndeclaredVariableError, UnexpectedScopePopError};
 use value::{Atom, TypeID, ValueID, ValueManagerRef};
 
 use std::collections::HashMap;
@@ -8,6 +8,7 @@ use failure::Error;
 
 use inkwell::values::PointerValue;
 
+#[derive(PartialEq, Debug, Clone)]
 pub enum BindingKind {
     Mutable,
     Immutable
@@ -43,6 +44,24 @@ impl Scope {
         self.variable_pointers
             .get(s)
             .cloned()
+    }
+
+    pub fn assign(&mut self, s: &str, atom: Atom) -> Result<(), Error> {
+        let new_entry = self
+            .bindings
+            .get(s)
+            .map(|v| {
+                if v.kind == BindingKind::Immutable {
+                    Err(ImmutableAssignError)
+                } else {
+                    Ok(BoundAtom {
+                        kind: v.kind.clone(),
+                        atom,
+                    })
+                }
+            }).ok_or(UndeclaredVariableError)??;
+        self.bindings.insert(s.to_string(), new_entry);
+        Ok(())
     }
 
     pub fn bind(&mut self, s: &str, atom: Atom, kind: BindingKind) {
@@ -112,6 +131,14 @@ impl ScopeStack {
 
     pub fn get_var(&self, s: &str) -> Option<PointerValue> {
         self.variables().find(|(k, _)| k == &s).map(|(_, v)| v)
+    }
+
+    pub fn assign(&mut self, s: &str, val: Atom) -> Result<(), Error> {
+        self.scopes
+            .iter_mut()
+            .find(|sc| sc.get(s).is_some())
+            .ok_or(UndeclaredVariableError.into())
+            .and_then(|v| v.assign(s, val))
     }
 
     pub fn bind(&mut self, s: &str, val: Atom, kind: BindingKind) {
