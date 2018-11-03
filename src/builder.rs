@@ -1,4 +1,4 @@
-use error::{InvalidCastError, InvalidContextBranchError, TypeError};
+use error::{InvalidCastError, InvalidContextBranchError, TypeError, UndeclaredVariableError};
 use expression::Operator;
 use scope::{Scope, ScopeStack, BindingKind};
 use value::manager::PrimitiveKind;
@@ -277,7 +277,7 @@ impl<'a> Builder<'a> {
         Ok(real_name)
     }
 
-    pub fn set_var(&mut self, name: &str, val: ValueID) -> Result<ValueID, Error> {
+    pub fn bind_var(&mut self, name: &str, val: ValueID) -> Result<ValueID, Error> {
         let variable = self.scope_stack.get_var(name).ok_or(()).or_else(
             |_| -> Result<values::PointerValue, Error> {
                 let manager = self.manager.try_borrow()?;
@@ -292,6 +292,15 @@ impl<'a> Builder<'a> {
             self.inst_builder.build_store(variable, val);
         }
         self.scope_stack.bind(name, val.into(), BindingKind::Immutable);
+        Ok(val)
+    }
+
+    pub fn assign_var(&mut self, name: &str, val: ValueID) -> Result<ValueID, Error> {
+        let var = self.scope_stack.get_var(name).ok_or(UndeclaredVariableError)?;
+        if let Ok(val) = self.manager.try_borrow()?.llvm_value(val) {
+            self.inst_builder.build_store(var, val);
+        }
+        self.scope_stack.assign(name, val.into())?;
         Ok(val)
     }
 
