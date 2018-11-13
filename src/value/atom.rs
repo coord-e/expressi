@@ -3,7 +3,7 @@ use value::{TypeID, ValueID};
 
 use failure::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Atom {
     Value(ValueID),
     Type(TypeID),

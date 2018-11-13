@@ -1,6 +1,6 @@
-use error::{InvalidCastError, InvalidContextBranchError, TypeError};
+use error::{InvalidCastError, InvalidContextBranchError, TypeError, UndeclaredVariableError};
 use expression::Operator;
-use scope::{Scope, ScopeStack};
+use scope::{Scope, ScopeStack, BindingKind};
 use value::manager::PrimitiveKind;
 use value::type_::EnumTypeData;
 use value::{TypeID, TypeStore, ValueData, ValueID, ValueManager, ValueManagerRef, ValueStore};
@@ -44,17 +44,20 @@ impl<'a> Builder<'a> {
         let manager = Rc::new(RefCell::new(ValueManager::new()));
         let mut scope_stack = ScopeStack::new(manager.clone());
 
-        scope_stack.add_type(
+        scope_stack.bind(
             "Number",
-            manager.borrow().primitive_type(PrimitiveKind::Number),
+            manager.borrow().primitive_type(PrimitiveKind::Number).into(),
+            BindingKind::Immutable
         );
-        scope_stack.add_type(
+        scope_stack.bind(
             "Boolean",
-            manager.borrow().primitive_type(PrimitiveKind::Boolean),
+            manager.borrow().primitive_type(PrimitiveKind::Boolean).into(),
+            BindingKind::Immutable
         );
-        scope_stack.add_type(
+        scope_stack.bind(
             "Empty",
-            manager.borrow().primitive_type(PrimitiveKind::Empty),
+            manager.borrow().primitive_type(PrimitiveKind::Empty).into(),
+            BindingKind::Immutable
         );
 
         Builder {
@@ -270,31 +273,36 @@ impl<'a> Builder<'a> {
         let llvm_type = manager.llvm_type(t)?;
         let variable = self.inst_builder.build_alloca(llvm_type, &real_name);
         let empty = manager.empty_value();
-        self.scope_stack.add(&real_name, empty, variable); // TODO: TypeValue
+        self.scope_stack.add_var(&real_name, variable); // TODO: TypeValue
         Ok(real_name)
     }
 
-    pub fn set_var(&mut self, name: &str, val: ValueID) -> Result<ValueID, Error> {
-        let variable = self.scope_stack.get_var(name).ok_or(()).or_else(
-            |_| -> Result<values::PointerValue, Error> {
-                let manager = self.manager.try_borrow()?;
-                let t = manager.type_of(val)?;
-                let llvm_type = manager.llvm_type(t)?;
-                let variable = self.inst_builder.build_alloca(llvm_type, name);
-                self.scope_stack.add(name, val, variable);
-                Ok(variable)
-            },
-        )?;
-        if let Ok(val) = self.manager.try_borrow()?.llvm_value(val) {
+    pub fn bind_var(&mut self, name: &str, val: ValueID, kind: BindingKind) -> Result<ValueID, Error> {
+        let manager = self.manager.try_borrow()?;
+        let t = manager.type_of(val)?;
+        let llvm_type = manager.llvm_type(t)?;
+        let variable = self.inst_builder.build_alloca(llvm_type, name);
+        self.scope_stack.add_var(name, variable);
+
+        if let Ok(val) = manager.llvm_value(val) {
             self.inst_builder.build_store(variable, val);
         }
-        self.scope_stack.set(name, val);
+        self.scope_stack.bind(name, val.into(), kind);
+        Ok(val)
+    }
+
+    pub fn assign_var(&mut self, name: &str, val: ValueID) -> Result<ValueID, Error> {
+        let var = self.scope_stack.get_var(name).ok_or(UndeclaredVariableError)?;
+        if let Ok(val) = self.manager.try_borrow()?.llvm_value(val) {
+            self.inst_builder.build_store(var, val);
+        }
+        self.scope_stack.assign(name, val.into())?;
         Ok(val)
     }
 
     pub fn get_var(&mut self, name: &str) -> Result<Option<ValueID>, Error> {
         self.scope_stack.get_var(name).map_or(Ok(None), |var| {
-            let value = self.scope_stack.get(name).unwrap();
+            let value = self.scope_stack.get(name).unwrap().expect_value()?;
             let t = self.manager.try_borrow()?.type_of(value)?;
             let llvm_type = self.manager.try_borrow()?.llvm_type(t)?;
             let loaded = self.inst_builder.build_load(var, "load_var");

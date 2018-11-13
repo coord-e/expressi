@@ -1,17 +1,21 @@
 use expression::Expression;
 use expression::Operator;
+use scope::BindingKind;
 
 #[pub]
 expression -> Expression
   = follow
 
 follow -> Expression
-  = l:bin_op ";" r:follow? { Expression::Follow(Box::new(l), Box::new(r.unwrap_or(Expression::Empty))) }
+  = l:assign ";" r:follow? { Expression::Follow(Box::new(l), Box::new(r.unwrap_or(Expression::Empty))) }
+    / assign
+
+assign -> Expression
+  = l:bin_op "=" r:assign { Expression::Assign(Box::new(l), Box::new(r)) }
     / bin_op
 
 bin_op -> Expression
   = #infix<spaced_atom> {
-  #R x "=" y { Expression::Assign(Box::new(x), Box::new(y)) }
   #L x "|" y { Expression::BinOp(Operator::BitOr, Box::new(x), Box::new(y)) }
      x "^" y { Expression::BinOp(Operator::BitXor, Box::new(x), Box::new(y)) }
      x "&" y { Expression::BinOp(Operator::BitAnd, Box::new(x), Box::new(y)) }
@@ -36,8 +40,11 @@ cast -> Expression
 index -> Expression
   = l:atom _ "[" r:expression "]" { Expression::BinOp(Operator::Index, Box::new(l), Box::new(r)) }
 
+bind -> Expression
+  = "let" _ kind:("mut" ?) _ l:identifier _ "=" r:assign { Expression::Bind(if kind.is_some() { BindingKind::Mutable } else { BindingKind::Immutable }, l.to_string(), Box::new(r)) }
+
 spaced_atom -> Expression
-  = _ v:(cast / index / if_else / atom) _ { v }
+  = _ v:(bind / cast / index / if_else / atom) _ { v }
 
 atom -> Expression
   = number
