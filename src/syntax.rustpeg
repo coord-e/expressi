@@ -40,7 +40,7 @@ index -> Expression
   = l:atom _ "[" r:expression "]" { Expression::BinOp(Operator::Index, Box::new(l), Box::new(r)) }
 
 bind -> Expression
-  = "let" _ l:value_identifier _ "=" r:assign { Expression::Bind(Box::new(l), Box::new(r)) }
+  = "let" _ l:identifier _ "=" r:assign { Expression::Bind(l.to_string(), Box::new(r)) }
 
 spaced_atom -> Expression
   = _ v:(bind / cast / index / if_else / atom) _ { v }
