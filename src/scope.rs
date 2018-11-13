@@ -114,11 +114,11 @@ impl ScopeStack {
     }
 
     pub fn variables(&self) -> impl Iterator<Item = (&String, PointerValue)> {
-        self.scopes.iter().flat_map(|it| it.variables())
+        self.scopes.iter().rev().flat_map(|it| it.variables())
     }
 
     pub fn bindings(&self) -> impl Iterator<Item = (&String, Atom)> {
-        self.scopes.iter().flat_map(|it| it.bindings())
+        self.scopes.iter().rev().flat_map(|it| it.bindings())
     }
 
     pub fn add_var(&mut self, s: &str, var: PointerValue) {
@@ -136,20 +136,14 @@ impl ScopeStack {
     pub fn assign(&mut self, s: &str, val: Atom) -> Result<(), Error> {
         self.scopes
             .iter_mut()
+            .rev()
             .find(|sc| sc.get(s).is_some())
             .ok_or(UndeclaredVariableError.into())
             .and_then(|v| v.assign(s, val))
     }
 
     pub fn bind(&mut self, s: &str, val: Atom, kind: BindingKind) {
-        let len = self.scopes.len();
-        let mut it = self.scopes.iter_mut();
-        it.by_ref()
-            .take(len - 1) // not to consume all elements
-            .find(|sc| sc.get(s).is_some())
-            .or(it.last())
-            .unwrap()
-            .bind(s, val, kind)
+        self.scopes.last_mut().unwrap().bind(s, val, kind);
     }
 
     pub fn unique_name(&self, s: &str) -> String {
