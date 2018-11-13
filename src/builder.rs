@@ -278,17 +278,13 @@ impl<'a> Builder<'a> {
     }
 
     pub fn bind_var(&mut self, name: &str, val: ValueID, kind: BindingKind) -> Result<ValueID, Error> {
-        let variable = self.scope_stack.get_var(name).ok_or(()).or_else(
-            |_| -> Result<values::PointerValue, Error> {
-                let manager = self.manager.try_borrow()?;
-                let t = manager.type_of(val)?;
-                let llvm_type = manager.llvm_type(t)?;
-                let variable = self.inst_builder.build_alloca(llvm_type, name);
-                self.scope_stack.add_var(name, variable);
-                Ok(variable)
-            },
-        )?;
-        if let Ok(val) = self.manager.try_borrow()?.llvm_value(val) {
+        let manager = self.manager.try_borrow()?;
+        let t = manager.type_of(val)?;
+        let llvm_type = manager.llvm_type(t)?;
+        let variable = self.inst_builder.build_alloca(llvm_type, name);
+        self.scope_stack.add_var(name, variable);
+
+        if let Ok(val) = manager.llvm_value(val) {
             self.inst_builder.build_store(variable, val);
         }
         self.scope_stack.bind(name, val.into(), kind);
