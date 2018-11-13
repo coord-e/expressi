@@ -2,7 +2,7 @@ use expression::Expression;
 
 use builder::Builder;
 use error::{TypeError, UndeclaredTypeError, UndeclaredVariableError};
-use scope::Scope;
+use scope::{Scope, BindingKind};
 use value::type_::{EnumTypeData, TypeID};
 use value::{Atom, ValueData, ValueID};
 
@@ -52,9 +52,9 @@ impl<'a> FunctionTranslator<'a> {
                 self.translate_expr(*rhs)?
             }
 
-            Expression::Bind(name, rhs) => {
+            Expression::Bind(kind, name, rhs) => {
                 let new_value = self.translate_expr(*rhs)?.expect_value()?;
-                self.builder.bind_var(&name, new_value)?;
+                self.builder.bind_var(&name, new_value, kind)?;
                 new_value.into()
             }
 
@@ -114,7 +114,7 @@ impl<'a> FunctionTranslator<'a> {
                     .brz(condition_value, &then_block, &else_block)?;
 
                 self.builder.switch_to_block(&then_block);
-                self.builder.bind_var(&var_name, then_return)?;
+                self.builder.bind_var(&var_name, then_return, BindingKind::Immutable)?;
                 self.builder.jump(&merge_block);
 
                 // Start writing 'else' block
@@ -124,7 +124,7 @@ impl<'a> FunctionTranslator<'a> {
                 if then_type != else_type {
                     panic!("Using different type value in if-else")
                 }
-                self.builder.bind_var(&var_name, else_return)?;
+                self.builder.bind_var(&var_name, else_return, BindingKind::Immutable)?;
 
                 // Jump to merge block after translation of the 'then' block
                 self.builder.jump(&merge_block);

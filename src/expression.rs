@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use scope::BindingKind;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Operator {
@@ -53,7 +54,7 @@ pub enum Expression {
     TypeIdentifier(String),
     Empty,
     Assign(Box<Expression>, Box<Expression>),
-    Bind(String, Box<Expression>),
+    Bind(BindingKind, String, Box<Expression>),
     Follow(Box<Expression>, Box<Expression>),
     BinOp(Operator, Box<Expression>, Box<Expression>),
     IfElse(Box<Expression>, Box<Expression>, Box<Expression>),

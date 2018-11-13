@@ -277,7 +277,7 @@ impl<'a> Builder<'a> {
         Ok(real_name)
     }
 
-    pub fn bind_var(&mut self, name: &str, val: ValueID) -> Result<ValueID, Error> {
+    pub fn bind_var(&mut self, name: &str, val: ValueID, kind: BindingKind) -> Result<ValueID, Error> {
         let variable = self.scope_stack.get_var(name).ok_or(()).or_else(
             |_| -> Result<values::PointerValue, Error> {
                 let manager = self.manager.try_borrow()?;
@@ -291,7 +291,7 @@ impl<'a> Builder<'a> {
         if let Ok(val) = self.manager.try_borrow()?.llvm_value(val) {
             self.inst_builder.build_store(variable, val);
         }
-        self.scope_stack.bind(name, val.into(), BindingKind::Immutable);
+        self.scope_stack.bind(name, val.into(), kind);
         Ok(val)
     }
 
