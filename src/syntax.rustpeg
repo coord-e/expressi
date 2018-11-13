@@ -10,11 +10,7 @@ follow -> Expression
     / assign
 
 assign -> Expression
-  = l:bind "=" r:assign { Expression::Assign(Box::new(l), Box::new(r)) }
-    / bind
-
-bind -> Expression
-  = "let" l:bin_op "=" r:bind { Expression::Bind(Box::new(l), Box::new(r)) }
+  = l:bin_op "=" r:assign { Expression::Assign(Box::new(l), Box::new(r)) }
     / bin_op
 
 bin_op -> Expression
@@ -43,8 +39,11 @@ cast -> Expression
 index -> Expression
   = l:atom _ "[" r:expression "]" { Expression::BinOp(Operator::Index, Box::new(l), Box::new(r)) }
 
+bind -> Expression
+  = "let" _ l:value_identifier _ "=" r:assign { Expression::Bind(Box::new(l), Box::new(r)) }
+
 spaced_atom -> Expression
-  = _ v:(cast / index / if_else / atom) _ { v }
+  = _ v:(bind / cast / index / if_else / atom) _ { v }
 
 atom -> Expression
   = number
