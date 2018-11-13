@@ -109,12 +109,12 @@ impl<'a> FunctionTranslator<'a> {
 
                 self.builder.switch_to_block(&initial_block);
                 let then_type = self.builder.type_of(then_return)?;
-                let var_name = self.builder.declare_var("__cond", then_type, true)?;
+                let var_name = self.builder.declare_mut_var("__cond", then_type, true)?;
                 self.builder
                     .brz(condition_value, &then_block, &else_block)?;
 
                 self.builder.switch_to_block(&then_block);
-                self.builder.bind_var(&var_name, then_return, BindingKind::Immutable)?;
+                self.builder.assign_var(&var_name, then_return)?;
                 self.builder.jump(&merge_block);
 
                 // Start writing 'else' block
@@ -124,7 +124,7 @@ impl<'a> FunctionTranslator<'a> {
                 if then_type != else_type {
                     panic!("Using different type value in if-else")
                 }
-                self.builder.bind_var(&var_name, else_return, BindingKind::Immutable)?;
+                self.builder.assign_var(&var_name, else_return)?;
 
                 // Jump to merge block after translation of the 'then' block
                 self.builder.jump(&merge_block);

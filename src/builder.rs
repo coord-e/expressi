@@ -263,7 +263,7 @@ impl<'a> Builder<'a> {
         unimplemented!()
     }
 
-    pub fn declare_var(&mut self, name: &str, t: TypeID, unique: bool) -> Result<String, Error> {
+    pub fn declare_mut_var(&mut self, name: &str, t: TypeID, unique: bool) -> Result<String, Error> {
         let manager = self.manager.try_borrow()?;
         let real_name = if unique {
             self.scope_stack.unique_name(name)
@@ -274,6 +274,7 @@ impl<'a> Builder<'a> {
         let variable = self.inst_builder.build_alloca(llvm_type, &real_name);
         let empty = manager.empty_value();
         self.scope_stack.add_var(&real_name, variable); // TODO: TypeValue
+        self.scope_stack.bind(&real_name, empty.into(), BindingKind::Mutable);
         Ok(real_name)
     }
 
