@@ -68,9 +68,12 @@ impl JIT {
 
         let builder = Builder::new(&mut self.builder, module.clone());
 
-        let mut trans = FunctionTranslator { builder };
+        let mut a_trans = ASTTranslator {};
+        let eir = a_trans.translate_expr(expr);
 
-        let evaluated_value = trans.translate_expr(expr)?.expect_value()?;
+        let mut trans = EIRTranslator { builder };
+
+        let evaluated_value = trans.translate_expr(eir)?.expect_value()?;
         trans.builder.ret_int(evaluated_value)?;
 
         if !function.verify(true) {
