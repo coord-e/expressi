@@ -22,17 +22,20 @@ type CompiledFunc = unsafe extern "C" fn() -> u64;
 pub struct JIT {
     context: context::ContextRef,
     builder: builder::Builder,
+    print_ast: bool,
+    print_eir: bool,
+    print_ir: bool
 }
 
 impl JIT {
-    pub fn new() -> Result<Self, Error> {
+    pub fn new(print_ast: bool, print_eir: bool, print_ir: bool) -> Result<Self, Error> {
         Target::initialize_native(&InitializationConfig::default())
             .map_err(|message| TargetInitializationError { message })?;
 
         let context = context::Context::get_global();
         let builder = context.create_builder();
 
-        Ok(Self { context, builder })
+        Ok(Self { context, builder, print_ast, print_ast, print_ir })
     }
 
     /// Compile a string in the toy language into machine code.
