@@ -5,97 +5,63 @@ use error::{TypeError, UndeclaredTypeError, UndeclaredVariableError};
 use scope::{Scope, BindingKind};
 use value::type_::{EnumTypeData, TypeID};
 use value::{Atom, ValueData, ValueID};
+use ir;
 
 use failure::Error;
 
-pub struct FunctionTranslator<'a> {
+pub struct EIRTranslator<'a> {
     pub builder: Builder<'a>,
 }
 
-impl<'a> FunctionTranslator<'a> {
-    pub fn translate_expr(&mut self, expr: Expression) -> Result<Atom, Error> {
+impl<'a> EIRTranslator<'a> {
+    pub fn translate_expr(&mut self, expr: ir::Value) -> Result<Atom, Error> {
         Ok(match expr {
-            Expression::Number(number) => self.builder.number_constant(i64::from(number))?.into(),
-
-            Expression::Boolean(tf) => self.builder.boolean_constant(tf)?.into(),
-
-            Expression::Empty => self.builder.empty_constant()?.into(),
-
-            Expression::Array(expr) => unimplemented!(),
-
-            Expression::Type(expr) => {
-                let typedata = expr
-                    .into_iter()
-                    .map(|(ident, params)| {
-                        Ok((
-                            match ident {
-                                Expression::TypeIdentifier(id) => id,
-                                _ => unreachable!(),
-                            },
-                            params
-                                .into_iter()
-                                .map(|t| self.translate_expr(t).and_then(|e| e.expect_type()))
-                                .collect::<Result<Vec<TypeID>, _>>()?,
-                        ))
-                    }).collect::<Result<EnumTypeData, Error>>()?;
-                self.builder.register_type(typedata)?.into()
+            ir::Value::Constant(c) => match c {
+                ir::Constant::Number(number) => self.builder.number_constant(i64::from(number))?.into(),
+                ir::Constant::Boolean(tf) => self.builder.boolean_constant(tf)?.into(),
+                ir::Constant::Empty => self.builder.empty_constant()?.into(),
             }
-
-            Expression::BinOp(op, lhs, rhs) => {
+            ir::Value::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?.expect_value()?;
                 let rhs = self.translate_expr(*rhs)?.expect_value()?;
                 self.builder.apply_op(op, lhs, rhs)?.into()
             }
 
-            Expression::Follow(lhs, rhs) => {
+            ir::Value::Follow(lhs, rhs) => {
                 self.translate_expr(*lhs)?;
                 self.translate_expr(*rhs)?
             }
 
-            Expression::Bind(kind, name, rhs) => {
+            ir::Value::Bind(kind, name, rhs) => {
                 let new_value = self.translate_expr(*rhs)?.expect_value()?;
                 self.builder.bind_var(&name, new_value, kind)?;
                 new_value.into()
             }
 
-            Expression::Assign(lhs, rhs) => {
+            ir::Value::Assign(lhs, rhs) => {
                 let new_value = self.translate_expr(*rhs)?.expect_value()?;
                 let name = match *lhs {
-                    Expression::Identifier(name) => name,
-                    _ => panic!("Non-identifier identifier"),
+                    ir::Value::Variable(name) => name,
+                    _ => panic!("Non-variable identifier"),
                 };
                 self.builder.assign_var(&name, new_value)?;
                 new_value.into()
             }
 
-            Expression::TypeIdentifier(id) => self
-                .builder
-                .scope_stack()
-                .get(&id)
-                .ok_or(UndeclaredTypeError.into())
-                .and_then(|v| v.expect_type())?
-                .into(),
-
-            Expression::Identifier(name) => self
+            ir::Value::Variable(name) => self
                 .builder
                 .get_var(&name)
                 .and_then(|v| v.ok_or(UndeclaredVariableError.into()))?
                 .into(),
 
-            Expression::Cast(lhs, rhs) => {
-                let lhs = self.translate_expr(*lhs)?.expect_value()?;
-                let rhs = self.translate_expr(*rhs)?.expect_type()?;
-                self.builder.cast_to(lhs, rhs)?.into()
-            }
-
-            Expression::Scope(expr) => {
+            ir::Value::Scope(expr) => {
                 self.builder.enter_new_scope();
                 let content = self.translate_expr(*expr)?.expect_value()?;
                 self.builder.exit_scope()?;
                 content.into()
             }
 
-            Expression::IfElse(cond, then_expr, else_expr) => {
+            ir::Value::IfElse(cond, then_expr, else_expr) => {
                 let condition_value = self.translate_expr(*cond)?.expect_value()?;
 
                 let then_block = self.builder.create_block()?;
@@ -132,6 +98,7 @@ impl<'a> FunctionTranslator<'a> {
                 self.builder.switch_to_block(&merge_block);
                 self.builder.get_var(&var_name)?.unwrap().into()
             }
+            ir::Value::Typed(_, value) => self.translate_expr(*value)?,
         })
     }
 }
