@@ -1,6 +1,7 @@
-use ir::Value;
+use expression::Expression;
+use ir::{Value, Constant};
 
-impl FunctionTranslator {
+impl ASTTranslator {
     pub fn translate_expr(&mut self, expr: Expression) -> Value {
         match expr {
             Expression::Number(number) => Value::Constant(Constant::Number(number)),
