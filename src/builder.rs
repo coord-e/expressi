@@ -9,7 +9,6 @@ use failure::Error;
 
 use inkwell::{basic_block, builder, module, types, values, IntPredicate};
 
-use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -40,8 +39,7 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(inst_builder: &'a mut builder::Builder, module: Rc<module::Module>) -> Self {
-        let manager = Rc::new(RefCell::new(ValueManager::new()));
+    pub fn new(manager: ValueManagerRef, inst_builder: &'a mut builder::Builder, module: Rc<module::Module>) -> Self {
         let mut scope_stack = ScopeStack::new(manager.clone());
 
         scope_stack.bind(

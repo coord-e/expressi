@@ -98,6 +98,7 @@ impl<'a> EIRTranslator<'a> {
                 self.builder.switch_to_block(&merge_block);
                 self.builder.get_var(&var_name)?.unwrap().into()
             }
+            ir::Value::Typed(_, value) => self.translate_expr(*value)?,
         })
     }
 }

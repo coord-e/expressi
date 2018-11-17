@@ -6,8 +6,9 @@ use error::{
 use expression::Expression;
 use parser;
 use translator::{EIRTranslator, ASTTranslator};
-use value::TypeID;
+use value::{ValueManager, TypeID};
 
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use failure::Error;
@@ -66,11 +67,12 @@ impl JIT {
 
         self.builder.position_at_end(&basic_block);
 
-        let builder = Builder::new(&mut self.builder, module.clone());
+        let manager = Rc::new(RefCell::new(ValueManager::new()));
 
-        let mut a_trans = ASTTranslator {};
-        let eir = a_trans.translate_expr(expr);
+        let mut a_trans = ASTTranslator {manager: manager.clone()};
+        let eir = a_trans.translate_expr(expr)?;
 
+        let builder = Builder::new(manager.clone(), &mut self.builder, module.clone());
         let mut trans = EIRTranslator { builder };
 
         let evaluated_value = trans.translate_expr(eir)?.expect_value()?;
