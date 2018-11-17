@@ -1,5 +1,6 @@
 use expression::Operator;
 use scope::BindingKind;
+use value::TypeID;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Constant {
@@ -19,7 +20,8 @@ pub enum Value {
     BinOp(Operator, Box<Value>, Box<Value>),
     IfElse(Box<Value>, Box<Value>, Box<Value>),
     Variable(Identifier),
-    Constant(Constant)
+    Constant(Constant),
+    Typed(TypeID, Box<Value>),
 }
 
 
