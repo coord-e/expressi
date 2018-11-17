@@ -53,6 +53,9 @@ impl JIT {
         let ast = parser::parse(&input).map_err(|e| ParseError {
             message: e.to_string(),
         })?;
+        if self.print_ast {
+            eprintln!("AST: {:#?}", ast);
+        }
 
         // Translate the AST nodes into Cranelift IR.
         self.translate(module.clone(), ast)?;
@@ -74,6 +77,9 @@ impl JIT {
 
         let mut a_trans = ASTTranslator {manager: manager.clone()};
         let eir = a_trans.translate_expr(expr)?;
+        if self.print_eir {
+            eprintln!("EIR: {:#?}", eir);
+        }
 
         let builder = Builder::new(manager.clone(), &mut self.builder, module.clone());
         let mut trans = EIRTranslator { builder };
@@ -92,6 +98,10 @@ impl JIT {
             return Err(ModuleVerificationError {
                 message: message.to_string(),
             }.into());
+        }
+
+        if self.print_ir {
+            module.print_to_stderr();
         }
 
         Ok(())
