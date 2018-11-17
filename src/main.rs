@@ -51,13 +51,21 @@ fn main() {
     let matches = App::new("expressi")
         .version("0.1")
         .author("coord.e <me@coord-e.com>")
-        .arg(
-            Arg::with_name("INPUT")
+        .arg(Arg::with_name("INPUT")
                 .help("Sets the input file to use")
-                .index(1),
-        ).get_matches();
+                .index(1))
+        .arg(Arg::with_name("emit-ast")
+              .long("emit-ast")
+              .help("Emit parsed ast"))
+        .arg(Arg::with_name("emit-eir")
+              .long("emit-eir")
+              .help("Emit eir"))
+        .arg(Arg::with_name("emit-ir")
+              .long("emit-ir")
+              .help("Emit llvm ir"))
+        .get_matches();
 
-    let mut jit = jit::JIT::new().unwrap();
+    let mut jit = jit::JIT::new(matches.is_present("emit-ast"), matches.is_present("emit-eir"), matches.is_present("emit-ir")).unwrap();
 
     if matches.is_present("INPUT") {
         if let Err(e) = compile_from_file(&mut jit, matches.value_of("INPUT").unwrap()) {
