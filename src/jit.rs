@@ -35,7 +35,7 @@ impl JIT {
         let context = context::Context::get_global();
         let builder = context.create_builder();
 
-        Ok(Self { context, builder, print_ast, print_ast, print_ir })
+        Ok(Self { context, builder, print_ast, print_eir, print_ir })
     }
 
     /// Compile a string in the toy language into machine code.
