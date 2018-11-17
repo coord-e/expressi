@@ -13,6 +13,7 @@ ansi_term = "0.11.0"
 scopeguard = "0.3.3"
 serde = "1.0"
 serde_yaml = "0.8"
+serde_derive = "1.0"
 
 [build-dependencies]
 peg = "0.5"
