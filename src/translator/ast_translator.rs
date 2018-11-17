@@ -1,6 +1,8 @@
 use expression::Expression;
 use ir::{Value, Constant};
 
+pub struct ASTTranslator {}
+
 impl ASTTranslator {
     pub fn translate_expr(&mut self, expr: Expression) -> Value {
         match expr {

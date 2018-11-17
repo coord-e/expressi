@@ -5,7 +5,7 @@ use error::{
 };
 use expression::Expression;
 use parser;
-use translator::FunctionTranslator;
+use translator::{EIRTranslator, ASTTranslator};
 use value::TypeID;
 
 use std::rc::Rc;
