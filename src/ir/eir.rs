@@ -1,4 +1,5 @@
 use expression::Operator;
+use scope::BindingKind;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Constant {
@@ -11,11 +12,12 @@ pub type Identifier = String;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Value {
-    Bind(Identifier, Box<Value>),
+    Bind(BindingKind, Identifier, Box<Value>),
     Assign(Box<Value>, Box<Value>),
     Scope(Box<Value>),
     Follow(Box<Value>, Box<Value>),
     BinOp(Operator, Box<Value>, Box<Value>),
+    IfElse(Box<Value>, Box<Value>, Box<Value>),
     Variable(Identifier),
     Constant(Constant)
 }
