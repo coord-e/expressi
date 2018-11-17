@@ -1,5 +1,6 @@
 use expression::Operator;
 
+#[derive(Serialize, Deserialize, Debug)]
 pub enum Constant {
     Number(i64),
     Boolean(bool),
@@ -8,6 +9,7 @@ pub enum Constant {
 
 pub type Identifier = String;
 
+#[derive(Serialize, Deserialize, Debug)]
 pub enum Value {
     Bind(Identifier, Box<Value>),
     Assign(Box<Value>, Box<Value>),
