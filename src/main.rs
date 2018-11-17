@@ -55,9 +55,25 @@ fn main() {
             Arg::with_name("INPUT")
                 .help("Sets the input file to use")
                 .index(1),
+        ).arg(
+            Arg::with_name("print-ast")
+                .long("print-ast")
+                .help("Print ast"),
+        ).arg(
+            Arg::with_name("print-eir")
+                .long("print-eir")
+                .help("Print eir"),
+        ).arg(
+            Arg::with_name("print-ir")
+                .long("print-ir")
+                .help("Print llvm ir"),
         ).get_matches();
 
-    let mut jit = jit::JIT::new().unwrap();
+    let mut jit = jit::JIT::new(
+        matches.is_present("print-ast"),
+        matches.is_present("print-eir"),
+        matches.is_present("print-ir"),
+    ).unwrap();
 
     if matches.is_present("INPUT") {
         if let Err(e) = compile_from_file(&mut jit, matches.value_of("INPUT").unwrap()) {

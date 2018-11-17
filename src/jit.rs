@@ -22,17 +22,20 @@ type CompiledFunc = unsafe extern "C" fn() -> u64;
 pub struct JIT {
     context: context::ContextRef,
     builder: builder::Builder,
+    print_ast: bool,
+    print_eir: bool,
+    print_ir: bool
 }
 
 impl JIT {
-    pub fn new() -> Result<Self, Error> {
+    pub fn new(print_ast: bool, print_eir: bool, print_ir: bool) -> Result<Self, Error> {
         Target::initialize_native(&InitializationConfig::default())
             .map_err(|message| TargetInitializationError { message })?;
 
         let context = context::Context::get_global();
         let builder = context.create_builder();
 
-        Ok(Self { context, builder })
+        Ok(Self { context, builder, print_ast, print_eir, print_ir })
     }
 
     /// Compile a string in the toy language into machine code.
@@ -50,6 +53,9 @@ impl JIT {
         let ast = parser::parse(&input).map_err(|e| ParseError {
             message: e.to_string(),
         })?;
+        if self.print_ast {
+            eprintln!("AST:\n{:#?}", ast);
+        }
 
         // Translate the AST nodes into Cranelift IR.
         self.translate(module.clone(), ast)?;
@@ -71,6 +77,9 @@ impl JIT {
 
         let mut a_trans = ASTTranslator {manager: manager.clone()};
         let eir = a_trans.translate_expr(expr)?;
+        if self.print_eir {
+            eprintln!("EIR:\n{:#?}", eir);
+        }
 
         let builder = Builder::new(manager.clone(), &mut self.builder, module.clone());
         let mut trans = EIRTranslator { builder };
@@ -89,6 +98,11 @@ impl JIT {
             return Err(ModuleVerificationError {
                 message: message.to_string(),
             }.into());
+        }
+
+        if self.print_ir {
+            eprintln!("LLVM IR:");
+            module.print_to_stderr();
         }
 
         Ok(())
