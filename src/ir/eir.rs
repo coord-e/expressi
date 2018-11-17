@@ -2,7 +2,7 @@ use expression::Operator;
 use scope::BindingKind;
 use value::TypeID;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub enum Constant {
     Number(i64),
     Boolean(bool),
@@ -11,7 +11,7 @@ pub enum Constant {
 
 pub type Identifier = String;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub enum Value {
     Bind(BindingKind, Identifier, Box<Value>),
     Assign(Box<Value>, Box<Value>),

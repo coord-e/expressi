@@ -8,7 +8,7 @@ use std::fmt;
 use std::ptr::NonNull;
 use std::str::FromStr;
 
-#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct TypeID(usize);
 
 pub type EnumTypeData = Vec<(String, Vec<TypeID>)>;

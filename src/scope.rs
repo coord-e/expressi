@@ -8,7 +8,7 @@ use failure::Error;
 
 use inkwell::values::PointerValue;
 
-#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Eq)]
+#[derive(PartialEq, Debug, Clone, Eq)]
 pub enum BindingKind {
     Mutable,
     Immutable
