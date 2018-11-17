@@ -54,7 +54,7 @@ impl JIT {
             message: e.to_string(),
         })?;
         if self.print_ast {
-            eprintln!("AST: {:#?}", ast);
+            eprintln!("AST:\n{:#?}", ast);
         }
 
         // Translate the AST nodes into Cranelift IR.
@@ -78,7 +78,7 @@ impl JIT {
         let mut a_trans = ASTTranslator {manager: manager.clone()};
         let eir = a_trans.translate_expr(expr)?;
         if self.print_eir {
-            eprintln!("EIR: {:#?}", eir);
+            eprintln!("EIR:\n{:#?}", eir);
         }
 
         let builder = Builder::new(manager.clone(), &mut self.builder, module.clone());
@@ -101,6 +101,7 @@ impl JIT {
         }
 
         if self.print_ir {
+            eprintln!("LLVM IR:");
             module.print_to_stderr();
         }
 
