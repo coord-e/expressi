@@ -102,7 +102,7 @@ impl TypeInfer {
 impl Transform for TypeInfer {
     fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
         Ok(match eir {
-            v @ ir::Value::Typed(_, _) => v.clone(),
+            ir::Value::Typed(_, _) => eir.clone(),
             ir::Value::BinOp(op, box lhs, box rhs) => {
                 let lhs = self.transform(&lhs)?;
                 let rhs = self.transform(&rhs)?;
