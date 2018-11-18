@@ -157,6 +157,24 @@ impl Transform for TypeInfer {
 
                 self.with_type(Some(type_), eir.clone())
             }
+            ir::Value::IfElse(box cond, box then_, box else_) => {
+                let cond  = self.transform(&cond)?;
+                let then_ = self.transform(&then_)?;
+                let else_ = self.transform(&else_)?;
+
+                let cond_ty = cond.type_().ok_or(TypeInferError::NotTyped)?;
+                let then_ty = then_.type_().ok_or(TypeInferError::NotTyped)?;
+                let else_ty = else_.type_().ok_or(TypeInferError::NotTyped)?;
+
+                let boolean_type = self.manager.primitive_type(PrimitiveKind::Boolean);
+
+                self.check_type(cond_ty, boolean_type)?;
+                self.check_type(then_ty, else_ty)?;
+
+                let new_inst = ir::Value::IfElse(box cond, box then_, box else_);
+
+                self.with_type(Some(then_ty), new_inst)
+            }
             _ => unimplemented!(),
         }
     }
