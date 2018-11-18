@@ -3,6 +3,8 @@ use scope::BindingKind;
 use transform::Transform;
 use value::TypeID;
 
+use failure::Error;
+
 #[derive(Debug, Clone)]
 pub enum Constant {
     Number(i64),
@@ -31,5 +33,12 @@ impl Value {
         T: Transform,
     {
         transformer.transform(self)
+    }
+
+    pub fn type_(&self) -> Option<TypeID> {
+        match self {
+            Value::Typed(t, _) => Some(t.clone()),
+            _ => None
+        }
     }
 }
