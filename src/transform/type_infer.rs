@@ -117,8 +117,17 @@ impl Transform for TypeInfer {
 
                 self.with_type(rhs_ty, &new_inst)
             }
-            _ => unimplemented!()
+            ir::Value::Variable(ident) => {
+                let type_ = self
+                    .env
+                    .get(ident)
+                    .ok_or(TypeInferError::UndeclaredIdentifier {
+                        ident: ident.clone(),
+                    })?;
+
+                self.with_type(type_, &eir)
+            }
+            _ => unimplemented!(),
         }
     }
 }
-
