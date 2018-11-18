@@ -1,4 +1,4 @@
-use error::{ImmutableAssignError, UndeclaredVariableError, UnexpectedScopePopError};
+use error::TranslationError;
 use value::{Atom, TypeID, ValueID, ValueManagerRef};
 
 use std::collections::HashMap;
@@ -52,14 +52,14 @@ impl Scope {
             .get(s)
             .map(|v| {
                 if v.kind == BindingKind::Immutable {
-                    Err(ImmutableAssignError)
+                    Err(TranslationError::ImmutableAssign)
                 } else {
                     Ok(BoundAtom {
                         kind: v.kind.clone(),
                         atom,
                     })
                 }
-            }).ok_or(UndeclaredVariableError)??;
+            }).ok_or(TranslationError::UndeclaredVariable)??;
         self.bindings.insert(s.to_string(), new_entry);
         Ok(())
     }
@@ -108,9 +108,9 @@ impl ScopeStack {
 
     pub fn pop(&mut self) -> Result<Scope, Error> {
         if self.scopes.len() == 1 {
-            return Err(UnexpectedScopePopError.into());
+            return Err(TranslationError::UnexpectedScopePop.into());
         }
-        self.scopes.pop().ok_or(UnexpectedScopePopError.into())
+        self.scopes.pop().ok_or(TranslationError::UnexpectedScopePop.into())
     }
 
     pub fn variables(&self) -> impl Iterator<Item = (&String, PointerValue)> {
@@ -138,7 +138,7 @@ impl ScopeStack {
             .iter_mut()
             .rev()
             .find(|sc| sc.get(s).is_some())
-            .ok_or(UndeclaredVariableError.into())
+            .ok_or(TranslationError::UndeclaredVariable.into())
             .and_then(|v| v.assign(s, val))
     }
 

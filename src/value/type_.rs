@@ -1,4 +1,4 @@
-use error::{InternalTypeConversionError, LLVMTypeConversionError};
+use error::TranslationError;
 
 use failure::Error;
 use inkwell::types::{BasicTypeEnum, IntType};
@@ -34,7 +34,7 @@ impl TypeData {
                 _ => unimplemented!(),
             },
             _ => {
-                return Err(LLVMTypeConversionError {
+                return Err(TranslationError::LLVMTypeConversion {
                     from: format!("{:?}", t),
                 }.into())
             }
@@ -46,7 +46,7 @@ impl TypeData {
             TypeData::Number => IntType::i64_type(),
             TypeData::Boolean => IntType::bool_type(),
             _ => {
-                return Err(InternalTypeConversionError {
+                return Err(TranslationError::InternalTypeConversion {
                     type_description: format!("{:?}", self),
                 }.into())
             }
@@ -75,22 +75,6 @@ impl fmt::Display for TypeData {
         };
 
         write!(f, "{}", rep)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct TypeParseError;
-
-impl FromStr for TypeData {
-    type Err = TypeParseError;
-
-    fn from_str(x: &str) -> Result<Self, Self::Err> {
-        Ok(match x {
-            "Number" => TypeData::Number,
-            "Boolean" => TypeData::Boolean,
-            "Empty" => TypeData::Empty,
-            _ => return Err(TypeParseError),
-        })
     }
 }
 

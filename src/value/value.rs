@@ -1,4 +1,4 @@
-use error::LLVMValueNotAvailableError;
+use error::TranslationError;
 use value::TypeID;
 
 use std::collections::HashMap;
@@ -33,7 +33,7 @@ impl TypedValueData {
         let TypedValueData(_, data) = self;
         Ok(match data {
             ValueData::Primitive { internal_value, .. } => internal_value.clone(),
-            _ => return Err(LLVMValueNotAvailableError.into()),
+            _ => return Err(TranslationError::LLVMValueNotAvailable.into()),
         })
     }
 }

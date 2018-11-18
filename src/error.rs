@@ -1,83 +1,100 @@
 use value::TypeID;
+use std::io;
 
-#[derive(Fail, Debug)]
-#[fail(display = "Use of undeclared variable")]
-pub struct UndeclaredVariableError;
+#[derive(Debug, Fail)]
+pub enum TranslationError {
+    #[fail(display = "Use of undeclared variable")]
+    UndeclaredVariable,
 
-#[derive(Fail, Debug)]
-#[fail(display = "Cannot assign twice to immutable variable")]
-pub struct ImmutableAssignError;
+    #[fail(display = "Cannot assign twice to immutable variable")]
+    ImmutableAssign,
 
-#[derive(Fail, Debug)]
-#[fail(display = "Use of undeclared type identifier")]
-pub struct UndeclaredTypeError;
+    #[fail(display = "Use of undeclared type identifier")]
+    UndeclaredType,
 
-#[derive(Fail, Debug)]
-#[fail(display = "Value is expected but found Type")]
-pub struct ValueExpectedError;
+    #[fail(display = "Value is expected but found Type")]
+    ValueExpected,
 
-#[derive(Fail, Debug)]
-#[fail(display = "Type is expected but found Value")]
-pub struct TypeExpectedError;
+    #[fail(display = "Type is expected but found Value")]
+    TypeExpected,
 
-#[derive(Fail, Debug)]
-#[fail(display = "LLVM Value is not available for this value")]
-pub struct LLVMValueNotAvailableError;
+    #[fail(display = "LLVM Value is not available for this value")]
+    LLVMValueNotAvailable,
 
-#[derive(Fail, Debug)]
-#[fail(display = "Invalid Type")]
-pub struct TypeError;
+    #[fail(display = "Invalid Type")]
+    InvalidType,
 
-#[derive(Fail, Debug)]
-#[fail(display = "Can't pop the scope stack anymore")]
-pub struct UnexpectedScopePopError;
+    #[fail(display = "Can't pop the scope stack anymore")]
+    UnexpectedScopePop,
 
-#[derive(Fail, Debug)]
-#[fail(display = "Internal Error; Use of invalid value ID")]
-pub struct InvalidValueIDError;
+    #[fail(display = "Attempt to create a new branch in an invalid context")]
+    InvalidContextBranch,
 
-#[derive(Fail, Debug)]
-#[fail(display = "Internal Error; Use of invalid type ID")]
-pub struct InvalidTypeIDError;
+    #[fail(display = "Invalid Cast from {:?} to {:?}", from, to)]
+    InvalidCast {
+        from: TypeID,
+        to: TypeID,
+    },
 
-#[derive(Fail, Debug)]
-#[fail(display = "Attempt to create a new branch in an invalid context")]
-pub struct InvalidContextBranchError;
+    #[fail(
+        display = "Attempt to convert incompatible llvm type {} to expressi's type representation",
+        from
+    )]
+    LLVMTypeConversion {
+        from: String,
+    },
 
-#[derive(Fail, Debug)]
-#[fail(display = "Failed to create JIT execution engine")]
-pub struct FailedToCreateJITError;
+    #[fail(
+        display = "Attempt to convert incompatible llvm type {} to expressi's type representation",
+        type_description
+    )]
+    InternalTypeConversion {
+        // TODO: Use better representation than string
+        type_description: String,
+    },
+}
 
-#[derive(Fail, Debug)]
-#[fail(display = "Invalid Cast from {:?} to {:?}", from, to)]
-pub struct InvalidCastError {
-    pub from: TypeID,
-    pub to: TypeID,
+#[derive(Debug, Fail)]
+pub enum InternalError {
+    #[fail(display = "Use of invalid value ID")]
+    InvalidValueID,
+
+    #[fail(display = "Use of invalid type ID")]
+    InvalidTypeID,
+}
+
+#[derive(Debug, Fail)]
+pub enum LLVMError {
+    #[fail(display = "Failed to initialize the target: {}", message)]
+    TargetInitializationFailed {
+        message: String,
+    },
+
+    #[fail(display = "The function '{}' is invaild", name)]
+    FunctionVerificationError {
+        name: String,
+    },
+
+    #[fail(display = "Invaild module was generated: {}", message)]
+    ModuleVerificationError {
+        message: String,
+    },
+
+    #[fail(display = "Failed to create JIT execution engine")]
+    FailedToCreateJIT,
 }
 
 #[derive(Fail, Debug)]
-#[fail(display = "Failed to initialize the target: {}", message)]
-pub struct TargetInitializationError {
-    pub message: String,
-}
+pub enum CLIError {
+    #[fail(display = "IO Error: {}", error)]
+    IOError {
+        error: io::Error,
+    },
 
-#[derive(Fail, Debug)]
-#[fail(
-    display = "Attempt to convert incompatible llvm type {} to expressi's type representation",
-    from
-)]
-pub struct LLVMTypeConversionError {
-    pub from: String,
-}
-
-#[derive(Fail, Debug)]
-#[fail(
-    display = "Attempt to convert incompatible llvm type {} to expressi's type representation",
-    type_description
-)]
-pub struct InternalTypeConversionError {
-    // TODO: Use better representation than string
-    pub type_description: String,
+    #[fail(display = "File not found: {}", path)]
+    NotFound {
+        path: String,
+    },
 }
 
 #[derive(Fail, Debug)]
@@ -86,26 +103,3 @@ pub struct ParseError {
     pub message: String,
 }
 
-#[derive(Fail, Debug)]
-#[fail(display = "The function '{}' is invaild", name)]
-pub struct FunctionVerificationError {
-    pub name: String,
-}
-
-#[derive(Fail, Debug)]
-#[fail(display = "Invaild module was generated: {}", message)]
-pub struct ModuleVerificationError {
-    pub message: String,
-}
-
-#[derive(Fail, Debug)]
-#[fail(display = "IO Error: {}", message)]
-pub struct IOError {
-    pub message: String,
-}
-
-#[derive(Fail, Debug)]
-#[fail(display = "File not found: {}", path)]
-pub struct NotFoundError {
-    pub path: String,
-}

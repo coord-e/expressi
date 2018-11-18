@@ -1,4 +1,4 @@
-use error::{InvalidCastError, InvalidContextBranchError, TypeError, UndeclaredVariableError};
+use error::TranslationError;
 use expression::Operator;
 use scope::{Scope, ScopeStack, BindingKind};
 use value::manager::PrimitiveKind;
@@ -131,7 +131,7 @@ impl<'a> Builder<'a> {
         let manager = self.manager.try_borrow()?;
         let number_type = manager.primitive_type(PrimitiveKind::Number);
         if manager.type_of(lhs)? != number_type || manager.type_of(rhs)? != number_type {
-            return Err(TypeError.into());
+            return Err(TranslationError::InvalidType.into());
         }
         Ok(())
     }
@@ -291,7 +291,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn assign_var(&mut self, name: &str, val: ValueID) -> Result<ValueID, Error> {
-        let var = self.scope_stack.get_var(name).ok_or(UndeclaredVariableError)?;
+        let var = self.scope_stack.get_var(name).ok_or(TranslationError::UndeclaredVariable)?;
         if let Ok(val) = self.manager.try_borrow()?.llvm_value(val) {
             self.inst_builder.build_store(var, val);
         }
@@ -315,7 +315,7 @@ impl<'a> Builder<'a> {
     pub fn cast_to(&mut self, v: ValueID, to_type: TypeID) -> Result<ValueID, Error> {
         let from_type = self.manager.try_borrow()?.type_of(v)?;
         if from_type == to_type {
-            return Err(InvalidCastError {
+            return Err(TranslationError::InvalidCast {
                 from: from_type,
                 to: to_type,
             }.into());
@@ -350,7 +350,7 @@ impl<'a> Builder<'a> {
                 );
             }
         }
-        Err(InvalidCastError {
+        Err(TranslationError::InvalidCast {
             from: from_type,
             to: to_type,
         }.into())
@@ -417,7 +417,7 @@ impl<'a> Builder<'a> {
             .inst_builder
             .get_insert_block()
             .and_then(|b| b.get_parent())
-            .ok_or(InvalidContextBranchError)?;
+            .ok_or(TranslationError::InvalidContextBranch)?;
         let block = self.module.get_context().append_basic_block(&parent, "");
         Ok(Block { ebb: block })
     }
@@ -431,7 +431,7 @@ impl<'a> Builder<'a> {
         let manager = self.manager.try_borrow()?;
         let bool_type = manager.primitive_type(PrimitiveKind::Boolean);
         if manager.type_of(condition)? != bool_type {
-            return Err(TypeError.into());
+            return Err(TranslationError::InvalidType.into());
         }
         let cl = manager.llvm_value(condition)?;
         self.inst_builder.build_conditional_branch(
@@ -453,7 +453,7 @@ impl<'a> Builder<'a> {
     pub fn current_block(&self) -> Result<Block, Error> {
         self.inst_builder
             .get_insert_block()
-            .ok_or(InvalidContextBranchError.into())
+            .ok_or(TranslationError::InvalidContextBranch.into())
             .map(|ebb| Block { ebb })
     }
 

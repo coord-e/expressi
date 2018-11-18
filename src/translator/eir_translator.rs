@@ -1,7 +1,7 @@
 use expression::Expression;
 
 use builder::Builder;
-use error::{TypeError, UndeclaredTypeError, UndeclaredVariableError};
+use error::TranslationError;
 use scope::{Scope, BindingKind};
 use value::type_::{EnumTypeData, TypeID};
 use value::{Atom, ValueData, ValueID};
@@ -51,7 +51,7 @@ impl<'a> EIRTranslator<'a> {
             ir::Value::Variable(name) => self
                 .builder
                 .get_var(&name)
-                .and_then(|v| v.ok_or(UndeclaredVariableError.into()))?
+                .and_then(|v| v.ok_or(TranslationError::UndeclaredVariable.into()))?
                 .into(),
 
             ir::Value::Scope(expr) => {
