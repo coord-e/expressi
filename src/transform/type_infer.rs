@@ -9,7 +9,7 @@ use failure::Error;
 
 use std::collections::HashMap;
 
-struct Env(HashMap<String, TypeID>);
+struct Env(HashMap<String, Option<TypeID>>);
 
 impl Env {
     fn new() -> Self {
@@ -32,15 +32,15 @@ impl ScopedEnv {
         self.0.pop();
     }
 
-    fn merged(&self) -> HashMap<&String, &TypeID> {
+    fn merged(&self) -> HashMap<&String, &Option<TypeID>> {
         self.0.iter().flat_map(|env| env.0.iter()).collect()
     }
 
-    fn insert(&mut self, key: &str, t: TypeID) {
+    fn insert(&mut self, key: &str, t: Option<TypeID>) {
         self.0.last_mut().unwrap().0.insert(key.to_string(), t);
     }
 
-    fn get(&self, key: &String) -> Option<TypeID> {
+    fn get(&self, key: &String) -> Option<Option<TypeID>> {
         self.merged().get(key).cloned().cloned()
     }
 }
@@ -82,13 +82,19 @@ impl TypeInfer {
 }
 
 impl Transform for TypeInfer {
-    fn transform(&self, eir: &ir::Value) -> Result<ir::Value, Error> {
+    fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
         match eir {
             v @ ir::Value::Typed(_, _) => Ok(v.clone()),
             ir::Value::BinOp(op, box lhs, box rhs) => {
                 let lhs = self.transform(&lhs)?;
                 let rhs = self.transform(&rhs)?;
                 self.bin_op(*op, &lhs, &rhs)
+            }
+            ir::Value::Bind(_, ident, box rhs) => {
+                let rhs = self.transform(&rhs)?;
+                let rhs_ty = rhs.type_();
+                self.env.insert(ident, rhs_ty);
+                Ok(rhs_ty.map(|t| ir::Value::Typed(t, box eir.clone())).unwrap_or(eir.clone()))
             }
             _ => unimplemented!()
         }

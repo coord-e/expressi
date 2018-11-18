@@ -87,7 +87,7 @@ impl JIT {
             eprintln!("EIR:\n{:#?}", eir);
         }
 
-        let ti = TypeInfer::new();
+        let mut ti = TypeInfer::new();
         let transformed = eir.apply(ti)?;
 
         if self.print_eir {
