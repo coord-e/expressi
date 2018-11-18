@@ -68,11 +68,16 @@ impl TypeInfer {
         let boolean_type = self.manager.primitive_type(PrimitiveKind::Boolean);
         Ok(match op {
             Operator::Index => unimplemented!(),
-            Operator::Lt | Operator::Gt | Operator::Le | Operator::Ge | Operator::Eq | Operator::Ne => {
+            Operator::Lt
+            | Operator::Gt
+            | Operator::Le
+            | Operator::Ge
+            | Operator::Eq
+            | Operator::Ne => {
                 self.check_type(lhs.type_().unwrap(), number_type)?;
                 self.check_type(rhs.type_().unwrap(), number_type)?;
                 ir::Value::Typed(boolean_type, box new_inst)
-            },
+            }
             _ => {
                 self.check_type(lhs.type_().unwrap(), number_type)?;
                 self.check_type(rhs.type_().unwrap(), number_type)?;
@@ -108,7 +113,8 @@ impl Transform for TypeInfer {
             ir::Value::Bind(kind, ident, box rhs) => {
                 let rhs = self.transform(&rhs)?;
                 let rhs_ty = rhs.type_();
-                self.env.insert(ident, rhs_ty.ok_or(TypeInferError::NotTyped)?);
+                self.env
+                    .insert(ident, rhs_ty.ok_or(TypeInferError::NotTyped)?);
 
                 let new_inst = ir::Value::Bind(kind.clone(), ident.clone(), box rhs);
 
@@ -158,7 +164,7 @@ impl Transform for TypeInfer {
                 self.with_type(Some(type_), eir.clone())
             }
             ir::Value::IfElse(box cond, box then_, box else_) => {
-                let cond  = self.transform(&cond)?;
+                let cond = self.transform(&cond)?;
                 let then_ = self.transform(&then_)?;
                 let else_ = self.transform(&else_)?;
 

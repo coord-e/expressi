@@ -20,7 +20,7 @@ pub enum TypeData {
     Array(NonNull<TypeData>, usize),
     Empty,
     Enum(EnumTypeData),
-    Variable(Option<TypeID>)
+    Variable(Option<TypeID>),
 }
 
 unsafe impl Send for TypeID {}
