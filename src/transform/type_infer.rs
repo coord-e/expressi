@@ -75,6 +75,13 @@ impl TypeInfer {
         })
     }
 
+    fn with_type(&self, type_: Option<TypeID>, new_inst: &ir::Value) -> Result<ir::Value, Error>
+    {
+        Ok(type_
+           .map(|t| ir::Value::Typed(t, box new_inst.clone()))
+           .unwrap_or_else(|| new_inst.clone()))
+    }
+
     fn check_type(&self, expected: TypeID, t: TypeID) -> Result<TypeID, Error> {
         ensure!(expected == t, TypeInferError::MismatchedTypes { expected, found: t });
         Ok(t)
@@ -97,9 +104,7 @@ impl Transform for TypeInfer {
 
                 let new_inst = ir::Value::Bind(kind.clone(), ident.clone(), box rhs);
 
-                Ok(rhs_ty
-                   .map(|t| ir::Value::Typed(t, box new_inst.clone()))
-                   .unwrap_or_else(|| new_inst.clone()))
+                self.with_type(rhs_ty, &new_inst)
             }
             ir::Value::Follow(box lhs, box rhs) => {
                 let lhs = self.transform(&lhs)?;
@@ -108,9 +113,7 @@ impl Transform for TypeInfer {
 
                 let new_inst = ir::Value::Follow(box lhs, box rhs);
 
-                Ok(rhs_ty
-                   .map(|t| ir::Value::Typed(t, box new_inst.clone()))
-                   .unwrap_or_else(|| new_inst.clone()))
+                self.with_type(rhs_ty, &new_inst)
             }
             _ => unimplemented!()
         }
