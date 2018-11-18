@@ -1,5 +1,6 @@
 use expression::Operator;
 use scope::BindingKind;
+use transform::Transform;
 use value::TypeID;
 
 #[derive(Debug)]
@@ -22,4 +23,13 @@ pub enum Value {
     Variable(Identifier),
     Constant(Constant),
     Typed(TypeID, Box<Value>),
+}
+
+impl Value {
+    pub fn apply<T>(&self, transformer: T) -> Self
+    where
+        T: Transform,
+    {
+        transformer.transform(self)
+    }
 }
