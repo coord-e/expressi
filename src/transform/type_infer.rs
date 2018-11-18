@@ -108,6 +108,19 @@ impl Transform for TypeInfer {
 
                 self.with_type(rhs_ty, new_inst)
             }
+            ir::Value::Assign(box lhs, box rhs) => {
+                let lhs = self.transform(&lhs)?;
+                let rhs = self.transform(&rhs)?;
+
+                let lhs_ty = lhs.type_().ok_or(TypeInferError::NotTyped)?;
+                let rhs_ty = rhs.type_().ok_or(TypeInferError::NotTyped)?;
+
+                self.check_type(lhs_ty, rhs_ty)?;
+
+                let new_inst = ir::Value::Assign(box lhs, box rhs);
+
+                self.with_type(Some(rhs_ty), new_inst)
+            }
             ir::Value::Follow(box lhs, box rhs) => {
                 let lhs = self.transform(&lhs)?;
                 let rhs = self.transform(&rhs)?;
