@@ -78,22 +78,6 @@ impl fmt::Display for TypeData {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct TypeParseError;
-
-impl FromStr for TypeData {
-    type Err = TypeParseError;
-
-    fn from_str(x: &str) -> Result<Self, Self::Err> {
-        Ok(match x {
-            "Number" => TypeData::Number,
-            "Boolean" => TypeData::Boolean,
-            "Empty" => TypeData::Empty,
-            _ => return Err(TypeParseError),
-        })
-    }
-}
-
 pub struct TypeStore {
     data: HashMap<TypeID, TypeData>,
 }
