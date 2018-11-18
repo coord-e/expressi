@@ -1,7 +1,7 @@
 use scope::BindingKind;
 use std::str::FromStr;
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Operator {
     Add,
     Sub,
