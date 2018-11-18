@@ -1,4 +1,4 @@
-use error::{TypeExpectedError, ValueExpectedError};
+use error::TranslationError;
 use value::{TypeID, ValueID};
 
 use failure::Error;
@@ -13,14 +13,14 @@ impl Atom {
     pub fn expect_value(self) -> Result<ValueID, Error> {
         match self {
             Atom::Value(v) => Ok(v),
-            _ => return Err(ValueExpectedError.into()),
+            _ => return Err(TranslationError::ValueExpected.into()),
         }
     }
 
     pub fn expect_type(self) -> Result<TypeID, Error> {
         match self {
             Atom::Type(v) => Ok(v),
-            _ => return Err(TypeExpectedError.into()),
+            _ => return Err(TranslationError::TypeExpected.into()),
         }
     }
 }

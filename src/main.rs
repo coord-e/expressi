@@ -7,7 +7,7 @@ use ansi_term::Colour::{Blue, Red};
 use clap::{App, Arg};
 use failure::Error;
 
-use expressi::error::{IOError, NotFoundError};
+use expressi::error::CLIError;
 use expressi::jit;
 
 use std::fs::File;
@@ -15,11 +15,11 @@ use std::io;
 use std::io::prelude::*;
 
 fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
-    let mut f = File::open(path).map_err(|_| NotFoundError {
+    let mut f = File::open(path).map_err(|_| CLIError::NotFound {
         path: path.to_owned(),
     })?;
     let mut contents = String::new();
-    f.read_to_string(&mut contents).map_err(|_| IOError {
+    f.read_to_string(&mut contents).map_err(|_| CLIError::IOError {
         message: "Failed to read file".to_owned(),
     })?;
     let func = jit.compile("file_input", &contents.trim())?;
@@ -29,12 +29,12 @@ fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
 
 fn repl(jit: &mut jit::JIT, line_count: u32) -> Result<(), Error> {
     print!("{}: > ", line_count);
-    io::stdout().flush().map_err(|_| IOError {
+    io::stdout().flush().map_err(|_| CLIError::IOError {
         message: "Failed to flush stdin".to_owned(),
     })?;
 
     let mut buffer = String::new();
-    io::stdin().read_line(&mut buffer).map_err(|_| IOError {
+    io::stdin().read_line(&mut buffer).map_err(|_| CLIError::IOError {
         message: "Failed to read stdin".to_owned(),
     })?;
 

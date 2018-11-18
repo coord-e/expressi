@@ -1,8 +1,5 @@
 use builder::Builder;
-use error::{
-    FailedToCreateJITError, FunctionVerificationError, ModuleVerificationError, ParseError,
-    TargetInitializationError,
-};
+use error::{LLVMError, ParseError};
 use expression::Expression;
 use parser;
 use translator::{EIRTranslator, ASTTranslator};
@@ -30,7 +27,7 @@ pub struct JIT {
 impl JIT {
     pub fn new(print_ast: bool, print_eir: bool, print_ir: bool) -> Result<Self, Error> {
         Target::initialize_native(&InitializationConfig::default())
-            .map_err(|message| TargetInitializationError { message })?;
+            .map_err(|message| LLVMError::TargetInitializationFailed { message })?;
 
         let context = context::Context::get_global();
         let builder = context.create_builder();
@@ -47,7 +44,7 @@ impl JIT {
         let module = Rc::new(self.context.create_module(name));
         let execution_engine = module
             .create_jit_execution_engine(OptimizationLevel::None)
-            .map_err(|_| FailedToCreateJITError)?;
+            .map_err(|_| LLVMError::FailedToCreateJIT)?;
 
         // Parse the string, producing AST nodes.
         let ast = parser::parse(&input).map_err(|e| ParseError {
@@ -89,13 +86,13 @@ impl JIT {
 
         if !function.verify(true) {
             eprintln!(""); // function.verify print results to stderr directory but it doesn't contain \n on the end
-            return Err(FunctionVerificationError {
+            return Err(LLVMError::FunctionVerificationError {
                 name: function.get_name().to_str()?.to_string(),
             }.into());
         }
 
         if let Err(message) = module.verify() {
-            return Err(ModuleVerificationError {
+            return Err(LLVMError::ModuleVerificationError {
                 message: message.to_string(),
             }.into());
         }

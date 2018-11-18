@@ -1,4 +1,4 @@
-use error::{InvalidTypeIDError, InvalidValueIDError};
+use error::InternalError;
 use value::type_::{EnumTypeData, TypeData, TypeID, TypeStore};
 use value::value::{ValueData, ValueID, ValueStore};
 
@@ -72,7 +72,7 @@ impl ValueManager {
         self.value_store
             .get(v)
             .map(|data| data.get_type())
-            .ok_or(InvalidValueIDError.into())
+            .ok_or(InternalError::InvalidValueID.into())
     }
 
     pub fn primitive_type(&self, kind: PrimitiveKind) -> TypeID {
@@ -107,14 +107,14 @@ impl ValueManager {
     pub fn llvm_value(&self, v: ValueID) -> Result<BasicValueEnum, Error> {
         self.value_store
             .get(v)
-            .ok_or(InvalidValueIDError.into())
+            .ok_or(InternalError::InvalidValueID.into())
             .and_then(|v| v.cl_value())
     }
 
     pub fn llvm_type(&self, v: TypeID) -> Result<BasicTypeEnum, Error> {
         self.type_store
             .get(v)
-            .ok_or(InvalidTypeIDError.into())
+            .ok_or(InternalError::InvalidTypeID.into())
             .and_then(|v| v.cl_type())
     }
 }

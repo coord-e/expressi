@@ -1,4 +1,4 @@
-use error::{InternalTypeConversionError, LLVMTypeConversionError};
+use error::TranslationError;
 
 use failure::Error;
 use inkwell::types::{BasicTypeEnum, IntType};
@@ -34,7 +34,7 @@ impl TypeData {
                 _ => unimplemented!(),
             },
             _ => {
-                return Err(LLVMTypeConversionError {
+                return Err(TranslationError::LLVMTypeConversion {
                     from: format!("{:?}", t),
                 }.into())
             }
@@ -46,7 +46,7 @@ impl TypeData {
             TypeData::Number => IntType::i64_type(),
             TypeData::Boolean => IntType::bool_type(),
             _ => {
-                return Err(InternalTypeConversionError {
+                return Err(TranslationError::InternalTypeConversion {
                     type_description: format!("{:?}", self),
                 }.into())
             }
