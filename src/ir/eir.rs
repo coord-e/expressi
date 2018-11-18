@@ -38,7 +38,7 @@ impl Value {
     pub fn type_(&self) -> Option<TypeID> {
         match self {
             Value::Typed(t, _) => Some(t.clone()),
-            _ => None
+            _ => None,
         }
     }
 }

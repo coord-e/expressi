@@ -1,9 +1,9 @@
-use transform::Transform;
-use transform::error::TypeInferError;
-use value::{ValueManager, TypeID};
-use value::manager::PrimitiveKind;
 use expression::Operator;
 use ir;
+use transform::error::TypeInferError;
+use transform::Transform;
+use value::manager::PrimitiveKind;
+use value::{TypeID, ValueManager};
 
 use failure::Error;
 
@@ -13,7 +13,7 @@ struct Env(HashMap<String, Option<TypeID>>);
 
 impl Env {
     fn new() -> Self {
-        Env ( HashMap::new() )
+        Env(HashMap::new())
     }
 }
 
@@ -21,7 +21,7 @@ struct ScopedEnv(Vec<Env>);
 
 impl ScopedEnv {
     fn new() -> Self {
-        ScopedEnv ( vec![Env::new()] )
+        ScopedEnv(vec![Env::new()])
     }
 
     fn new_scope(&mut self) {
@@ -47,14 +47,14 @@ impl ScopedEnv {
 
 pub struct TypeInfer {
     manager: ValueManager,
-    env: ScopedEnv
+    env: ScopedEnv,
 }
 
 impl TypeInfer {
     pub fn new() -> Self {
         Self {
             manager: ValueManager::new(),
-            env: ScopedEnv::new()
+            env: ScopedEnv::new(),
         }
     }
 
@@ -75,15 +75,17 @@ impl TypeInfer {
         })
     }
 
-    fn with_type(&self, type_: Option<TypeID>, new_inst: &ir::Value) -> Result<ir::Value, Error>
-    {
+    fn with_type(&self, type_: Option<TypeID>, new_inst: &ir::Value) -> Result<ir::Value, Error> {
         Ok(type_
-           .map(|t| ir::Value::Typed(t, box new_inst.clone()))
-           .unwrap_or_else(|| new_inst.clone()))
+            .map(|t| ir::Value::Typed(t, box new_inst.clone()))
+            .unwrap_or_else(|| new_inst.clone()))
     }
 
     fn check_type(&self, expected: TypeID, t: TypeID) -> Result<TypeID, Error> {
-        ensure!(expected == t, TypeInferError::MismatchedTypes { expected, found: t });
+        ensure!(
+            expected == t,
+            TypeInferError::MismatchedTypes { expected, found: t }
+        );
         Ok(t)
     }
 }

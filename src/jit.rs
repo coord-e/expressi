@@ -2,8 +2,8 @@ use builder::Builder;
 use error::{LLVMError, ParseError};
 use expression::Expression;
 use parser;
+use transform::{Transform, TypeInfer};
 use translator::{ASTTranslator, EIRTranslator};
-use transform::{TypeInfer, Transform};
 use value::{TypeID, ValueManager};
 
 use std::cell::RefCell;
