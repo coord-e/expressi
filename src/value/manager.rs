@@ -23,7 +23,7 @@ pub struct ValueManager {
     value_store: ValueStore,
     primitive_types: HashMap<PrimitiveKind, TypeID>,
     // TODO: Remove `Option` with better initialization
-    empty_value: Option<ValueID>,
+    empty_value: Option<ValueID>
 }
 
 pub type ValueManagerRef = Rc<RefCell<ValueManager>>;
@@ -62,6 +62,10 @@ impl ValueManager {
 
     pub fn new_type_variable(&mut self) -> TypeID {
         self.type_store.new_variable()
+    }
+
+    pub fn new_function_type(&mut self, num_args: usize) -> TypeID {
+        self.type_store.new_function_type(num_args)
     }
 
     pub fn new_value(&mut self, t: TypeID, data: ValueData) -> ValueID {

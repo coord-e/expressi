@@ -18,6 +18,7 @@ pub enum TypeData {
     Number,
     Boolean,
     Array(NonNull<TypeData>, usize),
+    Function(Vec<TypeID>),
     Empty,
     Enum(EnumTypeData),
     Variable(Option<TypeID>),
@@ -59,6 +60,9 @@ impl TypeData {
             TypeData::Number => 8,
             TypeData::Boolean => 1,
             TypeData::Array(_, _) => unimplemented!(),
+            // TODO: Architecture-independent pointer size
+            TypeData::Function(_) => 8,
+            TypeData::Depends(sub, _) => sub.size(),
             TypeData::Empty => 0,
             TypeData::Enum(_) => unimplemented!(),
             TypeData::Variable(_) => unimplemented!(),
@@ -72,6 +76,7 @@ impl fmt::Display for TypeData {
             TypeData::Number => "Number".to_string(),
             TypeData::Boolean => "Boolean".to_string(),
             TypeData::Array(_, _) => unimplemented!(),
+            TypeData::Function(args) => format!("Fn({:?})", args),
             TypeData::Empty => "Empty".to_string(),
             TypeData::Enum(data) => format!("{:?}", data),
             TypeData::Variable(instance) => format!("var({:?})", instance),
@@ -82,14 +87,22 @@ impl fmt::Display for TypeData {
 }
 
 pub struct TypeStore {
-    data: HashMap<TypeID, TypeData>,
+    data: HashMap<TypeID, TypeData>
 }
 
 impl TypeStore {
     pub fn new() -> Self {
         Self {
-            data: HashMap::new(),
+            data: HashMap::new()
         }
+    }
+
+    pub fn new_function_type(&mut self, num_args: usize) -> TypeID {
+        let args: Vec<TypeID> = (0..num_args).map(|_| self.new_type(TypeData::Unresolved)).collect();
+        let dep_args = args.clone();
+        let data = Box::new(TypeData::Function(args));
+        let with_dep = TypeData::Depends(data, dep_args);
+        self.new_type(with_dep)
     }
 
     pub fn new_type(&mut self, data: TypeData) -> TypeID {
