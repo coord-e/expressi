@@ -65,9 +65,15 @@ impl TypeInfer {
         }
 
         let number_type = self.manager.primitive_type(PrimitiveKind::Number);
+        let boolean_type = self.manager.primitive_type(PrimitiveKind::Boolean);
         Ok(match op {
             Operator::Index => unimplemented!(),
-            op @ _ => {
+            Operator::Lt | Operator::Gt | Operator::Le | Operator::Ge | Operator::Eq | Operator::Ne => {
+                self.check_type(lhs.type_().unwrap(), number_type)?;
+                self.check_type(rhs.type_().unwrap(), number_type)?;
+                ir::Value::Typed(boolean_type, box new_inst)
+            },
+            _ => {
                 self.check_type(lhs.type_().unwrap(), number_type)?;
                 self.check_type(rhs.type_().unwrap(), number_type)?;
                 ir::Value::Typed(number_type, box new_inst)
