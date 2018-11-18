@@ -29,9 +29,6 @@ pub enum TranslationError {
     #[fail(display = "Attempt to create a new branch in an invalid context")]
     InvalidContextBranch,
 
-    #[fail(display = "Failed to create JIT execution engine")]
-    FailedToCreateJIT,
-
     #[fail(display = "Invalid Cast from {:?} to {:?}", from, to)]
     InvalidCast {
         from: TypeID,
@@ -58,7 +55,7 @@ pub enum TranslationError {
 
 #[derive(Debug, Fail)]
 pub enum InternalError {
-    #ifail(display = "Use of invalid value ID")]
+    #[fail(display = "Use of invalid value ID")]
     InvalidValueID,
 
     #[fail(display = "Use of invalid type ID")]
@@ -66,7 +63,7 @@ pub enum InternalError {
 }
 
 #[derive(Debug, Fail)]
-enum LLVMError {
+pub enum LLVMError {
     #[fail(display = "Failed to initialize the target: {}", message)]
     TargetIntializationFailed {
         message: String,
@@ -81,6 +78,9 @@ enum LLVMError {
     ModuleVerificationError {
         message: String,
     },
+
+    #[fail(display = "Failed to create JIT execution engine")]
+    FailedToCreateJIT,
 }
 
 #[derive(Fail, Debug)]
@@ -96,6 +96,7 @@ pub enum CLIError {
     },
 }
 
+#[derive(Fail, Debug)]
 #[fail(display = "Failed to parse: {}", message)]
 pub struct ParseError {
     pub message: String,
