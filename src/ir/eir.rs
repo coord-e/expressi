@@ -26,7 +26,7 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn apply<T>(&self, transformer: T) -> Self
+    pub fn apply<T>(&self, transformer: T) -> Result<Self, Error>
     where
         T: Transform,
     {
