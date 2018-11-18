@@ -20,6 +20,7 @@ pub enum TypeData {
     Array(NonNull<TypeData>, usize),
     Empty,
     Enum(EnumTypeData),
+    Variable(Option<TypeID>)
 }
 
 unsafe impl Send for TypeID {}
@@ -60,6 +61,7 @@ impl TypeData {
             TypeData::Array(_, _) => unimplemented!(),
             TypeData::Empty => 0,
             TypeData::Enum(_) => unimplemented!(),
+            TypeData::Variable(_) => unimplemented!(),
         }
     }
 }
@@ -72,6 +74,7 @@ impl fmt::Display for TypeData {
             TypeData::Array(_, _) => unimplemented!(),
             TypeData::Empty => "Empty".to_string(),
             TypeData::Enum(data) => format!("{:?}", data),
+            TypeData::Variable(instance) => format!("var({:?})", instance),
         };
 
         write!(f, "{}", rep)
@@ -93,6 +96,10 @@ impl TypeStore {
         let id = TypeID(self.data.len());
         self.data.insert(id, data);
         id
+    }
+
+    pub fn new_variable(&mut self) -> TypeID {
+        self.new_type(TypeData::Variable(None))
     }
 
     pub fn new_enum(&mut self, data: EnumTypeData) -> TypeID {

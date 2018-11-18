@@ -60,6 +60,10 @@ impl ValueManager {
         self.type_store.new_enum(data)
     }
 
+    pub fn new_type_variable(&mut self) -> TypeID {
+        self.type_store.new_variable()
+    }
+
     pub fn new_value(&mut self, t: TypeID, data: ValueData) -> ValueID {
         self.value_store.new_value(t, data)
     }
