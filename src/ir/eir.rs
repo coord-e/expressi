@@ -3,7 +3,7 @@ use scope::BindingKind;
 use transform::Transform;
 use value::TypeID;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Constant {
     Number(i64),
     Boolean(bool),
@@ -12,7 +12,7 @@ pub enum Constant {
 
 pub type Identifier = String;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Bind(BindingKind, Identifier, Box<Value>),
     Assign(Box<Value>, Box<Value>),
