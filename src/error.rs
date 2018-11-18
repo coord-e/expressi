@@ -1,4 +1,5 @@
 use value::TypeID;
+use std::io;
 
 #[derive(Debug, Fail)]
 pub enum TranslationError {
@@ -85,9 +86,9 @@ pub enum LLVMError {
 
 #[derive(Fail, Debug)]
 pub enum CLIError {
-    #[fail(display = "IO Error: {}", message)]
+    #[fail(display = "IO Error: {}", error)]
     IOError {
-        message: String,
+        error: io::Error,
     },
 
     #[fail(display = "File not found: {}", path)]
