@@ -3,6 +3,7 @@ use error::{LLVMError, ParseError};
 use expression::Expression;
 use parser;
 use translator::{ASTTranslator, EIRTranslator};
+use transform::{TypeInfer, Transform};
 use value::{TypeID, ValueManager};
 
 use std::cell::RefCell;
@@ -86,10 +87,17 @@ impl JIT {
             eprintln!("EIR:\n{:#?}", eir);
         }
 
+        let ti = TypeInfer::new();
+        let transformed = eir.apply(ti);
+
+        if self.print_eir {
+            eprintln!("Transformed EIR:\n{:#?}", transformed);
+        }
+
         let builder = Builder::new(manager.clone(), &mut self.builder, module.clone());
         let mut trans = EIRTranslator { builder };
 
-        let evaluated_value = trans.translate_expr(eir)?.expect_value()?;
+        let evaluated_value = trans.translate_expr(transformed)?.expect_value()?;
         trans.builder.ret_int(evaluated_value)?;
 
         if !function.verify(true) {
