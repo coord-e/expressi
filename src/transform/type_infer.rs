@@ -92,6 +92,10 @@ impl TypeInfer {
             .ok_or(TypeInferError::NotTyped.into())
     }
 
+    fn type_of(val: &ir::Value) -> Result<TypeID, Error> {
+        val.type_().ok_or(TypeInferError::NotTyped.into())
+    }
+
     fn check_type(&self, expected: TypeID, t: TypeID) -> Result<TypeID, Error> {
         ensure!(
             expected == t,
@@ -112,20 +116,19 @@ impl Transform for TypeInfer {
             }
             ir::Value::Bind(kind, ident, box rhs) => {
                 let rhs = self.transform(&rhs)?;
-                let rhs_ty = rhs.type_();
-                self.env
-                    .insert(ident, rhs_ty.ok_or(TypeInferError::NotTyped)?);
+                let rhs_ty = Self::type_of(&rhs)?;
+                self.env.insert(ident, rhs_ty);
 
                 let new_inst = ir::Value::Bind(kind.clone(), ident.clone(), box rhs);
 
-                self.with_type(rhs_ty, new_inst)
+                self.with_type(Some(rhs_ty), new_inst)
             }
             ir::Value::Assign(box lhs, box rhs) => {
                 let lhs = self.transform(&lhs)?;
                 let rhs = self.transform(&rhs)?;
 
-                let lhs_ty = lhs.type_().ok_or(TypeInferError::NotTyped)?;
-                let rhs_ty = rhs.type_().ok_or(TypeInferError::NotTyped)?;
+                let lhs_ty = Self::type_of(&lhs)?;
+                let rhs_ty = Self::type_of(&rhs)?;
 
                 self.check_type(lhs_ty, rhs_ty)?;
 
@@ -136,22 +139,22 @@ impl Transform for TypeInfer {
             ir::Value::Follow(box lhs, box rhs) => {
                 let lhs = self.transform(&lhs)?;
                 let rhs = self.transform(&rhs)?;
-                let rhs_ty = rhs.type_();
+                let rhs_ty = Self::type_of(&rhs)?;
 
                 let new_inst = ir::Value::Follow(box lhs, box rhs);
 
-                self.with_type(rhs_ty, new_inst)
+                self.with_type(Some(rhs_ty), new_inst)
             }
             ir::Value::Scope(box inside) => {
                 self.env.new_scope();
                 let inside = self.transform(&inside)?;
                 self.env.exit_scope();
 
-                let inside_ty = inside.type_();
+                let inside_ty = Self::type_of(&inside)?;
 
                 let new_inst = ir::Value::Scope(box inside);
 
-                self.with_type(inside_ty, new_inst)
+                self.with_type(Some(inside_ty), new_inst)
             }
             ir::Value::Variable(ident) => {
                 let type_ = self
@@ -168,9 +171,9 @@ impl Transform for TypeInfer {
                 let then_ = self.transform(&then_)?;
                 let else_ = self.transform(&else_)?;
 
-                let cond_ty = cond.type_().ok_or(TypeInferError::NotTyped)?;
-                let then_ty = then_.type_().ok_or(TypeInferError::NotTyped)?;
-                let else_ty = else_.type_().ok_or(TypeInferError::NotTyped)?;
+                let cond_ty = Self::type_of(&cond)?;
+                let then_ty = Self::type_of(&then_)?;
+                let else_ty = Self::type_of(&else_)?;
 
                 let boolean_type = self.manager.primitive_type(PrimitiveKind::Boolean);
 
