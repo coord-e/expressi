@@ -9,7 +9,7 @@ use failure::Error;
 
 use std::collections::HashMap;
 
-struct Env(HashMap<String, Option<TypeID>>);
+struct Env(HashMap<String, TypeID>);
 
 impl Env {
     fn new() -> Self {
@@ -32,15 +32,15 @@ impl ScopedEnv {
         self.0.pop();
     }
 
-    fn merged(&self) -> HashMap<&String, &Option<TypeID>> {
+    fn merged(&self) -> HashMap<&String, &TypeID> {
         self.0.iter().flat_map(|env| env.0.iter()).collect()
     }
 
-    fn insert(&mut self, key: &str, t: Option<TypeID>) {
+    fn insert(&mut self, key: &str, t: TypeID) {
         self.0.last_mut().unwrap().0.insert(key.to_string(), t);
     }
 
-    fn get(&self, key: &String) -> Option<Option<TypeID>> {
+    fn get(&self, key: &String) -> Option<TypeID> {
         self.merged().get(key).cloned().cloned()
     }
 }
@@ -75,10 +75,10 @@ impl TypeInfer {
         })
     }
 
-    fn with_type(&self, type_: Option<TypeID>, new_inst: &ir::Value) -> Result<ir::Value, Error> {
-        Ok(type_
-            .map(|t| ir::Value::Typed(t, box new_inst.clone()))
-            .unwrap_or_else(|| new_inst.clone()))
+    fn with_type(&self, type_: Option<TypeID>, new_inst: ir::Value) -> Result<ir::Value, Error> {
+        type_
+            .map(|t| ir::Value::Typed(t, box new_inst))
+            .ok_or(TypeInferError::NotTyped.into())
     }
 
     fn check_type(&self, expected: TypeID, t: TypeID) -> Result<TypeID, Error> {
@@ -102,11 +102,11 @@ impl Transform for TypeInfer {
             ir::Value::Bind(kind, ident, box rhs) => {
                 let rhs = self.transform(&rhs)?;
                 let rhs_ty = rhs.type_();
-                self.env.insert(ident, rhs_ty);
+                self.env.insert(ident, rhs_ty.ok_or(TypeInferError::NotTyped)?);
 
                 let new_inst = ir::Value::Bind(kind.clone(), ident.clone(), box rhs);
 
-                self.with_type(rhs_ty, &new_inst)
+                self.with_type(rhs_ty, new_inst)
             }
             ir::Value::Follow(box lhs, box rhs) => {
                 let lhs = self.transform(&lhs)?;
@@ -115,7 +115,7 @@ impl Transform for TypeInfer {
 
                 let new_inst = ir::Value::Follow(box lhs, box rhs);
 
-                self.with_type(rhs_ty, &new_inst)
+                self.with_type(rhs_ty, new_inst)
             }
             ir::Value::Variable(ident) => {
                 let type_ = self
@@ -125,7 +125,7 @@ impl Transform for TypeInfer {
                         ident: ident.clone(),
                     })?;
 
-                self.with_type(type_, &eir)
+                self.with_type(Some(type_), eir.clone())
             }
             _ => unimplemented!(),
         }
