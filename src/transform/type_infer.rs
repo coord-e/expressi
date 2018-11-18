@@ -90,11 +90,16 @@ impl Transform for TypeInfer {
                 let rhs = self.transform(&rhs)?;
                 self.bin_op(*op, &lhs, &rhs)
             }
-            ir::Value::Bind(_, ident, box rhs) => {
+            ir::Value::Bind(kind, ident, box rhs) => {
                 let rhs = self.transform(&rhs)?;
                 let rhs_ty = rhs.type_();
                 self.env.insert(ident, rhs_ty);
-                Ok(rhs_ty.map(|t| ir::Value::Typed(t, box eir.clone())).unwrap_or(eir.clone()))
+
+                let new_inst = ir::Value::Bind(kind.clone(), ident.clone(), box rhs);
+
+                Ok(rhs_ty
+                   .map(|t| ir::Value::Typed(t, box new_inst.clone()))
+                   .unwrap_or_else(|| new_inst.clone()))
             }
             ir::Value::Follow(box lhs, box rhs) => {
                 let lhs = self.transform(&lhs)?;
