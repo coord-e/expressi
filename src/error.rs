@@ -65,7 +65,7 @@ pub enum InternalError {
 #[derive(Debug, Fail)]
 pub enum LLVMError {
     #[fail(display = "Failed to initialize the target: {}", message)]
-    TargetIntializationFailed {
+    TargetInitializationFailed {
         message: String,
     },
 
