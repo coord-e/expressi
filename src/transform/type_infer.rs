@@ -17,14 +17,44 @@ impl Env {
     }
 }
 
+struct ScopedEnv(Vec<Env>);
+
+impl ScopedEnv {
+    fn new() -> Self {
+        ScopedEnv ( vec![Env::new()] )
+    }
+
+    fn new_scope(&mut self) {
+        self.0.push(Env::new());
+    }
+
+    fn exit_scope(&mut self) {
+        self.0.pop();
+    }
+
+    fn merged(&self) -> HashMap<&String, &TypeID> {
+        self.0.iter().flat_map(|env| env.0.iter()).collect()
+    }
+
+    fn insert(&mut self, key: &str, t: TypeID) {
+        self.0.last_mut().unwrap().0.insert(key.to_string(), t);
+    }
+
+    fn get(&self, key: &String) -> Option<TypeID> {
+        self.merged().get(key).cloned().cloned()
+    }
+}
+
 pub struct TypeInfer {
-    manager: ValueManager
+    manager: ValueManager,
+    env: ScopedEnv
 }
 
 impl TypeInfer {
     pub fn new() -> Self {
         Self {
-            manager: ValueManager::new()
+            manager: ValueManager::new(),
+            env: ScopedEnv::new()
         }
     }
 
@@ -49,23 +79,19 @@ impl TypeInfer {
         ensure!(expected == t, TypeInferError::MismatchedTypes { expected, found: t });
         Ok(t)
     }
-
-    fn transform_with_env(&self, eir: &ir::Value, env: &Env) -> Result<ir::Value, Error> {
-        match eir {
-            v @ ir::Value::Typed(_, _) => Ok(v.clone()),
-            ir::Value::BinOp(op, box lhs, box rhs) => {
-                let lhs = self.transform_with_env(&lhs, env)?;
-                let rhs = self.transform_with_env(&rhs, env)?;
-                self.bin_op(*op, &lhs, &rhs)
-            }
-            _ => unimplemented!()
-        }
-    }
 }
 
 impl Transform for TypeInfer {
     fn transform(&self, eir: &ir::Value) -> Result<ir::Value, Error> {
-        self.transform_with_env(eir, &Env::new())
+        match eir {
+            v @ ir::Value::Typed(_, _) => Ok(v.clone()),
+            ir::Value::BinOp(op, box lhs, box rhs) => {
+                let lhs = self.transform(&lhs)?;
+                let rhs = self.transform(&rhs)?;
+                self.bin_op(*op, &lhs, &rhs)
+            }
+            _ => unimplemented!()
+        }
     }
 }
 
