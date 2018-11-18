@@ -7,6 +7,16 @@ use ir;
 
 use failure::Error;
 
+use std::collections::HashMap;
+
+struct Env(HashMap<String, TypeID>);
+
+impl Env {
+    fn new() -> Self {
+        Env ( HashMap::new() )
+    }
+}
+
 pub struct TypeInfer {
     manager: ValueManager
 }
@@ -39,15 +49,23 @@ impl TypeInfer {
         ensure!(expected == t, TypeInferError::MismatchedTypes { expected, found: t });
         Ok(t)
     }
+
+    fn transform_with_env(&self, eir: &ir::Value, env: &Env) -> Result<ir::Value, Error> {
+        match eir {
+            v @ ir::Value::Typed(_, _) => Ok(v.clone()),
+            ir::Value::BinOp(op, box lhs, box rhs) => {
+                let lhs = self.transform_with_env(&lhs, env)?;
+                let rhs = self.transform_with_env(&rhs, env)?;
+                self.bin_op(*op, &lhs, &rhs)
+            }
+            _ => unimplemented!()
+        }
+    }
 }
 
 impl Transform for TypeInfer {
     fn transform(&self, eir: &ir::Value) -> Result<ir::Value, Error> {
-        match eir {
-            v @ ir::Value::Typed(_, _) => Ok(v.clone()),
-            ir::Value::BinOp(op, box lhs, box rhs) => self.bin_op(*op, &self.transform(&lhs)?, &self.transform(&rhs)?),
-            _ => unimplemented!()
-        }
+        self.transform_with_env(eir, &Env::new())
     }
 }
 
