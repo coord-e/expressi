@@ -86,12 +86,6 @@ impl TypeInfer {
         })
     }
 
-    fn with_type(&self, type_: Option<TypeID>, new_inst: ir::Value) -> Result<ir::Value, Error> {
-        type_
-            .map(|t| ir::Value::Typed(t, box new_inst))
-            .ok_or(TypeInferError::NotTyped.into())
-    }
-
     fn type_of(val: &ir::Value) -> Result<TypeID, Error> {
         val.type_().ok_or(TypeInferError::NotTyped.into())
     }
@@ -107,12 +101,12 @@ impl TypeInfer {
 
 impl Transform for TypeInfer {
     fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
-        match eir {
-            v @ ir::Value::Typed(_, _) => Ok(v.clone()),
+        Ok(match eir {
+            v @ ir::Value::Typed(_, _) => v.clone(),
             ir::Value::BinOp(op, box lhs, box rhs) => {
                 let lhs = self.transform(&lhs)?;
                 let rhs = self.transform(&rhs)?;
-                self.bin_op(*op, &lhs, &rhs)
+                self.bin_op(*op, &lhs, &rhs)?
             }
             ir::Value::Bind(kind, ident, box rhs) => {
                 let rhs = self.transform(&rhs)?;
@@ -121,7 +115,7 @@ impl Transform for TypeInfer {
 
                 let new_inst = ir::Value::Bind(kind.clone(), ident.clone(), box rhs);
 
-                self.with_type(Some(rhs_ty), new_inst)
+                ir::Value::Typed(rhs_ty, box new_inst)
             }
             ir::Value::Assign(box lhs, box rhs) => {
                 let lhs = self.transform(&lhs)?;
@@ -134,7 +128,7 @@ impl Transform for TypeInfer {
 
                 let new_inst = ir::Value::Assign(box lhs, box rhs);
 
-                self.with_type(Some(rhs_ty), new_inst)
+                ir::Value::Typed(rhs_ty, box new_inst)
             }
             ir::Value::Follow(box lhs, box rhs) => {
                 let lhs = self.transform(&lhs)?;
@@ -143,7 +137,7 @@ impl Transform for TypeInfer {
 
                 let new_inst = ir::Value::Follow(box lhs, box rhs);
 
-                self.with_type(Some(rhs_ty), new_inst)
+                ir::Value::Typed(rhs_ty, box new_inst)
             }
             ir::Value::Scope(box inside) => {
                 self.env.new_scope();
@@ -154,7 +148,7 @@ impl Transform for TypeInfer {
 
                 let new_inst = ir::Value::Scope(box inside);
 
-                self.with_type(Some(inside_ty), new_inst)
+                ir::Value::Typed(inside_ty, box new_inst)
             }
             ir::Value::Variable(ident) => {
                 let type_ = self
@@ -164,7 +158,7 @@ impl Transform for TypeInfer {
                         ident: ident.clone(),
                     })?;
 
-                self.with_type(Some(type_), eir.clone())
+                ir::Value::Typed(type_, box eir.clone())
             }
             ir::Value::IfElse(box cond, box then_, box else_) => {
                 let cond = self.transform(&cond)?;
@@ -182,9 +176,9 @@ impl Transform for TypeInfer {
 
                 let new_inst = ir::Value::IfElse(box cond, box then_, box else_);
 
-                self.with_type(Some(then_ty), new_inst)
+                ir::Value::Typed(then_ty, box new_inst)
             }
             _ => unimplemented!(),
-        }
+        })
     }
 }
