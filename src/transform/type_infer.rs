@@ -136,6 +136,17 @@ impl Transform for TypeInfer {
 
                 self.with_type(rhs_ty, new_inst)
             }
+            ir::Value::Scope(box inside) => {
+                self.env.new_scope();
+                let inside = self.transform(&inside)?;
+                self.env.exit_scope();
+
+                let inside_ty = inside.type_();
+
+                let new_inst = ir::Value::Scope(box inside);
+
+                self.with_type(inside_ty, new_inst)
+            }
             ir::Value::Variable(ident) => {
                 let type_ = self
                     .env
