@@ -1,6 +1,6 @@
 use error::TranslationError;
 use expression::Operator;
-use scope::{Scope, ScopeStack, BindingKind};
+use scope::{BindingKind, Scope, ScopeStack};
 use value::manager::PrimitiveKind;
 use value::type_::EnumTypeData;
 use value::{TypeID, TypeStore, ValueData, ValueID, ValueManager, ValueManagerRef, ValueStore};
@@ -39,23 +39,33 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(manager: ValueManagerRef, inst_builder: &'a mut builder::Builder, module: Rc<module::Module>) -> Self {
+    pub fn new(
+        manager: ValueManagerRef,
+        inst_builder: &'a mut builder::Builder,
+        module: Rc<module::Module>,
+    ) -> Self {
         let mut scope_stack = ScopeStack::new(manager.clone());
 
         scope_stack.bind(
             "Number",
-            manager.borrow().primitive_type(PrimitiveKind::Number).into(),
-            BindingKind::Immutable
+            manager
+                .borrow()
+                .primitive_type(PrimitiveKind::Number)
+                .into(),
+            BindingKind::Immutable,
         );
         scope_stack.bind(
             "Boolean",
-            manager.borrow().primitive_type(PrimitiveKind::Boolean).into(),
-            BindingKind::Immutable
+            manager
+                .borrow()
+                .primitive_type(PrimitiveKind::Boolean)
+                .into(),
+            BindingKind::Immutable,
         );
         scope_stack.bind(
             "Empty",
             manager.borrow().primitive_type(PrimitiveKind::Empty).into(),
-            BindingKind::Immutable
+            BindingKind::Immutable,
         );
 
         Builder {
@@ -261,7 +271,12 @@ impl<'a> Builder<'a> {
         unimplemented!()
     }
 
-    pub fn declare_mut_var(&mut self, name: &str, t: TypeID, unique: bool) -> Result<String, Error> {
+    pub fn declare_mut_var(
+        &mut self,
+        name: &str,
+        t: TypeID,
+        unique: bool,
+    ) -> Result<String, Error> {
         let manager = self.manager.try_borrow()?;
         let real_name = if unique {
             self.scope_stack.unique_name(name)
@@ -272,11 +287,17 @@ impl<'a> Builder<'a> {
         let variable = self.inst_builder.build_alloca(llvm_type, &real_name);
         let empty = manager.empty_value();
         self.scope_stack.add_var(&real_name, variable); // TODO: TypeValue
-        self.scope_stack.bind(&real_name, empty.into(), BindingKind::Mutable);
+        self.scope_stack
+            .bind(&real_name, empty.into(), BindingKind::Mutable);
         Ok(real_name)
     }
 
-    pub fn bind_var(&mut self, name: &str, val: ValueID, kind: BindingKind) -> Result<ValueID, Error> {
+    pub fn bind_var(
+        &mut self,
+        name: &str,
+        val: ValueID,
+        kind: BindingKind,
+    ) -> Result<ValueID, Error> {
         let manager = self.manager.try_borrow()?;
         let t = manager.type_of(val)?;
         let llvm_type = manager.llvm_type(t)?;
@@ -291,7 +312,10 @@ impl<'a> Builder<'a> {
     }
 
     pub fn assign_var(&mut self, name: &str, val: ValueID) -> Result<ValueID, Error> {
-        let var = self.scope_stack.get_var(name).ok_or(TranslationError::UndeclaredVariable)?;
+        let var = self
+            .scope_stack
+            .get_var(name)
+            .ok_or(TranslationError::UndeclaredVariable)?;
         if let Ok(val) = self.manager.try_borrow()?.llvm_value(val) {
             self.inst_builder.build_store(var, val);
         }

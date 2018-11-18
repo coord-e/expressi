@@ -1,3 +1,3 @@
 pub mod eir;
 
-pub use ir::eir::{Value, Constant};
+pub use ir::eir::{Constant, Value};

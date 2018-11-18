@@ -11,12 +11,12 @@ use inkwell::values::PointerValue;
 #[derive(PartialEq, Debug, Clone, Eq)]
 pub enum BindingKind {
     Mutable,
-    Immutable
+    Immutable,
 }
 
 struct BoundAtom {
     kind: BindingKind,
-    atom: Atom
+    atom: Atom,
 }
 
 pub struct Scope {
@@ -35,15 +35,11 @@ impl Scope {
     }
 
     pub fn get(&self, s: &str) -> Option<Atom> {
-        self.bindings
-            .get(s)
-            .map(|b| b.atom.clone())
+        self.bindings.get(s).map(|b| b.atom.clone())
     }
 
     pub fn get_var(&self, s: &str) -> Option<PointerValue> {
-        self.variable_pointers
-            .get(s)
-            .cloned()
+        self.variable_pointers.get(s).cloned()
     }
 
     pub fn assign(&mut self, s: &str, atom: Atom) -> Result<(), Error> {
@@ -65,7 +61,8 @@ impl Scope {
     }
 
     pub fn bind(&mut self, s: &str, atom: Atom, kind: BindingKind) {
-        self.bindings.insert(s.to_string(), BoundAtom { kind, atom });
+        self.bindings
+            .insert(s.to_string(), BoundAtom { kind, atom });
     }
 
     pub fn add_var(&mut self, s: &str, var: PointerValue) {
@@ -73,15 +70,11 @@ impl Scope {
     }
 
     pub fn variables(&self) -> impl Iterator<Item = (&String, PointerValue)> {
-        self.variable_pointers
-            .iter()
-            .map(|(k, v)| (k, v.clone()))
+        self.variable_pointers.iter().map(|(k, v)| (k, v.clone()))
     }
 
     pub fn bindings(&self) -> impl Iterator<Item = (&String, Atom)> {
-        self.bindings
-            .iter()
-            .map(|(k, v)| (k, v.atom.clone()))
+        self.bindings.iter().map(|(k, v)| (k, v.atom.clone()))
     }
 }
 
@@ -110,7 +103,9 @@ impl ScopeStack {
         if self.scopes.len() == 1 {
             return Err(TranslationError::UnexpectedScopePop.into());
         }
-        self.scopes.pop().ok_or(TranslationError::UnexpectedScopePop.into())
+        self.scopes
+            .pop()
+            .ok_or(TranslationError::UnexpectedScopePop.into())
     }
 
     pub fn variables(&self) -> impl Iterator<Item = (&String, PointerValue)> {

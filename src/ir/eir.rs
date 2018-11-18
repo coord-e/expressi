@@ -6,7 +6,7 @@ use value::TypeID;
 pub enum Constant {
     Number(i64),
     Boolean(bool),
-    Empty
+    Empty,
 }
 
 pub type Identifier = String;
@@ -23,5 +23,3 @@ pub enum Value {
     Constant(Constant),
     Typed(TypeID, Box<Value>),
 }
-
-

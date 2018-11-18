@@ -1,27 +1,42 @@
 use expression::Expression;
-use ir::{Value, Constant};
-use value::ValueManagerRef;
+use ir::{Constant, Value};
 use value::manager::PrimitiveKind;
+use value::ValueManagerRef;
 
 use failure::Error;
 
 pub struct ASTTranslator {
-    pub manager: ValueManagerRef
+    pub manager: ValueManagerRef,
 }
 
 impl ASTTranslator {
     pub fn translate_expr(&mut self, expr: Expression) -> Result<Value, Error> {
         Ok(match expr {
             Expression::Number(number) => {
-                let number_type = self.manager.try_borrow()?.primitive_type(PrimitiveKind::Number);
-                Value::Typed(number_type, Box::new(Value::Constant(Constant::Number(number))))
+                let number_type = self
+                    .manager
+                    .try_borrow()?
+                    .primitive_type(PrimitiveKind::Number);
+                Value::Typed(
+                    number_type,
+                    Box::new(Value::Constant(Constant::Number(number))),
+                )
             }
             Expression::Boolean(value) => {
-                let boolean_type = self.manager.try_borrow()?.primitive_type(PrimitiveKind::Boolean);
-                Value::Typed(boolean_type, Box::new(Value::Constant(Constant::Boolean(value))))
+                let boolean_type = self
+                    .manager
+                    .try_borrow()?
+                    .primitive_type(PrimitiveKind::Boolean);
+                Value::Typed(
+                    boolean_type,
+                    Box::new(Value::Constant(Constant::Boolean(value))),
+                )
             }
             Expression::Empty => {
-                let empty_type = self.manager.try_borrow()?.primitive_type(PrimitiveKind::Empty);
+                let empty_type = self
+                    .manager
+                    .try_borrow()?
+                    .primitive_type(PrimitiveKind::Empty);
                 Value::Typed(empty_type, Box::new(Value::Constant(Constant::Empty)))
             }
             Expression::Array(expr) => unimplemented!(),
@@ -56,7 +71,11 @@ impl ASTTranslator {
                 let cond_value = self.translate_expr(*cond_expr)?;
                 let then_value = self.translate_expr(*then_expr)?;
                 let else_value = self.translate_expr(*else_expr)?;
-                Value::IfElse(Box::new(cond_value), Box::new(then_value), Box::new(else_value))
+                Value::IfElse(
+                    Box::new(cond_value),
+                    Box::new(then_value),
+                    Box::new(else_value),
+                )
             }
         })
     }

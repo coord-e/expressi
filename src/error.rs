@@ -1,5 +1,5 @@
-use value::TypeID;
 use std::io;
+use value::TypeID;
 
 #[derive(Debug, Fail)]
 pub enum TranslationError {
@@ -31,18 +31,13 @@ pub enum TranslationError {
     InvalidContextBranch,
 
     #[fail(display = "Invalid Cast from {:?} to {:?}", from, to)]
-    InvalidCast {
-        from: TypeID,
-        to: TypeID,
-    },
+    InvalidCast { from: TypeID, to: TypeID },
 
     #[fail(
         display = "Attempt to convert incompatible llvm type {} to expressi's type representation",
         from
     )]
-    LLVMTypeConversion {
-        from: String,
-    },
+    LLVMTypeConversion { from: String },
 
     #[fail(
         display = "Attempt to convert incompatible llvm type {} to expressi's type representation",
@@ -66,19 +61,13 @@ pub enum InternalError {
 #[derive(Debug, Fail)]
 pub enum LLVMError {
     #[fail(display = "Failed to initialize the target: {}", message)]
-    TargetInitializationFailed {
-        message: String,
-    },
+    TargetInitializationFailed { message: String },
 
     #[fail(display = "The function '{}' is invaild", name)]
-    FunctionVerificationError {
-        name: String,
-    },
+    FunctionVerificationError { name: String },
 
     #[fail(display = "Invaild module was generated: {}", message)]
-    ModuleVerificationError {
-        message: String,
-    },
+    ModuleVerificationError { message: String },
 
     #[fail(display = "Failed to create JIT execution engine")]
     FailedToCreateJIT,
@@ -87,14 +76,10 @@ pub enum LLVMError {
 #[derive(Fail, Debug)]
 pub enum CLIError {
     #[fail(display = "IO Error: {}", error)]
-    IOError {
-        error: io::Error,
-    },
+    IOError { error: io::Error },
 
     #[fail(display = "File not found: {}", path)]
-    NotFound {
-        path: String,
-    },
+    NotFound { path: String },
 }
 
 #[derive(Fail, Debug)]
@@ -102,4 +87,3 @@ pub enum CLIError {
 pub struct ParseError {
     pub message: String,
 }
-

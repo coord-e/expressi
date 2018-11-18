@@ -19,7 +19,8 @@ fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
         path: path.to_owned(),
     })?;
     let mut contents = String::new();
-    f.read_to_string(&mut contents).map_err(|error| CLIError::IOError { error })?;
+    f.read_to_string(&mut contents)
+        .map_err(|error| CLIError::IOError { error })?;
 
     let func = jit.compile("file_input", &contents.trim())?;
     println!("{}", unsafe { func() });
@@ -28,10 +29,14 @@ fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
 
 fn repl(jit: &mut jit::JIT, line_count: u32) -> Result<(), Error> {
     print!("{}: > ", line_count);
-    io::stdout().flush().map_err(|error| CLIError::IOError { error })?;
+    io::stdout()
+        .flush()
+        .map_err(|error| CLIError::IOError { error })?;
 
     let mut buffer = String::new();
-    io::stdin().read_line(&mut buffer).map_err(|error| CLIError::IOError { error })?;
+    io::stdin()
+        .read_line(&mut buffer)
+        .map_err(|error| CLIError::IOError { error })?;
 
     let func = jit.compile(&format!("repl_{}", line_count), &buffer.trim())?;
     println!(

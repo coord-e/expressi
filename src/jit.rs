@@ -2,8 +2,8 @@ use builder::Builder;
 use error::{LLVMError, ParseError};
 use expression::Expression;
 use parser;
-use translator::{EIRTranslator, ASTTranslator};
-use value::{ValueManager, TypeID};
+use translator::{ASTTranslator, EIRTranslator};
+use value::{TypeID, ValueManager};
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -21,7 +21,7 @@ pub struct JIT {
     builder: builder::Builder,
     print_ast: bool,
     print_eir: bool,
-    print_ir: bool
+    print_ir: bool,
 }
 
 impl JIT {
@@ -32,7 +32,13 @@ impl JIT {
         let context = context::Context::get_global();
         let builder = context.create_builder();
 
-        Ok(Self { context, builder, print_ast, print_eir, print_ir })
+        Ok(Self {
+            context,
+            builder,
+            print_ast,
+            print_eir,
+            print_ir,
+        })
     }
 
     /// Compile a string in the toy language into machine code.
@@ -72,7 +78,9 @@ impl JIT {
 
         let manager = Rc::new(RefCell::new(ValueManager::new()));
 
-        let mut a_trans = ASTTranslator {manager: manager.clone()};
+        let mut a_trans = ASTTranslator {
+            manager: manager.clone(),
+        };
         let eir = a_trans.translate_expr(expr)?;
         if self.print_eir {
             eprintln!("EIR:\n{:#?}", eir);

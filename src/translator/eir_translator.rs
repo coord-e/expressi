@@ -2,10 +2,10 @@ use expression::Expression;
 
 use builder::Builder;
 use error::TranslationError;
-use scope::{Scope, BindingKind};
+use ir;
+use scope::{BindingKind, Scope};
 use value::type_::{EnumTypeData, TypeID};
 use value::{Atom, ValueData, ValueID};
-use ir;
 
 use failure::Error;
 
@@ -17,10 +17,12 @@ impl<'a> EIRTranslator<'a> {
     pub fn translate_expr(&mut self, expr: ir::Value) -> Result<Atom, Error> {
         Ok(match expr {
             ir::Value::Constant(c) => match c {
-                ir::Constant::Number(number) => self.builder.number_constant(i64::from(number))?.into(),
+                ir::Constant::Number(number) => {
+                    self.builder.number_constant(i64::from(number))?.into()
+                }
                 ir::Constant::Boolean(tf) => self.builder.boolean_constant(tf)?.into(),
                 ir::Constant::Empty => self.builder.empty_constant()?.into(),
-            }
+            },
             ir::Value::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?.expect_value()?;
                 let rhs = self.translate_expr(*rhs)?.expect_value()?;

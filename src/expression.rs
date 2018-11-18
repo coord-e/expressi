@@ -1,5 +1,5 @@
-use std::str::FromStr;
 use scope::BindingKind;
+use std::str::FromStr;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Operator {
