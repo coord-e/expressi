@@ -96,6 +96,17 @@ impl Transform for TypeInfer {
                 self.env.insert(ident, rhs_ty);
                 Ok(rhs_ty.map(|t| ir::Value::Typed(t, box eir.clone())).unwrap_or(eir.clone()))
             }
+            ir::Value::Follow(box lhs, box rhs) => {
+                let lhs = self.transform(&lhs)?;
+                let rhs = self.transform(&rhs)?;
+                let rhs_ty = rhs.type_();
+
+                let new_inst = ir::Value::Follow(box lhs, box rhs);
+
+                Ok(rhs_ty
+                   .map(|t| ir::Value::Typed(t, box new_inst.clone()))
+                   .unwrap_or_else(|| new_inst.clone()))
+            }
             _ => unimplemented!()
         }
     }
