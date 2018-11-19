@@ -99,7 +99,7 @@ impl TypeStore {
         }
     }
 
-    pub fn new_function_type(&mut self, param_type: TypeID, ret_type: TypeID) -> TypeID {
+    pub fn new_function(&mut self, param_type: TypeID, ret_type: TypeID) -> TypeID {
         self.new_type(TypeData::Function(param_type, ret_type))
     }
 

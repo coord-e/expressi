@@ -47,14 +47,14 @@ impl ScopedEnv {
 }
 
 pub struct TypeInfer {
-    manager: ValueManager,
+    type_store: TypeStore,
     env: ScopedEnv,
 }
 
 impl TypeInfer {
     pub fn new() -> Self {
         Self {
-            manager: ValueManager::new(),
+            type_store: TypeStore::new(),
             env: ScopedEnv::new(),
         }
     }
@@ -65,8 +65,8 @@ impl TypeInfer {
             return Ok(new_inst);
         }
 
-        let number_type = self.manager.primitive_type(PrimitiveKind::Number);
-        let boolean_type = self.manager.primitive_type(PrimitiveKind::Boolean);
+        let number_type = self.type_store.primitive_type(PrimitiveKind::Number);
+        let boolean_type = self.type_store.primitive_type(PrimitiveKind::Boolean);
         Ok(match op {
             Operator::Index => unimplemented!(),
             Operator::Lt
@@ -88,7 +88,7 @@ impl TypeInfer {
     }
 
     fn prune(&self, t: TypeID) -> Result<TypeID, Error> {
-        Ok(match self.manager.type_data(t)? {
+        Ok(match self.type_store.get(t)? {
             TypeData::Variable(Some(v)) => v.clone(),
             _ => t
         })
@@ -102,9 +102,9 @@ impl TypeInfer {
             return Ok(())
         }
 
-        match (self.manager.type_data(t1)?.clone(), self.manager.type_data(t2)?.clone()) {
+        match (self.type_store.get(t1)?.clone(), self.type_store.get(t2)?.clone()) {
             (TypeData::Variable(..), _) => {
-                if let TypeData::Variable(ref mut instance) = self.manager.type_data_mut(t1)? {
+                if let TypeData::Variable(ref mut instance) = self.type_store.get_mut(t1)? {
                     *instance = Some(t2);
                 }
             }
@@ -203,7 +203,7 @@ impl Transform for TypeInfer {
                 let then_ty = Self::type_of(&then_)?;
                 let else_ty = Self::type_of(&else_)?;
 
-                let boolean_type = self.manager.primitive_type(PrimitiveKind::Boolean);
+                let boolean_type = self.type_store.primitive_type(PrimitiveKind::Boolean);
 
                 self.check_type(cond_ty, boolean_type)?;
                 self.check_type(then_ty, else_ty)?;
@@ -213,14 +213,14 @@ impl Transform for TypeInfer {
                 ir::Value::Typed(then_ty, box new_inst)
             }
             ir::Value::Function(ident, box body) => {
-                let param_ty = self.manager.new_type_variable();
+                let param_ty = self.type_store.new_variable();
                 self.env.new_scope();
                 self.env.insert(&ident, param_ty);
                 let body = self.transform(&body)?;
                 self.env.exit_scope();
                 let return_ty = Self::type_of(&body)?;
 
-                let f_ty = self.manager.new_function_type(param_ty, return_ty);
+                let f_ty = self.type_store.new_function(param_ty, return_ty);
                 ir::Value::Typed(f_ty, box eir.clone())
             }
             ir::Value::Apply(box lhs, box rhs) => {
@@ -230,8 +230,8 @@ impl Transform for TypeInfer {
                 let lhs_ty = Self::type_of(&lhs)?;
                 let rhs_ty = Self::type_of(&rhs)?;
 
-                let result_ty = self.manager.new_type_variable();
-                let fn_ty = self.manager.new_function_type(rhs_ty, result_ty);
+                let result_ty = self.type_store.new_variable();
+                let fn_ty = self.type_store.new_function(rhs_ty, result_ty);
                 self.unify(fn_ty, lhs_ty)?;
 
                 let new_inst = ir::Value::Apply(box lhs, box rhs);
