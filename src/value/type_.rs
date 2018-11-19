@@ -18,10 +18,11 @@ pub enum TypeData {
     Number,
     Boolean,
     Array(NonNull<TypeData>, usize),
-    Function(Vec<TypeID>),
+    Function(TypeID),
     Empty,
     Enum(EnumTypeData),
     Variable(Option<TypeID>),
+    PolyVariable(Vec<TypeID>),
 }
 
 unsafe impl Send for TypeID {}
