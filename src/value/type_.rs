@@ -2,7 +2,7 @@ use error::TranslationError;
 
 use failure::Error;
 use inkwell::types::{BasicTypeEnum, IntType};
-use value::PrimitiveKind;
+use value::manager::PrimitiveKind;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -99,11 +99,11 @@ impl TypeStore {
         let mut inst = Self {
             data: HashMap::new(),
             primitives: HashMap::new()
-        }
+        };
 
-        let number_ty = manager.type_store.new_type(TypeData::Number);
-        let boolean_ty = manager.type_store.new_type(TypeData::Boolean);
-        let empty_ty = manager.type_store.new_type(TypeData::Empty);
+        let number_ty = inst.new_type(TypeData::Number);
+        let boolean_ty = inst.new_type(TypeData::Boolean);
+        let empty_ty = inst.new_type(TypeData::Empty);
 
         inst
             .primitives

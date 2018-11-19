@@ -20,7 +20,9 @@ impl<T> Env<T> {
     }
 }
 
-impl<T> Scope for Env<T> {
+impl<T> Scope for Env<T>
+    where T: Clone
+{
     type V = T;
 
     fn data(&self) -> HashMap<&String, &Self::V> {
@@ -66,7 +68,9 @@ impl<T> ScopedEnv<T> {
     }
 }
 
-impl<T> Scope for ScopedEnv<T> {
+impl<T> Scope for ScopedEnv<T>
+    where T: Clone
+{
     type V = T;
 
     fn data(&self) -> HashMap<&String, &Self::V> {

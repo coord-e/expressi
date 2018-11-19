@@ -1,4 +1,4 @@
-use scope::BindingKind;
+use builder::BindingKind;
 use std::str::FromStr;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]

@@ -1,14 +1,14 @@
 use error::TranslationError;
 use expression::Operator;
-use scope::{Scope, ScopedEnv};
+use scope::{Scope, ScopedEnv, Env};
 use value::manager::PrimitiveKind;
 use value::type_::EnumTypeData;
-use value::{TypeID, TypeStore, ValueData, ValueID, ValueManager, ValueManagerRef, ValueStore};
+use value::{TypeID, TypeStore, ValueData, ValueManager, ValueManagerRef, ValueStore};
 use expression::Expression;
 
 use failure::Error;
 
-use inkwell::{basic_block, builder, module, types, values, IntPredicate};
+use inkwell::{basic_block, builder, module, types, values, IntPredicate, AddressSpace};
 
 use std::rc::Rc;
 
@@ -273,11 +273,11 @@ impl<'a> Builder<'a> {
         self.enter_scope(scope);
     }
 
-    pub fn enter_scope(&mut self, sc: Scope) {
+    pub fn enter_scope(&mut self, sc: Env<values::PointerValue>) {
         self.env.push(sc);
     }
 
-    pub fn exit_scope(&mut self) -> Result<Scope, Error> {
+    pub fn exit_scope(&mut self) -> Result<Env<values::PointerValue>, Error> {
         self.env.pop()
     }
 
@@ -323,9 +323,8 @@ impl<'a> Builder<'a> {
         if self.type_of(condition) != bool_type {
             return Err(TranslationError::InvalidType.into());
         }
-        let cl = manager.llvm_value(condition)?;
         self.inst_builder.build_conditional_branch(
-            cl.into_int_value(),
+            condition.into_int_value(),
             then_block.cl_ebb(),
             else_block.cl_ebb(),
         );

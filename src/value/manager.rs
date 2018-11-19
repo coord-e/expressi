@@ -56,18 +56,6 @@ impl ValueManager {
         manager
     }
 
-    pub fn new_user_type(&mut self, data: EnumTypeData) -> TypeID {
-        self.type_store.new_enum(data)
-    }
-
-    pub fn new_type_variable(&mut self) -> TypeID {
-        self.type_store.new_variable()
-    }
-
-    pub fn new_function_type(&mut self, param_type: TypeID, ret_type: TypeID) -> TypeID {
-        self.type_store.new_function_type(param_type, ret_type)
-    }
-
     pub fn new_value(&mut self, t: TypeID, data: ValueData) -> ValueID {
         self.value_store.new_value(t, data)
     }
@@ -124,13 +112,5 @@ impl ValueManager {
             .get(v)
             .ok_or(InternalError::InvalidTypeID.into())
             .and_then(|v| v.cl_type())
-    }
-
-    pub fn type_data(&self, t: TypeID) -> Result<&TypeData, Error> {
-        self.type_store.get(t).ok_or(InternalError::InvalidTypeID.into())
-    }
-
-    pub fn type_data_mut(&mut self, t: TypeID) -> Result<&mut TypeData, Error> {
-        self.type_store.get_mut(t).ok_or(InternalError::InvalidTypeID.into())
     }
 }

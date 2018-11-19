@@ -3,7 +3,7 @@ use expression::Expression;
 use builder::Builder;
 use error::TranslationError;
 use ir;
-use scope::{BindingKind, Scope};
+use scope::Scope;
 use value::type_::{EnumTypeData, TypeID};
 use value::{Atom, ValueData, ValueID};
 

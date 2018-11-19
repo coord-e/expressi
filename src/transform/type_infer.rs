@@ -3,9 +3,9 @@ use ir;
 use transform::error::TypeInferError;
 use transform::Transform;
 use value::manager::PrimitiveKind;
-use value::{TypeID, ValueManager};
+use value::{TypeID, TypeStore};
 use value::type_::TypeData;
-use scope::{ScopedEnv, Scope}
+use scope::{ScopedEnv, Scope};
 
 use failure::Error;
 

@@ -1,6 +1,6 @@
 use expression::Expression;
 use expression::Operator;
-use scope::BindingKind;
+use builder::BindingKind;
 
 #[pub]
 expression -> Expression
