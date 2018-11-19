@@ -1,13 +1,14 @@
 use error::{LLVMError, ParseError};
 use expression::Expression;
 use parser;
+use ir::Printer;
 use transform::TypeInfer;
 use translator::eir_translator::Builder;
 use translator::{ASTTranslator, EIRTranslator};
 use type_::TypeStore;
 
 use std::rc::Rc;
-
+use std::io;
 use failure::Error;
 
 use inkwell::targets::{InitializationConfig, Target};
@@ -85,7 +86,10 @@ impl JIT {
             a_trans.translate_expr(expr)?
         };
         if self.print_eir {
-            eprintln!("EIR:\n{:#?}", eir);
+            eprintln!("EIR:");
+            let printer = Printer::new(&type_store);
+            printer.print(&eir, &mut io::stderr())?;
+            eprintln!();
         }
 
         let transformed = {
@@ -94,7 +98,10 @@ impl JIT {
         };
 
         if self.print_eir {
-            eprintln!("Transformed EIR:\n{:#?}", transformed);
+            eprintln!("Transformed EIR:");
+            let printer = Printer::new(&type_store);
+            printer.print(&transformed, &mut io::stderr())?;
+            eprintln!();
         }
 
         let builder = Builder::new(&mut type_store, &mut self.builder, module.clone());
