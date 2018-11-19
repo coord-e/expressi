@@ -152,7 +152,7 @@ impl<'a> Transform for TypeInfer<'a> {
                 let new_scope = self.env.new_scope();
                 self.env.push(new_scope);
                 let inside = self.transform(&inside)?;
-                self.env.pop();
+                self.env.pop()?;
 
                 let inside_ty = Self::type_of(&inside)?;
 
@@ -194,7 +194,7 @@ impl<'a> Transform for TypeInfer<'a> {
                 self.env.push(new_scope);
                 self.env.insert(&ident, param_ty);
                 let body = self.transform(&body)?;
-                self.env.pop();
+                self.env.pop()?;
                 let return_ty = Self::type_of(&body)?;
 
                 let f_ty = self.type_store.new_function(param_ty, return_ty);
