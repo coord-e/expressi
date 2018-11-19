@@ -1,7 +1,7 @@
 use type_::TypeStore;
 use ir::{Value, Constant};
 
-use std::fmt;
+use std::io;
 
 pub struct Printer<'a> {
     type_store: &'a TypeStore
@@ -12,7 +12,9 @@ impl<'a> Printer<'a> {
         Self { type_store }
     }
 
-    pub fn print(&self, v: &Value, f: &mut fmt::Formatter) -> fmt::Result {
+    pub fn print<T>(&self, v: &Value, f: &mut T) -> io::Result<()>
+        where T: io::Write
+    {
         match v {
             Value::Constant(c) => match c {
                 Constant::Number(number) => write!(f, "{}", number),
