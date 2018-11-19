@@ -2,7 +2,7 @@ use error::TranslationError;
 
 use failure::Error;
 use inkwell::types::{BasicTypeEnum, IntType};
-use value::PrimitiveKind;
+use type_::PrimitiveKind;
 
 use std::collections::HashMap;
 use std::fmt;

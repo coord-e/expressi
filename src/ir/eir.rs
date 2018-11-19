@@ -1,7 +1,7 @@
 use builder::BindingKind;
 use expression::Operator;
 use transform::Transform;
-use value::TypeID;
+use type_::TypeID;
 
 use failure::Error;
 

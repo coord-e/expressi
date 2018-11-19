@@ -9,7 +9,7 @@ pub mod parser;
 pub mod scope;
 pub mod transform;
 pub mod translator;
-pub mod value;
+pub mod type_;
 
 pub mod error;
 

@@ -1,5 +1,5 @@
 use error::TranslationError;
-use value::TypeID;
+use type_::TypeID;
 
 use failure::Error;
 use inkwell::values::BasicValueEnum;

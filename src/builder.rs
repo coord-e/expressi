@@ -2,8 +2,8 @@ use error::TranslationError;
 use expression::Expression;
 use expression::Operator;
 use scope::{Env, Scope, ScopedEnv};
-use value::type_::EnumTypeData;
-use value::{PrimitiveKind, TypeID, TypeStore};
+use type_::type_::EnumTypeData;
+use type_::{PrimitiveKind, TypeID, TypeStore};
 
 use failure::Error;
 

@@ -4,8 +4,8 @@ use builder::Builder;
 use error::TranslationError;
 use ir;
 use scope::Scope;
-use value::type_::{EnumTypeData, TypeID};
-use value::Atom;
+use type_::type_::{EnumTypeData, TypeID};
+use type_::Atom;
 
 use failure::Error;
 

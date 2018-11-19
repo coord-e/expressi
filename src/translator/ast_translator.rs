@@ -1,6 +1,6 @@
 use expression::Expression;
 use ir::{Constant, Value};
-use value::{PrimitiveKind, TypeStore};
+use type_::{PrimitiveKind, TypeStore};
 
 use failure::Error;
 

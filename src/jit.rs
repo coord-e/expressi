@@ -4,7 +4,7 @@ use expression::Expression;
 use parser;
 use transform::{Transform, TypeInfer};
 use translator::{ASTTranslator, EIRTranslator};
-use value::{TypeID, TypeStore};
+use type_::{TypeID, TypeStore};
 
 use std::cell::RefCell;
 use std::rc::Rc;
