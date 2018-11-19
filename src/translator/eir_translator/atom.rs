@@ -1,8 +1,15 @@
 use error::TranslationError;
 use type_::TypeID;
+use ir::BindingKind;
 
 use failure::Error;
 use inkwell::values::BasicValueEnum;
+
+#[derive(Debug, Clone)]
+pub enum BoundAtom {
+    kind: BindingKind,
+    atom: Atom
+}
 
 #[derive(Debug, Clone)]
 pub enum Atom {
