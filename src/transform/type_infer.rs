@@ -22,7 +22,7 @@ impl<'a> TypeInfer<'a> {
         }
     }
 
-    fn bin_op(&self, op: Operator, lhs: &ir::Value, rhs: &ir::Value) -> Result<ir::Value, Error> {
+    fn bin_op(&mut self, op: Operator, lhs: &ir::Value, rhs: &ir::Value) -> Result<ir::Value, Error> {
         let new_inst = ir::Value::BinOp(op, box lhs.clone(), box rhs.clone());
         if lhs.type_().is_none() || rhs.type_().is_none() {
             return Ok(new_inst);
@@ -38,13 +38,13 @@ impl<'a> TypeInfer<'a> {
             | Operator::Ge
             | Operator::Eq
             | Operator::Ne => {
-                self.check_type(lhs.type_().unwrap(), number_type)?;
-                self.check_type(rhs.type_().unwrap(), number_type)?;
+                self.unify(lhs.type_().unwrap(), number_type)?;
+                self.unify(rhs.type_().unwrap(), number_type)?;
                 ir::Value::Typed(boolean_type, box new_inst)
             }
             _ => {
-                self.check_type(lhs.type_().unwrap(), number_type)?;
-                self.check_type(rhs.type_().unwrap(), number_type)?;
+                self.unify(lhs.type_().unwrap(), number_type)?;
+                self.unify(rhs.type_().unwrap(), number_type)?;
                 ir::Value::Typed(number_type, box new_inst)
             }
         })
@@ -98,14 +98,6 @@ impl<'a> TypeInfer<'a> {
     fn type_of(val: &ir::Value) -> Result<TypeID, Error> {
         val.type_().ok_or(TypeInferError::NotTyped.into())
     }
-
-    fn check_type(&self, expected: TypeID, t: TypeID) -> Result<TypeID, Error> {
-        ensure!(
-            expected == t,
-            TypeInferError::MismatchedTypes { expected, found: t }
-        );
-        Ok(t)
-    }
 }
 
 impl<'a> Transform for TypeInfer<'a> {
@@ -133,7 +125,7 @@ impl<'a> Transform for TypeInfer<'a> {
                 let lhs_ty = Self::type_of(&lhs)?;
                 let rhs_ty = Self::type_of(&rhs)?;
 
-                self.check_type(lhs_ty, rhs_ty)?;
+                self.unify(lhs_ty, rhs_ty)?;
 
                 let new_inst = ir::Value::Assign(box lhs, box rhs);
 
@@ -181,8 +173,8 @@ impl<'a> Transform for TypeInfer<'a> {
 
                 let boolean_type = self.type_store.primitive(PrimitiveKind::Boolean);
 
-                self.check_type(cond_ty, boolean_type)?;
-                self.check_type(then_ty, else_ty)?;
+                self.unify(cond_ty, boolean_type)?;
+                self.unify(then_ty, else_ty)?;
 
                 let new_inst = ir::Value::IfElse(box cond, box then_, box else_);
 
