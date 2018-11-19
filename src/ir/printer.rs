@@ -1,7 +1,7 @@
 use ir::{Constant, Value};
+use type_::type_::OperatorKind;
 use type_::type_::TypeData;
-use type_::TypeID;
-use type_::TypeStore;
+use type_::{TypeID, TypeStore};
 
 use std::io;
 
@@ -27,11 +27,27 @@ impl<'a> Printer<'a> {
                 }?;
                 write!(f, ")")
             }
-            TypeData::Function(param, ret) => {
-                self.print_type(*param, f)?;
-                write!(f, " -> ")?;
-                self.print_type(*ret, f)
-            }
+            TypeData::Operator(kind, types) => match kind {
+                OperatorKind::Function => {
+                    self.print_type(types[0], f)?;
+                    write!(f, " -> ")?;
+                    self.print_type(types[1], f)
+                }
+                _ => {
+                    write!(f, "{:?}", kind)?;
+
+                    if types.len() == 0 {
+                        return Ok(());
+                    }
+
+                    write!(f, "[")?;
+                    for ty in types {
+                        self.print_type(*ty, f)?;
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "]")
+                }
+            },
             v @ _ => write!(f, "{}", v),
         }
     }

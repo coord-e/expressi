@@ -91,9 +91,17 @@ impl<'a> TypeInfer<'a> {
             (_, TypeData::Variable(..)) => {
                 self.unify(t2, t1)?;
             }
-            (TypeData::Function(from1, to1), TypeData::Function(from2, to2)) => {
-                self.unify(from1, from2)?;
-                self.unify(to1, to2)?;
+            (TypeData::Operator(kind1, types1), TypeData::Operator(kind2, types2)) => {
+                if kind1 != kind2 || types1.len() != types2.len() {
+                    return Err(TypeInferError::MismatchedTypes {
+                        expected: t1,
+                        found: t2,
+                    }.into());
+                }
+
+                for (p, q) in types1.iter().zip(types2.iter()) {
+                    self.unify(*p, *q)?;
+                }
             }
             (_, _) => unimplemented!(),
         }
