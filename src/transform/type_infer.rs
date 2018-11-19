@@ -5,50 +5,13 @@ use transform::Transform;
 use value::manager::PrimitiveKind;
 use value::{TypeID, ValueManager};
 use value::type_::TypeData;
+use scope::{ScopedEnv, Scope}
 
 use failure::Error;
 
-use std::collections::HashMap;
-
-struct Env(HashMap<String, TypeID>);
-
-impl Env {
-    fn new() -> Self {
-        Env(HashMap::new())
-    }
-}
-
-struct ScopedEnv(Vec<Env>);
-
-impl ScopedEnv {
-    fn new() -> Self {
-        ScopedEnv(vec![Env::new()])
-    }
-
-    fn new_scope(&mut self) {
-        self.0.push(Env::new());
-    }
-
-    fn exit_scope(&mut self) {
-        self.0.pop();
-    }
-
-    fn merged(&self) -> HashMap<&String, &TypeID> {
-        self.0.iter().flat_map(|env| env.0.iter()).collect()
-    }
-
-    fn insert(&mut self, key: &str, t: TypeID) {
-        self.0.last_mut().unwrap().0.insert(key.to_string(), t);
-    }
-
-    fn get(&self, key: &String) -> Option<TypeID> {
-        self.merged().get(key).cloned().cloned()
-    }
-}
-
 pub struct TypeInfer {
     type_store: TypeStore,
-    env: ScopedEnv,
+    env: ScopedEnv<TypeID>,
 }
 
 impl TypeInfer {
@@ -174,9 +137,9 @@ impl Transform for TypeInfer {
                 ir::Value::Typed(rhs_ty, box new_inst)
             }
             ir::Value::Scope(box inside) => {
-                self.env.new_scope();
+                self.env.push(self.env.new_scope());
                 let inside = self.transform(&inside)?;
-                self.env.exit_scope();
+                self.env.pop();
 
                 let inside_ty = Self::type_of(&inside)?;
 
@@ -214,10 +177,10 @@ impl Transform for TypeInfer {
             }
             ir::Value::Function(ident, box body) => {
                 let param_ty = self.type_store.new_variable();
-                self.env.new_scope();
+                self.env.push(self.env.new_scope());
                 self.env.insert(&ident, param_ty);
                 let body = self.transform(&body)?;
-                self.env.exit_scope();
+                self.env.pop();
                 let return_ty = Self::type_of(&body)?;
 
                 let f_ty = self.type_store.new_function(param_ty, return_ty);
