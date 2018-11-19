@@ -146,7 +146,8 @@ impl<'a> Transform for TypeInfer<'a> {
                 ir::Value::Typed(rhs_ty, box new_inst)
             }
             ir::Value::Scope(box inside) => {
-                self.env.push(self.env.new_scope());
+                let new_scope = self.env.new_scope();
+                self.env.push(new_scope);
                 let inside = self.transform(&inside)?;
                 self.env.pop();
 
@@ -186,7 +187,8 @@ impl<'a> Transform for TypeInfer<'a> {
             }
             ir::Value::Function(ident, box body) => {
                 let param_ty = self.type_store.new_variable();
-                self.env.push(self.env.new_scope());
+                let new_scope = self.env.new_scope();
+                self.env.push(new_scope);
                 self.env.insert(&ident, param_ty);
                 let body = self.transform(&body)?;
                 self.env.pop();
