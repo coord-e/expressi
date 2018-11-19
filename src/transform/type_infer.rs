@@ -178,9 +178,15 @@ impl Transform for TypeInfer {
 
                 ir::Value::Typed(then_ty, box new_inst)
             }
-            ir::Value::Function(_, _) => {
+            ir::Value::Function(ident, box body) => {
                 let param_ty = self.manager.new_type_variable();
-                let f_ty = self.manager.new_function_type(param_ty);
+                self.env.new_scope();
+                self.env.insert(&ident, param_ty);
+                let body = self.transform(&body)?;
+                self.env.exit_scope();
+                let return_ty = Self::type_of(&body)?;
+
+                let f_ty = self.manager.new_function_type(param_ty, return_ty);
                 ir::Value::Typed(f_ty, box eir.clone())
             }
             _ => unimplemented!(),
