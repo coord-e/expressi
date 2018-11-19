@@ -1,4 +1,4 @@
-use type_::type_::{EnumTypeData, TypeData};
+use type_::type_::{EnumTypeData, TypeData, OperatorKind};
 use type_::PrimitiveKind;
 
 use std::collections::HashMap;
@@ -18,9 +18,9 @@ impl TypeStore {
             primitives: HashMap::new(),
         };
 
-        let number_ty = inst.new_type(TypeData::Number);
-        let boolean_ty = inst.new_type(TypeData::Boolean);
-        let empty_ty = inst.new_type(TypeData::Empty);
+        let number_ty = inst.new_type(TypeData::Operator(OperatorKind::Number, vec![]));
+        let boolean_ty = inst.new_type(TypeData::Operator(OperatorKind::Boolean, vec![]));
+        let empty_ty = inst.new_type(TypeData::Operator(OperatorKind::Empty, vec![]));
 
         inst.primitives.insert(PrimitiveKind::Number, number_ty);
         inst.primitives.insert(PrimitiveKind::Boolean, boolean_ty);
@@ -30,7 +30,7 @@ impl TypeStore {
     }
 
     pub fn new_function(&mut self, param_type: TypeID, ret_type: TypeID) -> TypeID {
-        self.new_type(TypeData::Function(param_type, ret_type))
+        self.new_type(TypeData::Operator(OperatorKind::Function, vec![param_type, ret_type]))
     }
 
     pub fn new_type(&mut self, data: TypeData) -> TypeID {
