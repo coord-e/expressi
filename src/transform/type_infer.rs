@@ -237,7 +237,7 @@ impl Transform for TypeInfer {
                 let new_inst = ir::Value::Apply(box lhs, box rhs);
                 ir::Value::Typed(result_ty, box new_inst)
             }
-            _ => unimplemented!(),
+            ir::Value::Constant(_) => bail!(TypeInferError::NotTyped)
         })
     }
 }
