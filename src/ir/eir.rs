@@ -4,7 +4,7 @@ use type_::TypeID;
 
 use failure::Error;
 
-#[derive(PartialEq, Debug, Clone, Eq)]
+#[derive(PartialEq, Debug, Clone, Eq, Copy)]
 pub enum BindingKind {
     Mutable,
     Immutable,

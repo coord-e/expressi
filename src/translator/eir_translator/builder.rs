@@ -45,6 +45,10 @@ impl BoundPointer {
     fn ptr_value(&self) -> values::PointerValue {
         self.ptr
     }
+
+    fn kind(&self) -> BindingKind {
+        self.kind
+    }
 }
 
 pub struct Builder<'a> {
@@ -202,6 +206,11 @@ impl<'a> Builder<'a> {
             .env
             .get(name)
             .ok_or(TranslationError::UndeclaredVariable)?;
+
+        if var.kind() != BindingKind::Mutable {
+            return Err(TranslationError::ImmutableAssign.into());
+        }
+
         self.inst_builder.build_store(var.ptr_value(), val);
         Ok(val)
     }
