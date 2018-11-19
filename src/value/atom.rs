@@ -1,18 +1,19 @@
 use error::TranslationError;
-use value::{TypeID, ValueID};
+use value::TypeID;
 
 use failure::Error;
+use inkwell::values::BasicValueEnum;
 
 #[derive(Debug, Clone)]
 pub enum Atom {
-    Value(ValueID),
+    LLVMValue(BasicValueEnum),
     Type(TypeID),
 }
 
 impl Atom {
-    pub fn expect_value(self) -> Result<ValueID, Error> {
+    pub fn expect_value(self) -> Result<BasicValueEnum, Error> {
         match self {
-            Atom::Value(v) => Ok(v),
+            Atom::LLVMValue(v) => Ok(v),
             _ => return Err(TranslationError::ValueExpected.into()),
         }
     }
@@ -25,9 +26,9 @@ impl Atom {
     }
 }
 
-impl From<ValueID> for Atom {
-    fn from(v: ValueID) -> Self {
-        Atom::Value(v)
+impl From<BasicValueEnum> for Atom {
+    fn from(v: BasicValueEnum) -> Self {
+        Atom::LLVMValue(v)
     }
 }
 

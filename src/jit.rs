@@ -4,7 +4,7 @@ use expression::Expression;
 use parser;
 use transform::{Transform, TypeInfer};
 use translator::{ASTTranslator, EIRTranslator};
-use value::{TypeID, ValueManager};
+use value::{TypeID, TypeStore};
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -77,24 +77,28 @@ impl JIT {
 
         self.builder.position_at_end(&basic_block);
 
-        let manager = Rc::new(RefCell::new(ValueManager::new()));
+        let mut type_store = TypeStore::new();
 
-        let mut a_trans = ASTTranslator {
-            manager: manager.clone(),
+        let eir = {
+            let mut a_trans = ASTTranslator {
+                type_store: &mut type_store,
+            };
+            a_trans.translate_expr(expr)?
         };
-        let eir = a_trans.translate_expr(expr)?;
         if self.print_eir {
             eprintln!("EIR:\n{:#?}", eir);
         }
 
-        let mut ti = TypeInfer::new();
-        let transformed = eir.apply(ti)?;
+        let transformed = {
+            let mut ti = TypeInfer::new(&mut type_store);
+            eir.apply(ti)?
+        };
 
         if self.print_eir {
             eprintln!("Transformed EIR:\n{:#?}", transformed);
         }
 
-        let builder = Builder::new(manager.clone(), &mut self.builder, module.clone());
+        let builder = Builder::new(&mut type_store, &mut self.builder, module.clone());
         let mut trans = EIRTranslator { builder };
 
         let evaluated_value = trans.translate_expr(transformed)?.expect_value()?;

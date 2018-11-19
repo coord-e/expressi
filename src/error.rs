@@ -1,5 +1,4 @@
 use std::io;
-use value::TypeID;
 
 #[derive(Debug, Fail)]
 pub enum TranslationError {
@@ -30,8 +29,9 @@ pub enum TranslationError {
     #[fail(display = "Attempt to create a new branch in an invalid context")]
     InvalidContextBranch,
 
+    // TODO: Hold BasicTypeEnum
     #[fail(display = "Invalid Cast from {:?} to {:?}", from, to)]
-    InvalidCast { from: TypeID, to: TypeID },
+    InvalidCast { from: String, to: String },
 
     #[fail(
         display = "Attempt to convert incompatible llvm type {} to expressi's type representation",

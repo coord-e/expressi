@@ -1,60 +1,23 @@
+use error::InternalError;
 use expression::Operator;
 use ir;
+use scope::{Scope, ScopedEnv};
 use transform::error::TypeInferError;
 use transform::Transform;
-use value::manager::PrimitiveKind;
-use value::{TypeID, ValueManager};
 use value::type_::TypeData;
+use value::{PrimitiveKind, TypeID, TypeStore};
 
 use failure::Error;
 
-use std::collections::HashMap;
-
-struct Env(HashMap<String, TypeID>);
-
-impl Env {
-    fn new() -> Self {
-        Env(HashMap::new())
-    }
+pub struct TypeInfer<'a> {
+    type_store: &'a mut TypeStore,
+    env: ScopedEnv<TypeID>,
 }
 
-struct ScopedEnv(Vec<Env>);
-
-impl ScopedEnv {
-    fn new() -> Self {
-        ScopedEnv(vec![Env::new()])
-    }
-
-    fn new_scope(&mut self) {
-        self.0.push(Env::new());
-    }
-
-    fn exit_scope(&mut self) {
-        self.0.pop();
-    }
-
-    fn merged(&self) -> HashMap<&String, &TypeID> {
-        self.0.iter().flat_map(|env| env.0.iter()).collect()
-    }
-
-    fn insert(&mut self, key: &str, t: TypeID) {
-        self.0.last_mut().unwrap().0.insert(key.to_string(), t);
-    }
-
-    fn get(&self, key: &String) -> Option<TypeID> {
-        self.merged().get(key).cloned().cloned()
-    }
-}
-
-pub struct TypeInfer {
-    manager: ValueManager,
-    env: ScopedEnv,
-}
-
-impl TypeInfer {
-    pub fn new() -> Self {
+impl<'a> TypeInfer<'a> {
+    pub fn new(type_store: &'a mut TypeStore) -> Self {
         Self {
-            manager: ValueManager::new(),
+            type_store,
             env: ScopedEnv::new(),
         }
     }
@@ -65,8 +28,8 @@ impl TypeInfer {
             return Ok(new_inst);
         }
 
-        let number_type = self.manager.primitive_type(PrimitiveKind::Number);
-        let boolean_type = self.manager.primitive_type(PrimitiveKind::Boolean);
+        let number_type = self.type_store.primitive(PrimitiveKind::Number);
+        let boolean_type = self.type_store.primitive(PrimitiveKind::Boolean);
         Ok(match op {
             Operator::Index => unimplemented!(),
             Operator::Lt
@@ -87,10 +50,22 @@ impl TypeInfer {
         })
     }
 
+    fn type_data(&self, t: TypeID) -> Result<&TypeData, Error> {
+        self.type_store
+            .get(t)
+            .ok_or(InternalError::InvalidTypeID.into())
+    }
+
+    fn type_data_mut(&mut self, t: TypeID) -> Result<&mut TypeData, Error> {
+        self.type_store
+            .get_mut(t)
+            .ok_or(InternalError::InvalidTypeID.into())
+    }
+
     fn prune(&self, t: TypeID) -> Result<TypeID, Error> {
-        Ok(match self.manager.type_data(t)? {
+        Ok(match self.type_data(t)? {
             TypeData::Variable(Some(v)) => v.clone(),
-            _ => t
+            _ => t,
         })
     }
 
@@ -99,12 +74,12 @@ impl TypeInfer {
         let t2 = self.prune(t2)?;
 
         if t1 == t2 {
-            return Ok(())
+            return Ok(());
         }
 
-        match (self.manager.type_data(t1)?.clone(), self.manager.type_data(t2)?.clone()) {
+        match (self.type_data(t1)?.clone(), self.type_data(t2)?.clone()) {
             (TypeData::Variable(..), _) => {
-                if let TypeData::Variable(ref mut instance) = self.manager.type_data_mut(t1)? {
+                if let TypeData::Variable(ref mut instance) = self.type_data_mut(t1)? {
                     *instance = Some(t2);
                 }
             }
@@ -115,7 +90,7 @@ impl TypeInfer {
                 self.unify(from1, from2)?;
                 self.unify(to1, to2)?;
             }
-            (_, _) => unimplemented!()
+            (_, _) => unimplemented!(),
         }
         Ok(())
     }
@@ -133,7 +108,7 @@ impl TypeInfer {
     }
 }
 
-impl Transform for TypeInfer {
+impl<'a> Transform for TypeInfer<'a> {
     fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
         Ok(match eir {
             ir::Value::Typed(_, _) => eir.clone(),
@@ -174,9 +149,10 @@ impl Transform for TypeInfer {
                 ir::Value::Typed(rhs_ty, box new_inst)
             }
             ir::Value::Scope(box inside) => {
-                self.env.new_scope();
+                let new_scope = self.env.new_scope();
+                self.env.push(new_scope);
                 let inside = self.transform(&inside)?;
-                self.env.exit_scope();
+                self.env.pop();
 
                 let inside_ty = Self::type_of(&inside)?;
 
@@ -203,7 +179,7 @@ impl Transform for TypeInfer {
                 let then_ty = Self::type_of(&then_)?;
                 let else_ty = Self::type_of(&else_)?;
 
-                let boolean_type = self.manager.primitive_type(PrimitiveKind::Boolean);
+                let boolean_type = self.type_store.primitive(PrimitiveKind::Boolean);
 
                 self.check_type(cond_ty, boolean_type)?;
                 self.check_type(then_ty, else_ty)?;
@@ -213,14 +189,15 @@ impl Transform for TypeInfer {
                 ir::Value::Typed(then_ty, box new_inst)
             }
             ir::Value::Function(ident, box body) => {
-                let param_ty = self.manager.new_type_variable();
-                self.env.new_scope();
+                let param_ty = self.type_store.new_variable();
+                let new_scope = self.env.new_scope();
+                self.env.push(new_scope);
                 self.env.insert(&ident, param_ty);
                 let body = self.transform(&body)?;
-                self.env.exit_scope();
+                self.env.pop();
                 let return_ty = Self::type_of(&body)?;
 
-                let f_ty = self.manager.new_function_type(param_ty, return_ty);
+                let f_ty = self.type_store.new_function(param_ty, return_ty);
                 ir::Value::Typed(f_ty, box eir.clone())
             }
             ir::Value::Apply(box lhs, box rhs) => {
@@ -230,14 +207,14 @@ impl Transform for TypeInfer {
                 let lhs_ty = Self::type_of(&lhs)?;
                 let rhs_ty = Self::type_of(&rhs)?;
 
-                let result_ty = self.manager.new_type_variable();
-                let fn_ty = self.manager.new_function_type(rhs_ty, result_ty);
+                let result_ty = self.type_store.new_variable();
+                let fn_ty = self.type_store.new_function(rhs_ty, result_ty);
                 self.unify(fn_ty, lhs_ty)?;
 
                 let new_inst = ir::Value::Apply(box lhs, box rhs);
                 ir::Value::Typed(result_ty, box new_inst)
             }
-            ir::Value::Constant(_) => bail!(TypeInferError::NotTyped)
+            ir::Value::Constant(_) => bail!(TypeInferError::NotTyped),
         })
     }
 }

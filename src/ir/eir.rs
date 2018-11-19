@@ -1,5 +1,5 @@
+use builder::BindingKind;
 use expression::Operator;
-use scope::BindingKind;
 use transform::Transform;
 use value::TypeID;
 
