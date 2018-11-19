@@ -1,7 +1,6 @@
 use type_::TypeID;
 
 use std::fmt;
-use std::ptr::NonNull;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OperatorKind {
