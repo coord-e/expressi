@@ -1,6 +1,6 @@
 use error::TranslationError;
 use expression::Operator;
-use scope::{BindingKind, Scope, ScopeStack};
+use scope::{Scope, ScopedEnv};
 use value::manager::PrimitiveKind;
 use value::type_::EnumTypeData;
 use value::{TypeID, TypeStore, ValueData, ValueID, ValueManager, ValueManagerRef, ValueStore};
@@ -42,7 +42,7 @@ pub struct Builder<'a> {
     inst_builder: &'a mut builder::Builder,
     module: Rc<module::Module>,
     type_store: &'a mut TypeStore,
-    scope_stack: ScopeStack,
+    env: ScopedEnv<values::PointerValue>,
 }
 
 impl<'a> Builder<'a> {
@@ -51,33 +51,11 @@ impl<'a> Builder<'a> {
         inst_builder: &'a mut builder::Builder,
         module: Rc<module::Module>,
     ) -> Self {
-        let mut scope_stack = ScopeStack::new();
-
-        scope_stack.bind(
-            "Number",
-            type_store
-                .primitive(PrimitiveKind::Number)
-                .into(),
-            BindingKind::Immutable,
-        );
-        scope_stack.bind(
-            "Boolean",
-            type_store
-                .primitive_type(PrimitiveKind::Boolean)
-                .into(),
-            BindingKind::Immutable,
-        );
-        scope_stack.bind(
-            "Empty",
-            type_store.primitive(PrimitiveKind::Empty).into(),
-            BindingKind::Immutable,
-        );
-
         Builder {
             inst_builder,
             module,
-            scope_stack,
             type_store,
+            env: ScopedEnv::new(),
         }
     }
 
@@ -85,8 +63,8 @@ impl<'a> Builder<'a> {
         self.inst_builder
     }
 
-    pub fn scope_stack<'short>(&'short mut self) -> &'short mut ScopeStack {
-        &mut self.scope_stack
+    pub fn env<'short>(&'short mut self) -> &'short mut ScopedEnv<values::PointerValue> {
+        &mut self.env
     }
 
     pub fn type_of(&self, v: values::BasicValueEnum) -> Result<TypeID, Error> {
