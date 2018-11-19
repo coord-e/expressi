@@ -35,37 +35,35 @@ impl Block {
 pub struct Builder<'a> {
     inst_builder: &'a mut builder::Builder,
     module: Rc<module::Module>,
-    manager: ValueManagerRef,
+    type_store: &'a mut TypeStore,
     scope_stack: ScopeStack,
 }
 
 impl<'a> Builder<'a> {
     pub fn new(
-        manager: ValueManagerRef,
+        type_store: &'a mut TypeStore,
         inst_builder: &'a mut builder::Builder,
         module: Rc<module::Module>,
     ) -> Self {
-        let mut scope_stack = ScopeStack::new(manager.clone());
+        let mut scope_stack = ScopeStack::new();
 
         scope_stack.bind(
             "Number",
-            manager
-                .borrow()
-                .primitive_type(PrimitiveKind::Number)
+            type_store
+                .primitive(PrimitiveKind::Number)
                 .into(),
             BindingKind::Immutable,
         );
         scope_stack.bind(
             "Boolean",
-            manager
-                .borrow()
+            type_store
                 .primitive_type(PrimitiveKind::Boolean)
                 .into(),
             BindingKind::Immutable,
         );
         scope_stack.bind(
             "Empty",
-            manager.borrow().primitive_type(PrimitiveKind::Empty).into(),
+            type_store.primitive(PrimitiveKind::Empty).into(),
             BindingKind::Immutable,
         );
 
@@ -73,7 +71,7 @@ impl<'a> Builder<'a> {
             inst_builder,
             module,
             scope_stack,
-            manager,
+            type_store,
         }
     }
 
@@ -85,41 +83,30 @@ impl<'a> Builder<'a> {
         &mut self.scope_stack
     }
 
-    pub fn type_of(&self, v: ValueID) -> Result<TypeID, Error> {
+    pub fn type_of(&self, v: values::BasicValueEnum) -> Result<TypeID, Error> {
         self.manager.try_borrow()?.type_of(v)
     }
 
-    pub fn number_constant(&mut self, v: i64) -> Result<ValueID, Error> {
+    pub fn number_constant(&mut self, v: i64) -> Result<values::BasicValueEnum, Error> {
         let t = types::IntType::i64_type();
-        self.manager.try_borrow_mut()?.new_value_from_llvm(
-            values::BasicValueEnum::IntValue(t.const_int(v.abs() as u64, v < 0)),
-            t,
-        )
+        values::BasicValueEnum::IntValue(t.const_int(v.abs() as u64, v < 0))
     }
 
-    pub fn boolean_constant(&mut self, v: bool) -> Result<ValueID, Error> {
+    pub fn boolean_constant(&mut self, v: bool) -> Result<values::BasicValueEnum, Error> {
         let t = types::IntType::bool_type();
-        self.manager.try_borrow_mut()?.new_value_from_llvm(
-            values::BasicValueEnum::IntValue(t.const_int(v as u64, false)),
-            t,
-        )
+        values::BasicValueEnum::IntValue(t.const_int(v as u64, false))
     }
 
-    pub fn empty_constant(&self) -> Result<ValueID, Error> {
-        self.manager
-            .try_borrow()
-            .map_err(Into::into)
-            .map(|manager| manager.empty_value())
+    pub fn empty_constant(&self) -> Result<values::BasicValueEnum, Error> {
+        let t = types::VoidType::void_type().ptr_type(AddressSpace::Generic);
+        values::BasicValueEnum::PointerValue(t.const_null())
     }
 
     pub fn register_type(&mut self, data: EnumTypeData) -> Result<TypeID, Error> {
-        self.manager
-            .try_borrow_mut()
-            .map_err(Into::into)
-            .map(|mut manager| manager.new_user_type(data))
+        self.type_store.new_enum(data)
     }
 
-    pub fn apply_op(&mut self, op: Operator, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
+    pub fn apply_op(&mut self, op: Operator, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
         match op {
             Operator::Add => self.add(lhs, rhs),
             Operator::Sub => self.sub(lhs, rhs),
@@ -138,114 +125,59 @@ impl<'a> Builder<'a> {
         }
     }
 
-    fn check_numeric_args(&self, lhs: ValueID, rhs: ValueID) -> Result<(), Error> {
-        let manager = self.manager.try_borrow()?;
-        let number_type = manager.primitive_type(PrimitiveKind::Number);
-        if manager.type_of(lhs)? != number_type || manager.type_of(rhs)? != number_type {
-            return Err(TranslationError::InvalidType.into());
-        }
-        Ok(())
-    }
-
-    pub fn add(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        self.check_numeric_args(lhs, rhs)?;
-        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
-        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
-        let res = self.inst_builder.build_int_add(
-            lhs_cl.into_int_value(),
-            rhs_cl.into_int_value(),
+    pub fn add(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
+        self.inst_builder.build_int_add(
+            lhs.into_int_value(),
+            rhs.into_int_value(),
             "add",
-        );
-        self.manager
-            .try_borrow_mut()?
-            .new_value_from_llvm(res, types::IntType::i64_type())
+        )
     }
 
-    pub fn sub(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        self.check_numeric_args(lhs, rhs)?;
-        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
-        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
-        let res = self.inst_builder.build_int_sub(
-            lhs_cl.into_int_value(),
-            rhs_cl.into_int_value(),
+    pub fn sub(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
+        self.inst_builder.build_int_sub(
+            lhs.into_int_value(),
+            rhs.into_int_value(),
             "sub",
-        );
-        self.manager
-            .try_borrow_mut()?
-            .new_value_from_llvm(res, types::IntType::i64_type())
+        )
     }
 
-    pub fn mul(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        self.check_numeric_args(lhs, rhs)?;
-        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
-        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
-        let res = self.inst_builder.build_int_mul(
-            lhs_cl.into_int_value(),
-            rhs_cl.into_int_value(),
+    pub fn mul(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
+        self.inst_builder.build_int_mul(
+            lhs.into_int_value(),
+            rhs.into_int_value(),
             "mul",
-        );
-        self.manager
-            .try_borrow_mut()?
-            .new_value_from_llvm(res, types::IntType::i64_type())
+        )
     }
 
-    pub fn div(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        self.check_numeric_args(lhs, rhs)?;
-        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
-        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
-        let res = self.inst_builder.build_int_unsigned_div(
-            lhs_cl.into_int_value(),
-            rhs_cl.into_int_value(),
+    pub fn div(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
+        self.inst_builder.build_int_unsigned_div(
+            lhs.into_int_value(),
+            rhs.into_int_value(),
             "div",
-        );
-        self.manager
-            .try_borrow_mut()?
-            .new_value_from_llvm(res, types::IntType::i64_type())
+        )
     }
 
-    pub fn bit_and(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        self.check_numeric_args(lhs, rhs)?;
-        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
-        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
-        let res =
-            self.inst_builder
-                .build_and(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "and");
-        self.manager
-            .try_borrow_mut()?
-            .new_value_from_llvm(res, types::IntType::i64_type())
+    pub fn bit_and(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
+        self.inst_builder
+            .build_and(lhs.into_int_value(), rhs.into_int_value(), "and")
     }
 
-    pub fn bit_or(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        self.check_numeric_args(lhs, rhs)?;
-        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
-        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
-        let res =
-            self.inst_builder
-                .build_or(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "or");
-        self.manager
-            .try_borrow_mut()?
-            .new_value_from_llvm(res, types::IntType::i64_type())
+    pub fn bit_or(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
+        self.inst_builder
+            .build_or(lhs.into_int_value(), rhs.into_int_value(), "or")
     }
 
-    pub fn bit_xor(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
-        self.check_numeric_args(lhs, rhs)?;
-        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
-        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
-        let res =
-            self.inst_builder
-                .build_xor(lhs_cl.into_int_value(), rhs_cl.into_int_value(), "xor");
-        self.manager
-            .try_borrow_mut()?
-            .new_value_from_llvm(res, types::IntType::i64_type())
+    pub fn bit_xor(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
+        self.inst_builder
+            .build_xor(lhs.into_int_value(), rhs.into_int_value(), "xor")
     }
 
     pub fn cmp(
         &mut self,
         cmp_type: CondCode,
-        lhs: ValueID,
-        rhs: ValueID,
-    ) -> Result<ValueID, Error> {
-        self.check_numeric_args(lhs, rhs)?;
+        lhs: values::BasicValueEnum,
+        rhs: values::BasicValueEnum,
+    ) -> Result<values::BasicValueEnum, Error> {
         let cc = match cmp_type {
             CondCode::Equal => IntPredicate::EQ,
             CondCode::NotEqual => IntPredicate::NE,
@@ -255,20 +187,15 @@ impl<'a> Builder<'a> {
             CondCode::LessThanOrEqual => IntPredicate::SLE,
         };
 
-        let lhs_cl = self.manager.try_borrow()?.llvm_value(lhs)?;
-        let rhs_cl = self.manager.try_borrow()?.llvm_value(rhs)?;
-        let res = self.inst_builder.build_int_compare(
+        self.inst_builder.build_int_compare(
             cc,
-            lhs_cl.into_int_value(),
-            rhs_cl.into_int_value(),
+            lhs.into_int_value(),
+            rhs.into_int_value(),
             "cmp",
-        );
-        self.manager
-            .try_borrow_mut()?
-            .new_value_from_llvm(res, types::IntType::bool_type())
+        )
     }
 
-    pub fn index(&mut self, lhs: ValueID, rhs: ValueID) -> Result<ValueID, Error> {
+    pub fn index(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
         unimplemented!()
     }
 
@@ -296,9 +223,9 @@ impl<'a> Builder<'a> {
     pub fn bind_var(
         &mut self,
         name: &str,
-        val: ValueID,
+        val: values::BasicValueEnum,
         kind: BindingKind,
-    ) -> Result<ValueID, Error> {
+    ) -> Result<values::BasicValueEnum, Error> {
         let manager = self.manager.try_borrow()?;
         let t = manager.type_of(val)?;
         let llvm_type = manager.llvm_type(t)?;
@@ -312,7 +239,7 @@ impl<'a> Builder<'a> {
         Ok(val)
     }
 
-    pub fn assign_var(&mut self, name: &str, val: ValueID) -> Result<ValueID, Error> {
+    pub fn assign_var(&mut self, name: &str, val: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
         let var = self
             .scope_stack
             .get_var(name)
@@ -324,7 +251,7 @@ impl<'a> Builder<'a> {
         Ok(val)
     }
 
-    pub fn get_var(&mut self, name: &str) -> Result<Option<ValueID>, Error> {
+    pub fn get_var(&mut self, name: &str) -> Result<Option<values::BasicValueEnum>, Error> {
         self.scope_stack.get_var(name).map_or(Ok(None), |var| {
             let value = self.scope_stack.get(name).unwrap().expect_value()?;
             let t = self.manager.try_borrow()?.type_of(value)?;
@@ -337,7 +264,7 @@ impl<'a> Builder<'a> {
         })
     }
 
-    pub fn cast_to(&mut self, v: ValueID, to_type: TypeID) -> Result<ValueID, Error> {
+    pub fn cast_to(&mut self, v: values::BasicValueEnum, to_type: TypeID) -> Result<values::BasicValueEnum, Error> {
         let from_type = self.manager.try_borrow()?.type_of(v)?;
         if from_type == to_type {
             return Err(TranslationError::InvalidCast {
@@ -400,7 +327,7 @@ impl<'a> Builder<'a> {
 
     pub fn store(
         &mut self,
-        v: ValueID,
+        v: values::BasicValueEnum,
         addr: values::PointerValue,
         offset: u32,
     ) -> Result<(), Error> {
@@ -422,7 +349,7 @@ impl<'a> Builder<'a> {
         t: TypeID,
         addr: values::PointerValue,
         offset: u32,
-    ) -> Result<ValueID, Error> {
+    ) -> Result<values::BasicValueEnum, Error> {
         // TODO: Safety check
         let ptr = unsafe {
             self.inst_builder.build_in_bounds_gep(
@@ -449,7 +376,7 @@ impl<'a> Builder<'a> {
 
     pub fn brz(
         &mut self,
-        condition: ValueID,
+        condition: values::BasicValueEnum,
         then_block: &Block,
         else_block: &Block,
     ) -> Result<(), Error> {
@@ -482,7 +409,7 @@ impl<'a> Builder<'a> {
             .map(|ebb| Block { ebb })
     }
 
-    pub fn ret_int(&mut self, v: ValueID) -> Result<(), Error> {
+    pub fn ret_int(&mut self, v: values::BasicValueEnum) -> Result<(), Error> {
         // TODO: Generic return
         let number_type = self
             .manager
