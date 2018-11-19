@@ -46,9 +46,9 @@ impl<'a> Printer<'a> {
 
             Value::Variable(name) => write!(f, "{}", name),
             Value::Scope(expr) => {
-                write!(f, "{{ ")?;
+                write!(f, "{{\n")?;
                 self.print(expr, f)?;
-                write!(f, " }}")
+                write!(f, "\n}}")
             }
             Value::IfElse(cond, then_expr, else_expr) => {
                 self.print(cond, f)?;
