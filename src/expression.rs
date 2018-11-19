@@ -1,4 +1,4 @@
-use builder::BindingKind;
+use translator::eir_translator::builder::BindingKind;
 use std::str::FromStr;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]

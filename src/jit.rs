@@ -1,4 +1,4 @@
-use builder::Builder;
+use translator::eir_translator::Builder;
 use error::{LLVMError, ParseError};
 use expression::Expression;
 use parser;

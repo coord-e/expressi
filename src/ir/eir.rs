@@ -1,4 +1,4 @@
-use builder::BindingKind;
+use translator::eir_translator::builder::BindingKind;
 use expression::Operator;
 use transform::Transform;
 use type_::TypeID;

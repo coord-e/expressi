@@ -1,11 +1,10 @@
 use expression::Expression;
 
-use builder::Builder;
 use error::TranslationError;
 use ir;
 use scope::Scope;
 use type_::type_::{EnumTypeData, TypeID};
-use type_::Atom;
+use translator::eir_translator::{Builder, Atom};
 
 use failure::Error;
 
