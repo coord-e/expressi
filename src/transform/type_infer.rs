@@ -87,6 +87,39 @@ impl TypeInfer {
         })
     }
 
+    fn prune(&self, t: TypeID) -> Result<TypeID, Error> {
+        Ok(match self.manager.type_data(t)? {
+            TypeData::Variable(Some(v)) => v.clone(),
+            _ => t
+        })
+    }
+
+    fn unify(&mut self, t1: TypeID, t2: TypeID) -> Result<(), Error> {
+        let t1 = self.prune(t1)?;
+        let t2 = self.prune(t2)?;
+
+        if t1 == t2 {
+            return Ok(())
+        }
+
+        match (self.manager.type_data(t1)?.clone(), self.manager.type_data(t2)?.clone()) {
+            (TypeData::Variable(..), _) => {
+                if let TypeData::Variable(ref mut instance) = self.manager.type_data_mut(t1)? {
+                    *instance = Some(t2);
+                }
+            }
+            (_, TypeData::Variable(..)) => {
+                self.unify(t2, t1)?;
+            }
+            (TypeData::Function(from1, to1), TypeData::Function(from2, to2)) => {
+                self.unify(from1, from2)?;
+                self.unify(to1, to2)?;
+            }
+            (_, _) => unimplemented!()
+        }
+        Ok(())
+    }
+
     fn type_of(val: &ir::Value) -> Result<TypeID, Error> {
         val.type_().ok_or(TypeInferError::NotTyped.into())
     }
@@ -199,8 +232,7 @@ impl Transform for TypeInfer {
 
                 let result_ty = self.manager.new_type_variable();
                 let fn_ty = self.manager.new_function_type(rhs_ty, result_ty);
-                let Self { ref mut manager, .. } = self;
-                unify(manager, fn_ty, lhs_ty)?;
+                self.unify(fn_ty, lhs_ty)?;
 
                 let new_inst = ir::Value::Apply(box lhs, box rhs);
                 ir::Value::Typed(result_ty, box new_inst)
@@ -208,37 +240,4 @@ impl Transform for TypeInfer {
             _ => unimplemented!(),
         })
     }
-}
-
-fn prune(manager: &ValueManager, t: TypeID) -> Result<TypeID, Error> {
-    Ok(match manager.type_data(t)? {
-        TypeData::Variable(Some(v)) => v.clone(),
-        _ => t
-    })
-}
-
-fn unify(manager: &mut ValueManager, t1: TypeID, t2: TypeID) -> Result<(), Error> {
-    let t1 = prune(manager, t1)?;
-    let t2 = prune(manager, t2)?;
-
-    if t1 == t2 {
-        return Ok(())
-    }
-
-    match (manager.type_data(t1)?.clone(), manager.type_data(t2)?.clone()) {
-        (TypeData::Variable(..), _) => {
-            if let TypeData::Variable(ref mut instance) = manager.type_data_mut(t1)? {
-                *instance = Some(t2);
-            }
-        }
-        (_, TypeData::Variable(..)) => {
-            unify(manager, t2, t1)?;
-        }
-        (TypeData::Function(from1, to1), TypeData::Function(from2, to2)) => {
-            unify(manager, from1, from2)?;
-            unify(manager, to1, to2)?;
-        }
-        (_, _) => unimplemented!()
-    }
-    Ok(())
 }
