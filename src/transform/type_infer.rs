@@ -6,6 +6,7 @@ use value::manager::PrimitiveKind;
 use value::{TypeID, TypeStore};
 use value::type_::TypeData;
 use scope::{ScopedEnv, Scope};
+use error::InternalError;
 
 use failure::Error;
 
@@ -50,8 +51,16 @@ impl TypeInfer {
         })
     }
 
+    fn type_data(&self, t: TypeID) -> Result<&TypeData, Error> {
+        self.type_store.get(t).ok_or(InternalError::InvalidTypeID.into())
+    }
+
+    fn type_data_mut(&mut self, t: TypeID) -> Result<&mut TypeData, Error> {
+        self.type_store.get_mut(t).ok_or(InternalError::InvalidTypeID.into())
+    }
+
     fn prune(&self, t: TypeID) -> Result<TypeID, Error> {
-        Ok(match self.type_store.get(t)? {
+        Ok(match self.type_data(t)? {
             TypeData::Variable(Some(v)) => v.clone(),
             _ => t
         })
@@ -65,9 +74,9 @@ impl TypeInfer {
             return Ok(())
         }
 
-        match (self.type_store.get(t1)?.clone(), self.type_store.get(t2)?.clone()) {
+        match (self.type_data(t1)?.clone(), self.type_data(t2)?.clone()) {
             (TypeData::Variable(..), _) => {
-                if let TypeData::Variable(ref mut instance) = self.type_store.get_mut(t1)? {
+                if let TypeData::Variable(ref mut instance) = self.type_data_mut(t1)? {
                     *instance = Some(t2);
                 }
             }
