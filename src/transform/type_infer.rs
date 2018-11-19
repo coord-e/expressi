@@ -96,11 +96,11 @@ impl<'a> TypeInfer<'a> {
                     return Err(TypeInferError::MismatchedTypes {
                         expected: t1,
                         found: t2,
-                    });
+                    }.into());
                 }
 
                 for (p, q) in types1.iter().zip(types2.iter()) {
-                    self.unify(*p, *q);
+                    self.unify(*p, *q)?;
                 }
             }
             (_, _) => unimplemented!(),
