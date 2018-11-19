@@ -98,12 +98,8 @@ impl TypeStore {
         }
     }
 
-    pub fn new_function_type(&mut self, num_args: usize) -> TypeID {
-        let args: Vec<TypeID> = (0..num_args).map(|_| self.new_type(TypeData::Unresolved)).collect();
-        let dep_args = args.clone();
-        let data = Box::new(TypeData::Function(args));
-        let with_dep = TypeData::Depends(data, dep_args);
-        self.new_type(with_dep)
+    pub fn new_function_type(&mut self, param_type: TypeID) -> TypeID {
+        self.new_type(TypeData::Function(param_type))
     }
 
     pub fn new_type(&mut self, data: TypeData) -> TypeID {
