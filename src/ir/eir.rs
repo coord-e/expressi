@@ -20,6 +20,7 @@ pub enum Value {
     Assign(Box<Value>, Box<Value>),
     Scope(Box<Value>),
     Follow(Box<Value>, Box<Value>),
+    Apply(Box<Value>, Box<Value>),
     BinOp(Operator, Box<Value>, Box<Value>),
     IfElse(Box<Value>, Box<Value>, Box<Value>),
     Variable(Identifier),

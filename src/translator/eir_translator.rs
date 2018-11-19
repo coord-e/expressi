@@ -24,6 +24,7 @@ impl<'a> EIRTranslator<'a> {
                 ir::Constant::Empty => self.builder.empty_constant()?.into(),
             },
             ir::Value::Function(_, _) => unimplemented!(),
+            ir::Value::Apply(_, _) => unimplemented!(),
             ir::Value::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?.expect_value()?;
                 let rhs = self.translate_expr(*rhs)?.expect_value()?;

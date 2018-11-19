@@ -50,6 +50,11 @@ impl ASTTranslator {
                 let rhs = self.translate_expr(*rhs)?;
                 Value::BinOp(op, Box::new(lhs), Box::new(rhs))
             }
+            Expression::Apply(lhs, rhs) => {
+                let rhs_value = self.translate_expr(*rhs)?;
+                let lhs_value = self.translate_expr(*lhs)?;
+                Value::Apply(Box::new(lhs_value), Box::new(rhs_value))
+            }
             Expression::Follow(lhs, rhs) => {
                 let rhs_value = self.translate_expr(*rhs)?;
                 let lhs_value = self.translate_expr(*lhs)?;

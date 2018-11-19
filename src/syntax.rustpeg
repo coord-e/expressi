@@ -40,11 +40,14 @@ cast -> Expression
 index -> Expression
   = l:atom _ "[" r:expression "]" { Expression::BinOp(Operator::Index, Box::new(l), Box::new(r)) }
 
+apply -> Expression
+  = l:atom _ "(" r:expression ")" { Expression::Apply(Box::new(l), Box::new(r)) }
+
 bind -> Expression
   = "let" _ kind:("mut" ?) _ l:identifier _ "=" r:assign { Expression::Bind(if kind.is_some() { BindingKind::Mutable } else { BindingKind::Immutable }, l.to_string(), Box::new(r)) }
 
 spaced_atom -> Expression
-  = _ v:(bind / cast / index / if_else / atom) _ { v }
+  = _ v:(bind / cast / index / apply / if_else / atom) _ { v }
 
 atom -> Expression
   = number
