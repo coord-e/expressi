@@ -18,7 +18,7 @@ pub enum TypeData {
     Number,
     Boolean,
     Array(NonNull<TypeData>, usize),
-    Function(TypeID),
+    Function(TypeID, TypeID),
     Empty,
     Enum(EnumTypeData),
     Variable(Option<TypeID>),
@@ -62,7 +62,7 @@ impl TypeData {
             TypeData::Boolean => 1,
             TypeData::Array(_, _) => unimplemented!(),
             // TODO: Architecture-independent pointer size
-            TypeData::Function(_) => 8,
+            TypeData::Function(_, _) => 8,
             TypeData::Empty => 0,
             TypeData::Enum(_) => unimplemented!(),
             TypeData::Variable(_) => unimplemented!(),
@@ -77,7 +77,7 @@ impl fmt::Display for TypeData {
             TypeData::Number => "Number".to_string(),
             TypeData::Boolean => "Boolean".to_string(),
             TypeData::Array(_, _) => unimplemented!(),
-            TypeData::Function(args) => format!("Fn({:?})", args),
+            TypeData::Function(param, ret) => format!("{:?} -> {:?}", param, ret),
             TypeData::Empty => "Empty".to_string(),
             TypeData::Enum(data) => format!("{:?}", data),
             TypeData::Variable(instance) => format!("var({:?})", instance),
@@ -99,8 +99,8 @@ impl TypeStore {
         }
     }
 
-    pub fn new_function_type(&mut self, param_type: TypeID) -> TypeID {
-        self.new_type(TypeData::Function(param_type))
+    pub fn new_function_type(&mut self, param_type: TypeID, ret_type: TypeID) -> TypeID {
+        self.new_type(TypeData::Function(param_type, ret_type))
     }
 
     pub fn new_type(&mut self, data: TypeData) -> TypeID {

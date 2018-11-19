@@ -64,8 +64,8 @@ impl ValueManager {
         self.type_store.new_variable()
     }
 
-    pub fn new_function_type(&mut self, param_type: TypeID) -> TypeID {
-        self.type_store.new_function_type(param_type)
+    pub fn new_function_type(&mut self, param_type: TypeID, ret_type: TypeID) -> TypeID {
+        self.type_store.new_function_type(param_type, ret_type)
     }
 
     pub fn new_value(&mut self, t: TypeID, data: ValueData) -> ValueID {
