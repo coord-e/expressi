@@ -69,7 +69,7 @@ impl<'a> Printer<'a> {
             }
             Value::Typed(ty, val) => {
                 self.print(val, f)?;
-                write!(f, " :: {:?}", self.type_store.get(*ty).unwrap())
+                write!(f, " :: {}", self.type_store.get(*ty).unwrap())
             }
         }
     }
