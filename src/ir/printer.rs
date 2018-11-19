@@ -1,5 +1,7 @@
 use type_::TypeStore;
 use ir::{Value, Constant};
+use type_::TypeID;
+use type_::type_::TypeData;
 
 use std::io;
 
@@ -10,6 +12,29 @@ pub struct Printer<'a> {
 impl<'a> Printer<'a> {
     pub fn new(type_store: &'a TypeStore) -> Self {
         Self { type_store }
+    }
+
+    fn print_type<T>(&self, ty: TypeID, f: &mut T) -> io::Result<()>
+        where T: io::Write
+    {
+        match self.type_store.get(ty).unwrap() {
+            TypeData::Variable(opt_id) => {
+                write!(f, "var(")?;
+                match opt_id {
+                    Some(id) => self.print_type(*id, f),
+                    None => write!(f, "?")
+                }?;
+                write!(f, ")")
+            },
+            TypeData::Function(param, ret) => {
+                self.print_type(*param, f)?;
+                write!(f, " -> ")?;
+                self.print_type(*ret, f)
+            },
+            v @ _ => {
+                write!(f, "{}", v)
+            }
+        }
     }
 
     pub fn print<T>(&self, v: &Value, f: &mut T) -> io::Result<()>
@@ -69,7 +94,8 @@ impl<'a> Printer<'a> {
             }
             Value::Typed(ty, val) => {
                 self.print(val, f)?;
-                write!(f, " :: {}", self.type_store.get(*ty).unwrap())
+                write!(f, " :: ")?;
+                self.print_type(*ty, f)
             }
         }
     }
