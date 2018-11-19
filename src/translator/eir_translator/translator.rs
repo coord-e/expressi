@@ -3,7 +3,8 @@ use expression::Expression;
 use error::TranslationError;
 use ir;
 use scope::Scope;
-use type_::type_::{EnumTypeData, TypeID};
+use type_::TypeID;
+use type_::type_::EnumTypeData;
 use translator::eir_translator::{Builder, Atom};
 
 use failure::Error;
