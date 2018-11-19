@@ -1,12 +1,8 @@
 use error::TranslationError;
-use value::{Atom, TypeID, ValueID};
 
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use failure::Error;
-
-use inkwell::values::PointerValue;
 
 #[derive(PartialEq, Debug, Clone, Eq)]
 pub enum BindingKind {
@@ -14,131 +10,80 @@ pub enum BindingKind {
     Immutable,
 }
 
-struct BoundAtom {
-    kind: BindingKind,
-    atom: Atom,
+pub trait Scope {
+    type V: Clone;
+
+    fn data(&self) -> HashMap<&String, &Self::V>;
+    fn insert(&mut self, key: &str, val: Self::V);
+    fn get(&self, key: &str) -> Option<Self::V>;
 }
 
-pub struct Scope {
-    variable_pointers: HashMap<String, PointerValue>,
-    bindings: HashMap<String, BoundAtom>,
-}
+pub struct Env<T>(HashMap<String, T>);
 
-impl Scope {
+impl<T> Env<T> {
     pub fn new() -> Self {
-        Scope {
-            variable_pointers: HashMap::new(),
-            bindings: HashMap::new(),
-        }
-    }
-
-    pub fn get(&self, s: &str) -> Option<Atom> {
-        self.bindings.get(s).map(|b| b.atom.clone())
-    }
-
-    pub fn get_var(&self, s: &str) -> Option<PointerValue> {
-        self.variable_pointers.get(s).cloned()
-    }
-
-    pub fn assign(&mut self, s: &str, atom: Atom) -> Result<(), Error> {
-        let new_entry = self
-            .bindings
-            .get(s)
-            .map(|v| {
-                if v.kind == BindingKind::Immutable {
-                    Err(TranslationError::ImmutableAssign)
-                } else {
-                    Ok(BoundAtom {
-                        kind: v.kind.clone(),
-                        atom,
-                    })
-                }
-            }).ok_or(TranslationError::UndeclaredVariable)??;
-        self.bindings.insert(s.to_string(), new_entry);
-        Ok(())
-    }
-
-    pub fn bind(&mut self, s: &str, atom: Atom, kind: BindingKind) {
-        self.bindings
-            .insert(s.to_string(), BoundAtom { kind, atom });
-    }
-
-    pub fn add_var(&mut self, s: &str, var: PointerValue) {
-        self.variable_pointers.insert(s.to_string(), var);
-    }
-
-    pub fn variables(&self) -> impl Iterator<Item = (&String, PointerValue)> {
-        self.variable_pointers.iter().map(|(k, v)| (k, v.clone()))
-    }
-
-    pub fn bindings(&self) -> impl Iterator<Item = (&String, Atom)> {
-        self.bindings.iter().map(|(k, v)| (k, v.atom.clone()))
+        Env(HashMap::new())
     }
 }
 
-pub struct ScopeStack {
-    scopes: Vec<Scope>,
+impl<T> Scope for Env<T> {
+    type V = T;
+
+    fn data(&self) -> HashMap<&String, &Self::V> {
+        self.0
+    }
+
+    fn insert(&mut self, key: &str, val: Self::V) {
+        self.0.insert(key.to_string(), val);
+    }
+
+    fn get(&self, key: &str) -> Option<Self::V> {
+        self.0.get(key.to_string()).cloned()
+    }
 }
 
-impl ScopeStack {
+pub struct ScopedEnv<T>(Vec<Env<T>>);
+
+impl<T> ScopedEnv<T> {
     pub fn new() -> Self {
-        ScopeStack {
-            scopes: vec![Scope::new()],
-        }
+        ScopedEnv(vec![Env::new()])
     }
 
-    pub fn new_scope(&self) -> Scope {
+    pub fn new_scope(&self) -> Env<T> {
         Scope::new()
     }
 
-    pub fn push(&mut self, sc: Scope) {
-        self.scopes.push(sc)
+    pub fn push(&mut self, sc: Env<T>) {
+        self.0.push(sc)
     }
 
-    pub fn pop(&mut self) -> Result<Scope, Error> {
-        if self.scopes.len() == 1 {
+    pub fn pop(&mut self) -> Result<Env<T>, Error> {
+        if self.0.len() == 1 {
             return Err(TranslationError::UnexpectedScopePop.into());
         }
-        self.scopes
+        self.0
             .pop()
             .ok_or(TranslationError::UnexpectedScopePop.into())
     }
 
-    pub fn variables(&self) -> impl Iterator<Item = (&String, PointerValue)> {
-        self.scopes.iter().rev().flat_map(|it| it.variables())
-    }
-
-    pub fn bindings(&self) -> impl Iterator<Item = (&String, Atom)> {
-        self.scopes.iter().rev().flat_map(|it| it.bindings())
-    }
-
-    pub fn add_var(&mut self, s: &str, var: PointerValue) {
-        self.scopes.last_mut().unwrap().add_var(s, var)
-    }
-
-    pub fn get(&self, s: &str) -> Option<Atom> {
-        self.bindings().find(|(k, _)| k == &s).map(|(_, v)| v)
-    }
-
-    pub fn get_var(&self, s: &str) -> Option<PointerValue> {
-        self.variables().find(|(k, _)| k == &s).map(|(_, v)| v)
-    }
-
-    pub fn assign(&mut self, s: &str, val: Atom) -> Result<(), Error> {
-        self.scopes
-            .iter_mut()
-            .rev()
-            .find(|sc| sc.get(s).is_some())
-            .ok_or(TranslationError::UndeclaredVariable.into())
-            .and_then(|v| v.assign(s, val))
-    }
-
-    pub fn bind(&mut self, s: &str, val: Atom, kind: BindingKind) {
-        self.scopes.last_mut().unwrap().bind(s, val, kind);
-    }
-
     pub fn unique_name(&self, s: &str) -> String {
-        let num_vars = self.variables().count();
+        let num_vars = self.0.len();
         format!("{}.{}", s, num_vars)
+    }
+}
+
+impl<T> Scope for ScopedEnv<T> {
+    type V = T;
+
+    fn data(&self) -> HashMap<&String, &Self::V> {
+        self.0.iter().flat_map(|env| env.0.iter()).collect()
+    }
+
+    fn insert(&mut self, key: &str, val: Self::V) {
+        self.0.last_mut().unwrap().0.insert(key.to_string(), val);
+    }
+
+    fn get(&self, key: &str) -> Option<Self::V> {
+        self.merged().get(key.to_string()).cloned().cloned()
     }
 }
