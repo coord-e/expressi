@@ -72,7 +72,7 @@ array -> Expression
   = "[" e:(expression ** ',') "]" { Expression::Array(e.into_iter().map(|v| Box::new(v)).collect()) }
 
 function -> Expression
-  = "(" _ args:( value_identifier ** ( _ ',' _ )) _ ")" _ "->" e:expression { Expression::Function(args, Box::new(e)) }
+  = param:identifier _ "->" e:expression { Expression::Function(param.to_string(), Box::new(e)) }
 
 type_ -> Expression
   = "<" e:(type_elem  ++ "|") ">" { Expression::Type(e) }

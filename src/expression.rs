@@ -50,7 +50,7 @@ pub enum Expression {
     Number(i64),
     Boolean(bool),
     Array(Vec<Box<Expression>>),
-    Function(Vec<Expression>, Box<Expression>),
+    Function(String, Box<Expression>),
     Identifier(String),
     TypeIdentifier(String),
     Empty,
