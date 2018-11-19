@@ -14,10 +14,14 @@ pub enum BindingKind {
 
 impl fmt::Display for BindingKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match self {
-            BindingKind::Mutable => "mut",
-            BindingKind::Immutable => ""
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                BindingKind::Mutable => "mut",
+                BindingKind::Immutable => "",
+            }
+        )
     }
 }
 

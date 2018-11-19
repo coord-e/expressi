@@ -1,12 +1,12 @@
-use type_::TypeStore;
-use ir::{Value, Constant};
-use type_::TypeID;
+use ir::{Constant, Value};
 use type_::type_::TypeData;
+use type_::TypeID;
+use type_::TypeStore;
 
 use std::io;
 
 pub struct Printer<'a> {
-    type_store: &'a TypeStore
+    type_store: &'a TypeStore,
 }
 
 impl<'a> Printer<'a> {
@@ -15,37 +15,37 @@ impl<'a> Printer<'a> {
     }
 
     fn print_type<T>(&self, ty: TypeID, f: &mut T) -> io::Result<()>
-        where T: io::Write
+    where
+        T: io::Write,
     {
         match self.type_store.get(ty).unwrap() {
             TypeData::Variable(opt_id) => {
                 write!(f, "var(")?;
                 match opt_id {
                     Some(id) => self.print_type(*id, f),
-                    None => write!(f, "?")
+                    None => write!(f, "?"),
                 }?;
                 write!(f, ")")
-            },
+            }
             TypeData::Function(param, ret) => {
                 self.print_type(*param, f)?;
                 write!(f, " -> ")?;
                 self.print_type(*ret, f)
-            },
-            v @ _ => {
-                write!(f, "{}", v)
             }
+            v @ _ => write!(f, "{}", v),
         }
     }
 
     pub fn print<T>(&self, v: &Value, f: &mut T) -> io::Result<()>
-        where T: io::Write
+    where
+        T: io::Write,
     {
         match v {
             Value::Constant(c) => match c {
                 Constant::Number(number) => write!(f, "{}", number),
                 Constant::Boolean(tf) => write!(f, "{}", tf),
                 Constant::Empty => write!(f, "<empty>"),
-            }
+            },
             Value::BinOp(op, lhs, rhs) => {
                 self.print(lhs, f)?;
                 write!(f, " {:?} ", op)?;

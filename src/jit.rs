@@ -1,15 +1,15 @@
 use error::{LLVMError, ParseError};
 use expression::Expression;
-use parser;
 use ir::Printer;
+use parser;
 use transform::TypeInfer;
 use translator::eir_translator::Builder;
 use translator::{ASTTranslator, EIRTranslator};
 use type_::TypeStore;
 
-use std::rc::Rc;
-use std::io;
 use failure::Error;
+use std::io;
+use std::rc::Rc;
 
 use inkwell::targets::{InitializationConfig, Target};
 use inkwell::OptimizationLevel;

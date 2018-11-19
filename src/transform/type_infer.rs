@@ -22,7 +22,12 @@ impl<'a> TypeInfer<'a> {
         }
     }
 
-    fn bin_op(&mut self, op: Operator, lhs: &ir::Value, rhs: &ir::Value) -> Result<ir::Value, Error> {
+    fn bin_op(
+        &mut self,
+        op: Operator,
+        lhs: &ir::Value,
+        rhs: &ir::Value,
+    ) -> Result<ir::Value, Error> {
         let new_inst = ir::Value::BinOp(op, box lhs.clone(), box rhs.clone());
         if lhs.type_().is_none() || rhs.type_().is_none() {
             return Ok(new_inst);
