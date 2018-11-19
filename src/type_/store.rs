@@ -1,4 +1,4 @@
-use type_::type_::{EnumTypeData, TypeData, OperatorKind};
+use type_::type_::{EnumTypeData, OperatorKind, TypeData};
 use type_::PrimitiveKind;
 
 use std::collections::HashMap;
@@ -30,7 +30,10 @@ impl TypeStore {
     }
 
     pub fn new_function(&mut self, param_type: TypeID, ret_type: TypeID) -> TypeID {
-        self.new_type(TypeData::Operator(OperatorKind::Function, vec![param_type, ret_type]))
+        self.new_type(TypeData::Operator(
+            OperatorKind::Function,
+            vec![param_type, ret_type],
+        ))
     }
 
     pub fn new_type(&mut self, data: TypeData) -> TypeID {
