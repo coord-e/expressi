@@ -13,7 +13,7 @@ pub struct TypeID(usize);
 
 pub type EnumTypeData = Vec<(String, Vec<TypeID>)>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TypeData {
     Number,
     Boolean,
@@ -119,5 +119,9 @@ impl TypeStore {
 
     pub fn get(&self, id: TypeID) -> Option<&TypeData> {
         self.data.get(&id)
+    }
+
+    pub fn get_mut(&mut self, id: TypeID) -> Option<&mut TypeData> {
+        self.data.get_mut(&id)
     }
 }

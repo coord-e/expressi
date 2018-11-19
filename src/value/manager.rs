@@ -125,4 +125,12 @@ impl ValueManager {
             .ok_or(InternalError::InvalidTypeID.into())
             .and_then(|v| v.cl_type())
     }
+
+    pub fn type_data(&self, t: TypeID) -> Result<&TypeData, Error> {
+        self.type_store.get(t).ok_or(InternalError::InvalidTypeID.into())
+    }
+
+    pub fn type_data_mut(&mut self, t: TypeID) -> Result<&mut TypeData, Error> {
+        self.type_store.get_mut(t).ok_or(InternalError::InvalidTypeID.into())
+    }
 }
