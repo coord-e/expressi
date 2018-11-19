@@ -1,12 +1,11 @@
 use error::{LLVMError, ParseError};
 use expression::Expression;
 use parser;
-use transform::{Transform, TypeInfer};
+use transform::TypeInfer;
 use translator::eir_translator::Builder;
 use translator::{ASTTranslator, EIRTranslator};
-use type_::{TypeID, TypeStore};
+use type_::TypeStore;
 
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use failure::Error;

@@ -2,11 +2,10 @@ use error::TranslationError;
 
 use failure::Error;
 use inkwell::types::{BasicTypeEnum, IntType};
-use type_::{PrimitiveKind, TypeID};
+use type_::TypeID;
 
 use std::fmt;
 use std::ptr::NonNull;
-use std::str::FromStr;
 
 pub type EnumTypeData = Vec<(String, Vec<TypeID>)>;
 

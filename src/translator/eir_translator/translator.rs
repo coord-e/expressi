@@ -1,11 +1,6 @@
-use expression::Expression;
-
 use error::TranslationError;
 use ir;
-use scope::Scope;
 use translator::eir_translator::{Atom, Builder};
-use type_::type_::EnumTypeData;
-use type_::TypeID;
 
 use failure::Error;
 
