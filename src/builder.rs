@@ -12,6 +12,12 @@ use inkwell::{basic_block, builder, module, types, values, IntPredicate};
 
 use std::rc::Rc;
 
+#[derive(PartialEq, Debug, Clone, Eq)]
+pub enum BindingKind {
+    Mutable,
+    Immutable,
+}
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum CondCode {
     Equal,

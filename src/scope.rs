@@ -4,12 +4,6 @@ use std::collections::HashMap;
 
 use failure::Error;
 
-#[derive(PartialEq, Debug, Clone, Eq)]
-pub enum BindingKind {
-    Mutable,
-    Immutable,
-}
-
 pub trait Scope {
     type V: Clone;
 
