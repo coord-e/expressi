@@ -35,12 +35,18 @@ impl<'a> Printer<'a> {
                         self.print_type(types[1], f)
                     }
                     _ => {
-                        write!(f, "{:?} [", kind)?;
+                        write!(f, "{:?}", kind)?;
+
+                        if types.len() == 0 {
+                            return Ok(());
+                        }
+
+                        write!(f, "[")?;
                         for ty in types {
                             self.print_type(*ty, f)?;
                             write!(f, ", ")?;
                         }
-                        Ok(())
+                        write!(f, "]")
                     }
                 }
             }
