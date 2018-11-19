@@ -1,13 +1,13 @@
 use error::TranslationError;
-use expression::Operator;
-use scope::{Scope, ScopedEnv, Env};
-use value::type_::EnumTypeData;
-use value::{TypeID, TypeStore, PrimitiveKind};
 use expression::Expression;
+use expression::Operator;
+use scope::{Env, Scope, ScopedEnv};
+use value::type_::EnumTypeData;
+use value::{PrimitiveKind, TypeID, TypeStore};
 
 use failure::Error;
 
-use inkwell::{basic_block, builder, module, types, values, IntPredicate, AddressSpace};
+use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPredicate};
 
 use std::rc::Rc;
 
@@ -79,12 +79,16 @@ impl<'a> Builder<'a> {
 
     pub fn number_constant(&mut self, v: i64) -> Result<values::BasicValueEnum, Error> {
         let t = types::IntType::i64_type();
-        Ok(values::BasicValueEnum::IntValue(t.const_int(v.abs() as u64, v < 0)))
+        Ok(values::BasicValueEnum::IntValue(
+            t.const_int(v.abs() as u64, v < 0),
+        ))
     }
 
     pub fn boolean_constant(&mut self, v: bool) -> Result<values::BasicValueEnum, Error> {
         let t = types::IntType::bool_type();
-        Ok(values::BasicValueEnum::IntValue(t.const_int(v as u64, false)))
+        Ok(values::BasicValueEnum::IntValue(
+            t.const_int(v as u64, false),
+        ))
     }
 
     pub fn empty_constant(&self) -> Result<values::BasicValueEnum, Error> {
@@ -96,14 +100,21 @@ impl<'a> Builder<'a> {
         Ok(self.type_store.new_enum(data))
     }
 
-    pub fn apply_op(&mut self, op: Operator, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
+    pub fn apply_op(
+        &mut self,
+        op: Operator,
+        lhs: values::BasicValueEnum,
+        rhs: values::BasicValueEnum,
+    ) -> Result<values::BasicValueEnum, Error> {
         let lhs_int = lhs.into_int_value();
         let rhs_int = rhs.into_int_value();
         Ok(match op {
             Operator::Add => self.inst_builder.build_int_add(lhs_int, rhs_int, "add"),
             Operator::Sub => self.inst_builder.build_int_sub(lhs_int, rhs_int, "sub"),
             Operator::Mul => self.inst_builder.build_int_mul(lhs_int, rhs_int, "mul"),
-            Operator::Div => self.inst_builder.build_int_unsigned_div(lhs_int, rhs_int, "div"),
+            Operator::Div => self
+                .inst_builder
+                .build_int_unsigned_div(lhs_int, rhs_int, "div"),
             Operator::BitAnd => self.inst_builder.build_and(lhs_int, rhs_int, "add"),
             Operator::BitXor => self.inst_builder.build_xor(lhs_int, rhs_int, "xor"),
             Operator::BitOr => self.inst_builder.build_or(lhs_int, rhs_int, "or"),
@@ -132,15 +143,14 @@ impl<'a> Builder<'a> {
             CondCode::LessThanOrEqual => IntPredicate::SLE,
         };
 
-        self.inst_builder.build_int_compare(
-            cc,
-            lhs,
-            rhs,
-            "cmp",
-        )
+        self.inst_builder.build_int_compare(cc, lhs, rhs, "cmp")
     }
 
-    pub fn index(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> values::IntValue {
+    pub fn index(
+        &mut self,
+        lhs: values::BasicValueEnum,
+        rhs: values::BasicValueEnum,
+    ) -> values::IntValue {
         unimplemented!()
     }
 
@@ -173,7 +183,11 @@ impl<'a> Builder<'a> {
         Ok(val)
     }
 
-    pub fn assign_var(&mut self, name: &str, val: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
+    pub fn assign_var(
+        &mut self,
+        name: &str,
+        val: values::BasicValueEnum,
+    ) -> Result<values::BasicValueEnum, Error> {
         let var = self
             .env
             .get(name)
@@ -189,7 +203,11 @@ impl<'a> Builder<'a> {
         })
     }
 
-    pub fn cast_to(&mut self, v: values::BasicValueEnum, to_type: types::BasicTypeEnum) -> Result<values::BasicValueEnum, Error> {
+    pub fn cast_to(
+        &mut self,
+        v: values::BasicValueEnum,
+        to_type: types::BasicTypeEnum,
+    ) -> Result<values::BasicValueEnum, Error> {
         let from_type = self.type_of(v);
         if from_type == to_type {
             return Err(TranslationError::InvalidCast {
@@ -205,15 +223,19 @@ impl<'a> Builder<'a> {
         if from_type == number_type {
             if to_type == bool_type {
                 let zero = self.number_constant(0)?;
-                return Ok(self.cmp(CondCode::NotEqual, v.into_int_value(), zero.into_int_value()).into());
+                return Ok(self
+                    .cmp(
+                        CondCode::NotEqual,
+                        v.into_int_value(),
+                        zero.into_int_value(),
+                    ).into());
             }
         } else if from_type == bool_type {
             if to_type == number_type {
-                return Ok(self.inst_builder.build_int_z_extend(
-                        v.into_int_value(),
-                        to_type.into_int_type(),
-                        "b2i",
-                ).into());
+                return Ok(self
+                    .inst_builder
+                    .build_int_z_extend(v.into_int_value(), to_type.into_int_type(), "b2i")
+                    .into());
             }
         }
         Err(TranslationError::InvalidCast {
@@ -235,7 +257,11 @@ impl<'a> Builder<'a> {
         self.env.pop()
     }
 
-    pub fn array_alloc(&mut self, t: types::BasicTypeEnum, size: u32) -> Result<values::PointerValue, Error> {
+    pub fn array_alloc(
+        &mut self,
+        t: types::BasicTypeEnum,
+        size: u32,
+    ) -> Result<values::PointerValue, Error> {
         unimplemented!()
     }
 

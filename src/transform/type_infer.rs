@@ -1,11 +1,11 @@
+use error::InternalError;
 use expression::Operator;
 use ir;
+use scope::{Scope, ScopedEnv};
 use transform::error::TypeInferError;
 use transform::Transform;
-use value::{PrimitiveKind, TypeID, TypeStore};
 use value::type_::TypeData;
-use scope::{ScopedEnv, Scope};
-use error::InternalError;
+use value::{PrimitiveKind, TypeID, TypeStore};
 
 use failure::Error;
 
@@ -51,17 +51,21 @@ impl<'a> TypeInfer<'a> {
     }
 
     fn type_data(&self, t: TypeID) -> Result<&TypeData, Error> {
-        self.type_store.get(t).ok_or(InternalError::InvalidTypeID.into())
+        self.type_store
+            .get(t)
+            .ok_or(InternalError::InvalidTypeID.into())
     }
 
     fn type_data_mut(&mut self, t: TypeID) -> Result<&mut TypeData, Error> {
-        self.type_store.get_mut(t).ok_or(InternalError::InvalidTypeID.into())
+        self.type_store
+            .get_mut(t)
+            .ok_or(InternalError::InvalidTypeID.into())
     }
 
     fn prune(&self, t: TypeID) -> Result<TypeID, Error> {
         Ok(match self.type_data(t)? {
             TypeData::Variable(Some(v)) => v.clone(),
-            _ => t
+            _ => t,
         })
     }
 
@@ -70,7 +74,7 @@ impl<'a> TypeInfer<'a> {
         let t2 = self.prune(t2)?;
 
         if t1 == t2 {
-            return Ok(())
+            return Ok(());
         }
 
         match (self.type_data(t1)?.clone(), self.type_data(t2)?.clone()) {
@@ -86,7 +90,7 @@ impl<'a> TypeInfer<'a> {
                 self.unify(from1, from2)?;
                 self.unify(to1, to2)?;
             }
-            (_, _) => unimplemented!()
+            (_, _) => unimplemented!(),
         }
         Ok(())
     }
@@ -210,7 +214,7 @@ impl<'a> Transform for TypeInfer<'a> {
                 let new_inst = ir::Value::Apply(box lhs, box rhs);
                 ir::Value::Typed(result_ty, box new_inst)
             }
-            ir::Value::Constant(_) => bail!(TypeInferError::NotTyped)
+            ir::Value::Constant(_) => bail!(TypeInferError::NotTyped),
         })
     }
 }

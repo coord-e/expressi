@@ -91,29 +91,23 @@ impl fmt::Display for TypeData {
 
 pub struct TypeStore {
     data: HashMap<TypeID, TypeData>,
-    primitives: HashMap<PrimitiveKind, TypeID>
+    primitives: HashMap<PrimitiveKind, TypeID>,
 }
 
 impl TypeStore {
     pub fn new() -> Self {
         let mut inst = Self {
             data: HashMap::new(),
-            primitives: HashMap::new()
+            primitives: HashMap::new(),
         };
 
         let number_ty = inst.new_type(TypeData::Number);
         let boolean_ty = inst.new_type(TypeData::Boolean);
         let empty_ty = inst.new_type(TypeData::Empty);
 
-        inst
-            .primitives
-            .insert(PrimitiveKind::Number, number_ty);
-        inst
-            .primitives
-            .insert(PrimitiveKind::Boolean, boolean_ty);
-        inst
-            .primitives
-            .insert(PrimitiveKind::Empty, empty_ty);
+        inst.primitives.insert(PrimitiveKind::Number, number_ty);
+        inst.primitives.insert(PrimitiveKind::Boolean, boolean_ty);
+        inst.primitives.insert(PrimitiveKind::Empty, empty_ty);
 
         inst
     }

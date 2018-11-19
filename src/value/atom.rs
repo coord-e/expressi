@@ -1,8 +1,8 @@
 use error::TranslationError;
 use value::TypeID;
 
-use inkwell::values::BasicValueEnum;
 use failure::Error;
+use inkwell::values::BasicValueEnum;
 
 #[derive(Debug, Clone)]
 pub enum Atom {

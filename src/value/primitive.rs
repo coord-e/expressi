@@ -4,4 +4,3 @@ pub enum PrimitiveKind {
     Boolean,
     Empty,
 }
-

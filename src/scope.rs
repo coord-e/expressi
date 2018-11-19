@@ -21,7 +21,8 @@ impl<T> Env<T> {
 }
 
 impl<T> Scope for Env<T>
-    where T: Clone
+where
+    T: Clone,
 {
     type V = T;
 
@@ -69,7 +70,8 @@ impl<T> ScopedEnv<T> {
 }
 
 impl<T> Scope for ScopedEnv<T>
-    where T: Clone
+where
+    T: Clone,
 {
     type V = T;
 

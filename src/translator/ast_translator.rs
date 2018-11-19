@@ -5,34 +5,28 @@ use value::{PrimitiveKind, TypeStore};
 use failure::Error;
 
 pub struct ASTTranslator<'a> {
-    pub type_store: &'a mut TypeStore
+    pub type_store: &'a mut TypeStore,
 }
 
 impl<'a> ASTTranslator<'a> {
     pub fn translate_expr(&mut self, expr: Expression) -> Result<Value, Error> {
         Ok(match expr {
             Expression::Number(number) => {
-                let number_type = self
-                    .type_store
-                    .primitive(PrimitiveKind::Number);
+                let number_type = self.type_store.primitive(PrimitiveKind::Number);
                 Value::Typed(
                     number_type,
                     Box::new(Value::Constant(Constant::Number(number))),
                 )
             }
             Expression::Boolean(value) => {
-                let boolean_type = self
-                    .type_store
-                    .primitive(PrimitiveKind::Boolean);
+                let boolean_type = self.type_store.primitive(PrimitiveKind::Boolean);
                 Value::Typed(
                     boolean_type,
                     Box::new(Value::Constant(Constant::Boolean(value))),
                 )
             }
             Expression::Empty => {
-                let empty_type = self
-                    .type_store
-                    .primitive(PrimitiveKind::Empty);
+                let empty_type = self.type_store.primitive(PrimitiveKind::Empty);
                 Value::Typed(empty_type, Box::new(Value::Constant(Constant::Empty)))
             }
             Expression::Function(ident, body) => {
