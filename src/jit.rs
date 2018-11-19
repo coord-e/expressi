@@ -4,7 +4,7 @@ use expression::Expression;
 use parser;
 use transform::{Transform, TypeInfer};
 use translator::{ASTTranslator, EIRTranslator};
-use value::{TypeID, ValueManager};
+use value::{TypeStore, TypeID, ValueManager};
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -87,14 +87,17 @@ impl JIT {
             eprintln!("EIR:\n{:#?}", eir);
         }
 
-        let mut ti = TypeInfer::new();
-        let transformed = eir.apply(ti)?;
+        let mut type_store = TypeStore::new();
+        let transformed = {
+            let mut ti = TypeInfer::new(&mut type_store);
+            eir.apply(ti)?
+        };
 
         if self.print_eir {
             eprintln!("Transformed EIR:\n{:#?}", transformed);
         }
 
-        let builder = Builder::new(manager.clone(), &mut self.builder, module.clone());
+        let builder = Builder::new(&mut type_store, &mut self.builder, module.clone());
         let mut trans = EIRTranslator { builder };
 
         let evaluated_value = trans.translate_expr(transformed)?.expect_value()?;

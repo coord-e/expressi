@@ -10,15 +10,15 @@ use error::InternalError;
 
 use failure::Error;
 
-pub struct TypeInfer {
-    type_store: TypeStore,
+pub struct TypeInfer<'a> {
+    type_store: &'a mut TypeStore,
     env: ScopedEnv<TypeID>,
 }
 
-impl TypeInfer {
-    pub fn new() -> Self {
+impl<'a> TypeInfer<'a> {
+    pub fn new(type_store: &'a mut TypeStore) -> Self {
         Self {
-            type_store: TypeStore::new(),
+            type_store,
             env: ScopedEnv::new(),
         }
     }
@@ -105,7 +105,7 @@ impl TypeInfer {
     }
 }
 
-impl Transform for TypeInfer {
+impl<'a> Transform for TypeInfer<'a> {
     fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
         Ok(match eir {
             ir::Value::Typed(_, _) => eir.clone(),
