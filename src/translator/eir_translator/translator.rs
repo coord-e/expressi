@@ -3,9 +3,9 @@ use expression::Expression;
 use error::TranslationError;
 use ir;
 use scope::Scope;
-use type_::TypeID;
+use translator::eir_translator::{Atom, Builder};
 use type_::type_::EnumTypeData;
-use translator::eir_translator::{Builder, Atom};
+use type_::TypeID;
 
 use failure::Error;
 

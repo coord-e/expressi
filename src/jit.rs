@@ -1,8 +1,8 @@
-use translator::eir_translator::Builder;
 use error::{LLVMError, ParseError};
 use expression::Expression;
 use parser;
 use transform::{Transform, TypeInfer};
+use translator::eir_translator::Builder;
 use translator::{ASTTranslator, EIRTranslator};
 use type_::{TypeID, TypeStore};
 

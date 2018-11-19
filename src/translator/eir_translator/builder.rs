@@ -1,10 +1,10 @@
 use error::TranslationError;
 use expression::Expression;
 use expression::Operator;
+use ir::BindingKind;
 use scope::{Env, Scope, ScopedEnv};
 use type_::type_::EnumTypeData;
 use type_::{PrimitiveKind, TypeID, TypeStore};
-use ir::BindingKind;
 
 use failure::Error;
 
