@@ -1,5 +1,5 @@
 use error::TranslationError;
-use value::{Atom, TypeID, ValueID, ValueManagerRef};
+use value::{Atom, TypeID, ValueID};
 
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -21,16 +21,14 @@ struct BoundAtom {
 
 pub struct Scope {
     variable_pointers: HashMap<String, PointerValue>,
-    manager: ValueManagerRef,
     bindings: HashMap<String, BoundAtom>,
 }
 
 impl Scope {
-    pub fn new(manager: ValueManagerRef) -> Self {
+    pub fn new() -> Self {
         Scope {
             variable_pointers: HashMap::new(),
             bindings: HashMap::new(),
-            manager,
         }
     }
 
@@ -80,19 +78,17 @@ impl Scope {
 
 pub struct ScopeStack {
     scopes: Vec<Scope>,
-    manager: ValueManagerRef,
 }
 
 impl ScopeStack {
-    pub fn new(manager: ValueManagerRef) -> Self {
+    pub fn new() -> Self {
         ScopeStack {
-            scopes: vec![Scope::new(manager.clone())],
-            manager,
+            scopes: vec![Scope::new()],
         }
     }
 
     pub fn new_scope(&self) -> Scope {
-        Scope::new(self.manager.clone())
+        Scope::new()
     }
 
     pub fn push(&mut self, sc: Scope) {
