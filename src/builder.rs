@@ -67,8 +67,15 @@ impl<'a> Builder<'a> {
         &mut self.env
     }
 
-    pub fn type_of(&self, v: values::BasicValueEnum) -> Result<TypeID, Error> {
-        self.manager.try_borrow()?.type_of(v)
+    pub fn type_of(&self, v: values::BasicValueEnum) -> types::BasicTypeEnum {
+        match v {
+            values::BasicValueEnum::ArrayValue(v) => v.get_type().into(),
+            values::BasicValueEnum::IntValue(v) => v.get_type().into(),
+            values::BasicValueEnum::FloatValue(v) => v.get_type().into(),
+            values::BasicValueEnum::PointerValue(v) => v.get_type().into(),
+            values::BasicValueEnum::StructValue(v) => v.get_type().into(),
+            values::BasicValueEnum::VectorValue(v) => v.get_type().into(),
+        }
     }
 
     pub fn number_constant(&mut self, v: i64) -> Result<values::BasicValueEnum, Error> {
@@ -186,21 +193,16 @@ impl<'a> Builder<'a> {
     pub fn declare_mut_var(
         &mut self,
         name: &str,
-        t: TypeID,
+        t: types::BasicTypeEnum,
         unique: bool,
     ) -> Result<String, Error> {
-        let manager = self.manager.try_borrow()?;
         let real_name = if unique {
             self.scope_stack.unique_name(name)
         } else {
             name.to_string()
         };
-        let llvm_type = manager.llvm_type(t)?;
-        let variable = self.inst_builder.build_alloca(llvm_type, &real_name);
-        let empty = manager.empty_value();
-        self.scope_stack.add_var(&real_name, variable); // TODO: TypeValue
-        self.scope_stack
-            .bind(&real_name, empty.into(), BindingKind::Mutable);
+        let variable = self.inst_builder.build_alloca(t, &real_name);
+        self.env.insert(real_name, variable);
         Ok(real_name)
     }
 
@@ -210,46 +212,31 @@ impl<'a> Builder<'a> {
         val: values::BasicValueEnum,
         kind: BindingKind,
     ) -> Result<values::BasicValueEnum, Error> {
-        let manager = self.manager.try_borrow()?;
-        let t = manager.type_of(val)?;
-        let llvm_type = manager.llvm_type(t)?;
+        let llvm_type = self.type_of(val);
         let variable = self.inst_builder.build_alloca(llvm_type, name);
-        self.scope_stack.add_var(name, variable);
-
-        if let Ok(val) = manager.llvm_value(val) {
-            self.inst_builder.build_store(variable, val);
-        }
-        self.scope_stack.bind(name, val.into(), kind);
+        self.env.insert(name, variable);
+        self.inst_builder.build_store(variable, val);
         Ok(val)
     }
 
     pub fn assign_var(&mut self, name: &str, val: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
         let var = self
-            .scope_stack
-            .get_var(name)
+            .env
+            .get(name)
             .ok_or(TranslationError::UndeclaredVariable)?;
-        if let Ok(val) = self.manager.try_borrow()?.llvm_value(val) {
-            self.inst_builder.build_store(var, val);
-        }
-        self.scope_stack.assign(name, val.into())?;
+        self.inst_builder.build_store(var, val);
         Ok(val)
     }
 
     pub fn get_var(&mut self, name: &str) -> Result<Option<values::BasicValueEnum>, Error> {
-        self.scope_stack.get_var(name).map_or(Ok(None), |var| {
-            let value = self.scope_stack.get(name).unwrap().expect_value()?;
-            let t = self.manager.try_borrow()?.type_of(value)?;
-            let llvm_type = self.manager.try_borrow()?.llvm_type(t)?;
+        self.env.get(name).map_or(Ok(None), |var| {
             let loaded = self.inst_builder.build_load(var, "load_var");
-            self.manager
-                .try_borrow_mut()?
-                .new_value_from_llvm(loaded, llvm_type)
-                .map(Some)
+            Ok(Some(loaded))
         })
     }
 
-    pub fn cast_to(&mut self, v: values::BasicValueEnum, to_type: TypeID) -> Result<values::BasicValueEnum, Error> {
-        let from_type = self.manager.try_borrow()?.type_of(v)?;
+    pub fn cast_to(&mut self, v: values::BasicValueEnum, to_type: types::BasicTypeEnum) -> Result<values::BasicValueEnum, Error> {
+        let from_type = self.type_of(v);
         if from_type == to_type {
             return Err(TranslationError::InvalidCast {
                 from: from_type,
@@ -257,14 +244,8 @@ impl<'a> Builder<'a> {
             }.into());
         }
 
-        let bool_type = self
-            .manager
-            .try_borrow()?
-            .primitive_type(PrimitiveKind::Boolean);
-        let number_type = self
-            .manager
-            .try_borrow()?
-            .primitive_type(PrimitiveKind::Number);
+        let number_type = types::IntType::i64_type();
+        let bool_type = types::IntType::bool_type();
 
         // TODO: more elegant way to match types
         if from_type == number_type {
@@ -274,15 +255,10 @@ impl<'a> Builder<'a> {
             }
         } else if from_type == bool_type {
             if to_type == number_type {
-                let cl = self.manager.try_borrow()?.llvm_value(v)?;
-                let to_llvm_type = self.manager.try_borrow()?.llvm_type(to_type)?;
-                return self.manager.try_borrow_mut()?.new_value_from_llvm(
-                    self.inst_builder.build_int_z_extend(
-                        cl.into_int_value(),
-                        to_llvm_type.into_int_type(),
+                return self.inst_builder.build_int_z_extend(
+                        v.into_int_value(),
+                        to_type.into_int_type(),
                         "b2i",
-                    ),
-                    to_llvm_type,
                 );
             }
         }
@@ -293,19 +269,19 @@ impl<'a> Builder<'a> {
     }
 
     pub fn enter_new_scope(&mut self) {
-        let scope = self.scope_stack.new_scope();
+        let scope = self.env.new_scope();
         self.enter_scope(scope);
     }
 
     pub fn enter_scope(&mut self, sc: Scope) {
-        self.scope_stack.push(sc);
+        self.env.push(sc);
     }
 
     pub fn exit_scope(&mut self) -> Result<Scope, Error> {
-        self.scope_stack.pop()
+        self.env.pop()
     }
 
-    pub fn array_alloc(&mut self, t: TypeID, size: u32) -> Result<values::PointerValue, Error> {
+    pub fn array_alloc(&mut self, t: types::BasicTypeEnum, size: u32) -> Result<values::PointerValue, Error> {
         unimplemented!()
     }
 
@@ -315,17 +291,7 @@ impl<'a> Builder<'a> {
         addr: values::PointerValue,
         offset: u32,
     ) -> Result<(), Error> {
-        // TODO: Safety check
-        let ptr = unsafe {
-            self.inst_builder.build_in_bounds_gep(
-                addr,
-                &[types::IntType::i32_type().const_int(offset as u64, false)],
-                "store",
-            )
-        };
-        let cl = self.manager.try_borrow()?.llvm_value(v)?;
-        self.inst_builder.build_store(ptr, cl);
-        Ok(())
+        unimplemented!()
     }
 
     pub fn load(
@@ -334,18 +300,7 @@ impl<'a> Builder<'a> {
         addr: values::PointerValue,
         offset: u32,
     ) -> Result<values::BasicValueEnum, Error> {
-        // TODO: Safety check
-        let ptr = unsafe {
-            self.inst_builder.build_in_bounds_gep(
-                addr,
-                &[types::IntType::i32_type().const_int(offset as u64, false)],
-                "store",
-            )
-        };
-        let llvm_type = self.manager.try_borrow()?.llvm_type(t)?;
-        self.manager
-            .try_borrow_mut()?
-            .new_value_from_llvm(self.inst_builder.build_load(ptr, "load"), llvm_type)
+        unimplemented!()
     }
 
     pub fn create_block(&mut self) -> Result<Block, Error> {
@@ -364,9 +319,8 @@ impl<'a> Builder<'a> {
         then_block: &Block,
         else_block: &Block,
     ) -> Result<(), Error> {
-        let manager = self.manager.try_borrow()?;
-        let bool_type = manager.primitive_type(PrimitiveKind::Boolean);
-        if manager.type_of(condition)? != bool_type {
+        let bool_type = types::IntType::bool_type;
+        if self.type_of(condition) != bool_type {
             return Err(TranslationError::InvalidType.into());
         }
         let cl = manager.llvm_value(condition)?;
@@ -395,21 +349,14 @@ impl<'a> Builder<'a> {
 
     pub fn ret_int(&mut self, v: values::BasicValueEnum) -> Result<(), Error> {
         // TODO: Generic return
-        let number_type = self
-            .manager
-            .try_borrow()?
-            .primitive_type(PrimitiveKind::Number);
-        let return_value = if self.manager.try_borrow()?.type_of(v)? != number_type {
+        let number_type = types::IntType::i64_type;
+        let return_value = if self.type_of(v) != number_type {
             self.cast_to(v, number_type)?
         } else {
             v
         };
         // Emit the return instruction.
-        let cl = self
-            .manager
-            .try_borrow()?
-            .llvm_value(return_value)?
-            .into_int_value();
+        let cl = return_value.into_int_value();
         self.inst_builder.build_return(Some(&cl));
         Ok(())
     }
