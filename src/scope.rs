@@ -26,7 +26,7 @@ impl<T> Scope for Env<T>
     type V = T;
 
     fn data(&self) -> HashMap<&String, &Self::V> {
-        self.0
+        self.0.iter().map(|(k, v)| (k, v)).collect()
     }
 
     fn insert(&mut self, key: &str, val: Self::V) {
@@ -34,7 +34,7 @@ impl<T> Scope for Env<T>
     }
 
     fn get(&self, key: &str) -> Option<Self::V> {
-        self.0.get(key.to_string()).cloned()
+        self.0.get(&key.to_string()).cloned()
     }
 }
 
@@ -46,7 +46,7 @@ impl<T> ScopedEnv<T> {
     }
 
     pub fn new_scope(&self) -> Env<T> {
-        Scope::new()
+        Env::new()
     }
 
     pub fn push(&mut self, sc: Env<T>) {
@@ -82,6 +82,6 @@ impl<T> Scope for ScopedEnv<T>
     }
 
     fn get(&self, key: &str) -> Option<Self::V> {
-        self.merged().get(key.to_string()).cloned().cloned()
+        self.data().get(&key.to_string()).cloned().cloned()
     }
 }
