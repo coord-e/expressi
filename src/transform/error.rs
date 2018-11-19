@@ -1,4 +1,4 @@
-use value::TypeID;
+use type_::TypeID;
 
 #[derive(Debug, Fail)]
 pub enum TypeInferError {

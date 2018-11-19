@@ -1,21 +1,16 @@
 use error::TranslationError;
 use expression::Expression;
 use expression::Operator;
+use ir::BindingKind;
 use scope::{Env, Scope, ScopedEnv};
-use value::type_::EnumTypeData;
-use value::{PrimitiveKind, TypeID, TypeStore};
+use type_::type_::EnumTypeData;
+use type_::{PrimitiveKind, TypeID, TypeStore};
 
 use failure::Error;
 
 use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPredicate};
 
 use std::rc::Rc;
-
-#[derive(PartialEq, Debug, Clone, Eq)]
-pub enum BindingKind {
-    Mutable,
-    Immutable,
-}
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum CondCode {

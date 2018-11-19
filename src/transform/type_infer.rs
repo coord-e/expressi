@@ -4,8 +4,8 @@ use ir;
 use scope::{Scope, ScopedEnv};
 use transform::error::TypeInferError;
 use transform::Transform;
-use value::type_::TypeData;
-use value::{PrimitiveKind, TypeID, TypeStore};
+use type_::type_::TypeData;
+use type_::{PrimitiveKind, TypeID, TypeStore};
 
 use failure::Error;
 
