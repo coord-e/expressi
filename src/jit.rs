@@ -100,7 +100,7 @@ impl JIT {
         if self.print_eir {
             eprintln!("Transformed EIR:");
             let printer = Printer::new(&type_store);
-            printer.print(&eir, &mut io::stderr())?;
+            printer.print(&transformed, &mut io::stderr())?;
             eprintln!();
         }
 
