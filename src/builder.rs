@@ -80,95 +80,50 @@ impl<'a> Builder<'a> {
 
     pub fn number_constant(&mut self, v: i64) -> Result<values::BasicValueEnum, Error> {
         let t = types::IntType::i64_type();
-        values::BasicValueEnum::IntValue(t.const_int(v.abs() as u64, v < 0))
+        Ok(values::BasicValueEnum::IntValue(t.const_int(v.abs() as u64, v < 0)))
     }
 
     pub fn boolean_constant(&mut self, v: bool) -> Result<values::BasicValueEnum, Error> {
         let t = types::IntType::bool_type();
-        values::BasicValueEnum::IntValue(t.const_int(v as u64, false))
+        Ok(values::BasicValueEnum::IntValue(t.const_int(v as u64, false)))
     }
 
     pub fn empty_constant(&self) -> Result<values::BasicValueEnum, Error> {
         let t = types::VoidType::void_type().ptr_type(AddressSpace::Generic);
-        values::BasicValueEnum::PointerValue(t.const_null())
+        Ok(values::BasicValueEnum::PointerValue(t.const_null()))
     }
 
     pub fn register_type(&mut self, data: EnumTypeData) -> Result<TypeID, Error> {
-        self.type_store.new_enum(data)
+        Ok(self.type_store.new_enum(data))
     }
 
     pub fn apply_op(&mut self, op: Operator, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
-        match op {
-            Operator::Add => self.add(lhs, rhs),
-            Operator::Sub => self.sub(lhs, rhs),
-            Operator::Mul => self.mul(lhs, rhs),
-            Operator::Div => self.div(lhs, rhs),
-            Operator::BitAnd => self.bit_and(lhs, rhs),
-            Operator::BitXor => self.bit_xor(lhs, rhs),
-            Operator::BitOr => self.bit_or(lhs, rhs),
-            Operator::Lt => self.cmp(CondCode::LessThan, lhs, rhs),
-            Operator::Gt => self.cmp(CondCode::GreaterThan, lhs, rhs),
-            Operator::Le => self.cmp(CondCode::LessThanOrEqual, lhs, rhs),
-            Operator::Ge => self.cmp(CondCode::GreaterThanOrEqual, lhs, rhs),
-            Operator::Eq => self.cmp(CondCode::Equal, lhs, rhs),
-            Operator::Ne => self.cmp(CondCode::NotEqual, lhs, rhs),
+        let lhs_int = lhs.into_int_value();
+        let rhs_int = rhs.into_int_value();
+        Ok(match op {
+            Operator::Add => self.inst_builder.build_int_add(lhs_int, rhs_int, "add"),
+            Operator::Sub => self.inst_builder.build_int_sub(lhs_int, rhs_int, "sub"),
+            Operator::Mul => self.inst_builder.build_int_mul(lhs_int, rhs_int, "mul"),
+            Operator::Div => self.inst_builder.build_int_unsigned_div(lhs_int, rhs_int, "div"),
+            Operator::BitAnd => self.inst_builder.build_and(lhs_int, rhs_int, "add"),
+            Operator::BitXor => self.inst_builder.build_xor(lhs_int, rhs_int, "xor"),
+            Operator::BitOr => self.inst_builder.build_or(lhs_int, rhs_int, "or"),
+            Operator::Lt => self.cmp(CondCode::LessThan, lhs_int, rhs_int),
+            Operator::Gt => self.cmp(CondCode::GreaterThan, lhs_int, rhs_int),
+            Operator::Le => self.cmp(CondCode::LessThanOrEqual, lhs_int, rhs_int),
+            Operator::Ge => self.cmp(CondCode::GreaterThanOrEqual, lhs_int, rhs_int),
+            Operator::Eq => self.cmp(CondCode::Equal, lhs_int, rhs_int),
+            Operator::Ne => self.cmp(CondCode::NotEqual, lhs_int, rhs_int),
             Operator::Index => self.index(lhs, rhs),
-        }
-    }
-
-    pub fn add(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
-        self.inst_builder.build_int_add(
-            lhs.into_int_value(),
-            rhs.into_int_value(),
-            "add",
-        )
-    }
-
-    pub fn sub(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
-        self.inst_builder.build_int_sub(
-            lhs.into_int_value(),
-            rhs.into_int_value(),
-            "sub",
-        )
-    }
-
-    pub fn mul(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
-        self.inst_builder.build_int_mul(
-            lhs.into_int_value(),
-            rhs.into_int_value(),
-            "mul",
-        )
-    }
-
-    pub fn div(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
-        self.inst_builder.build_int_unsigned_div(
-            lhs.into_int_value(),
-            rhs.into_int_value(),
-            "div",
-        )
-    }
-
-    pub fn bit_and(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
-        self.inst_builder
-            .build_and(lhs.into_int_value(), rhs.into_int_value(), "and")
-    }
-
-    pub fn bit_or(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
-        self.inst_builder
-            .build_or(lhs.into_int_value(), rhs.into_int_value(), "or")
-    }
-
-    pub fn bit_xor(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
-        self.inst_builder
-            .build_xor(lhs.into_int_value(), rhs.into_int_value(), "xor")
+        }.into())
     }
 
     pub fn cmp(
         &mut self,
         cmp_type: CondCode,
-        lhs: values::BasicValueEnum,
-        rhs: values::BasicValueEnum,
-    ) -> Result<values::BasicValueEnum, Error> {
+        lhs: values::IntValue,
+        rhs: values::IntValue,
+    ) -> values::IntValue {
         let cc = match cmp_type {
             CondCode::Equal => IntPredicate::EQ,
             CondCode::NotEqual => IntPredicate::NE,
@@ -180,13 +135,13 @@ impl<'a> Builder<'a> {
 
         self.inst_builder.build_int_compare(
             cc,
-            lhs.into_int_value(),
-            rhs.into_int_value(),
+            lhs,
+            rhs,
             "cmp",
         )
     }
 
-    pub fn index(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
+    pub fn index(&mut self, lhs: values::BasicValueEnum, rhs: values::BasicValueEnum) -> values::IntValue {
         unimplemented!()
     }
 
