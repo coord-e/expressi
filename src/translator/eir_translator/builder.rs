@@ -34,7 +34,7 @@ impl Block {
 #[derive(Debug, Clone)]
 pub struct BoundPointer {
     kind: BindingKind,
-    ptr: values::PointerValue
+    ptr: values::PointerValue,
 }
 
 impl BoundPointer {
@@ -180,7 +180,10 @@ impl<'a> Builder<'a> {
             name.to_string()
         };
         let variable = self.inst_builder.build_alloca(t, &real_name);
-        self.env.insert(&real_name, BoundPointer::new(BindingKind::Mutable, variable));
+        self.env.insert(
+            &real_name,
+            BoundPointer::new(BindingKind::Mutable, variable),
+        );
         Ok(real_name)
     }
 
