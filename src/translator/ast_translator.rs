@@ -39,6 +39,10 @@ impl ASTTranslator {
                     .primitive_type(PrimitiveKind::Empty);
                 Value::Typed(empty_type, Box::new(Value::Constant(Constant::Empty)))
             }
+            Expression::Function(ident, body) => {
+                let body = self.translate_expr(*body)?;
+                Value::Function(ident, Box::new(body))
+            }
             Expression::Array(expr) => unimplemented!(),
             Expression::Type(expr) => unimplemented!(),
             Expression::BinOp(op, lhs, rhs) => {

@@ -63,10 +63,10 @@ impl TypeData {
             TypeData::Array(_, _) => unimplemented!(),
             // TODO: Architecture-independent pointer size
             TypeData::Function(_) => 8,
-            TypeData::Depends(sub, _) => sub.size(),
             TypeData::Empty => 0,
             TypeData::Enum(_) => unimplemented!(),
             TypeData::Variable(_) => unimplemented!(),
+            TypeData::PolyVariable(_) => unimplemented!(),
         }
     }
 }
@@ -81,6 +81,7 @@ impl fmt::Display for TypeData {
             TypeData::Empty => "Empty".to_string(),
             TypeData::Enum(data) => format!("{:?}", data),
             TypeData::Variable(instance) => format!("var({:?})", instance),
+            TypeData::PolyVariable(types) => format!("pvar({:?})", types),
         };
 
         write!(f, "{}", rep)

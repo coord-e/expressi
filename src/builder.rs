@@ -112,12 +112,6 @@ impl<'a> Builder<'a> {
             .map(|manager| manager.empty_value())
     }
 
-    pub fn function_constant(&self, arguments: Vec<String>, content: Expression) -> Result<ValueID, Error> {
-        let mut manager_mut = self.manager.try_borrow_mut()?;
-        let ty = manager_mut.new_function_type(arguments.len());
-        Ok(manager_mut.new_value(ty, ValueData::Function { arguments, content }))
-    }
-
     pub fn register_type(&mut self, data: EnumTypeData) -> Result<TypeID, Error> {
         self.manager
             .try_borrow_mut()
