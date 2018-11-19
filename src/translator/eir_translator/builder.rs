@@ -2,6 +2,7 @@ use error::TranslationError;
 use expression::Operator;
 use ir::BindingKind;
 use scope::{Env, Scope, ScopedEnv};
+use translator::eir_translator::BoundPointer;
 use type_::type_::EnumTypeData;
 use type_::{TypeID, TypeStore};
 
@@ -35,7 +36,7 @@ pub struct Builder<'a> {
     inst_builder: &'a mut builder::Builder,
     module: Rc<module::Module>,
     type_store: &'a mut TypeStore,
-    env: ScopedEnv<values::PointerValue>,
+    env: ScopedEnv<BoundPointer>,
 }
 
 impl<'a> Builder<'a> {
@@ -56,7 +57,7 @@ impl<'a> Builder<'a> {
         self.inst_builder
     }
 
-    pub fn env<'short>(&'short mut self) -> &'short mut ScopedEnv<values::PointerValue> {
+    pub fn env<'short>(&'short mut self) -> &'short mut ScopedEnv<BoundPointer> {
         &mut self.env
     }
 
@@ -160,7 +161,10 @@ impl<'a> Builder<'a> {
             name.to_string()
         };
         let variable = self.inst_builder.build_alloca(t, &real_name);
-        self.env.insert(&real_name, variable);
+        self.env.insert(
+            &real_name,
+            BoundPointer::new(BindingKind::Mutable, variable),
+        );
         Ok(real_name)
     }
 
@@ -168,11 +172,11 @@ impl<'a> Builder<'a> {
         &mut self,
         name: &str,
         val: values::BasicValueEnum,
-        _kind: BindingKind,
+        kind: BindingKind,
     ) -> Result<values::BasicValueEnum, Error> {
         let llvm_type = self.type_of(val);
         let variable = self.inst_builder.build_alloca(llvm_type, name);
-        self.env.insert(name, variable);
+        self.env.insert(name, BoundPointer::new(kind, variable));
         self.inst_builder.build_store(variable, val);
         Ok(val)
     }
@@ -186,13 +190,18 @@ impl<'a> Builder<'a> {
             .env
             .get(name)
             .ok_or(TranslationError::UndeclaredVariable)?;
-        self.inst_builder.build_store(var, val);
+
+        if var.kind() != BindingKind::Mutable {
+            return Err(TranslationError::ImmutableAssign.into());
+        }
+
+        self.inst_builder.build_store(var.ptr_value(), val);
         Ok(val)
     }
 
     pub fn get_var(&mut self, name: &str) -> Result<Option<values::BasicValueEnum>, Error> {
         self.env.get(name).map_or(Ok(None), |var| {
-            let loaded = self.inst_builder.build_load(var, "load_var");
+            let loaded = self.inst_builder.build_load(var.ptr_value(), "load_var");
             Ok(Some(loaded))
         })
     }
@@ -243,11 +252,11 @@ impl<'a> Builder<'a> {
         self.enter_scope(scope);
     }
 
-    pub fn enter_scope(&mut self, sc: Env<values::PointerValue>) {
+    pub fn enter_scope(&mut self, sc: Env<BoundPointer>) {
         self.env.push(sc);
     }
 
-    pub fn exit_scope(&mut self) -> Result<Env<values::PointerValue>, Error> {
+    pub fn exit_scope(&mut self) -> Result<Env<BoundPointer>, Error> {
         self.env.pop()
     }
 
