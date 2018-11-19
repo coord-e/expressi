@@ -45,7 +45,7 @@ impl<'a> EIRTranslator<'a> {
             ir::Value::Assign(lhs, rhs) => {
                 let new_value = self.translate_expr(*rhs)?.expect_value()?;
                 let name = match *lhs {
-                    ir::Value::Variable(name) => name,
+                    ir::Value::Typed(_, box ir::Value::Variable(name)) => name,
                     _ => panic!("Non-variable identifier"),
                 };
                 self.builder.assign_var(&name, new_value)?;
