@@ -2,6 +2,7 @@ use error::TranslationError;
 use expression::Operator;
 use ir::BindingKind;
 use scope::{Env, Scope, ScopedEnv};
+use translator::eir_translator::BoundPointer;
 use type_::type_::EnumTypeData;
 use type_::{TypeID, TypeStore};
 
@@ -28,26 +29,6 @@ pub struct Block {
 impl Block {
     pub fn cl_ebb(&self) -> &basic_block::BasicBlock {
         &self.ebb
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct BoundPointer {
-    kind: BindingKind,
-    ptr: values::PointerValue,
-}
-
-impl BoundPointer {
-    fn new(kind: BindingKind, ptr: values::PointerValue) -> Self {
-        Self { kind, ptr }
-    }
-
-    fn ptr_value(&self) -> values::PointerValue {
-        self.ptr
-    }
-
-    fn kind(&self) -> BindingKind {
-        self.kind
     }
 }
 
