@@ -152,12 +152,12 @@ impl<'a> Builder<'a> {
         unique: bool,
     ) -> Result<String, Error> {
         let real_name = if unique {
-            self.scope_stack.unique_name(name)
+            self.env.unique_name(name)
         } else {
             name.to_string()
         };
         let variable = self.inst_builder.build_alloca(t, &real_name);
-        self.env.insert(real_name, variable);
+        self.env.insert(&real_name, variable);
         Ok(real_name)
     }
 
@@ -194,32 +194,32 @@ impl<'a> Builder<'a> {
         let from_type = self.type_of(v);
         if from_type == to_type {
             return Err(TranslationError::InvalidCast {
-                from: from_type,
-                to: to_type,
+                from: format!("{:?}", from_type),
+                to: format!("{:?}", to_type),
             }.into());
         }
 
-        let number_type = types::IntType::i64_type();
-        let bool_type = types::IntType::bool_type();
+        let number_type: types::BasicTypeEnum = types::IntType::i64_type().into();
+        let bool_type: types::BasicTypeEnum = types::IntType::bool_type().into();
 
         // TODO: more elegant way to match types
         if from_type == number_type {
             if to_type == bool_type {
                 let zero = self.number_constant(0)?;
-                return self.cmp(CondCode::NotEqual, v, zero);
+                return Ok(self.cmp(CondCode::NotEqual, v.into_int_value(), zero.into_int_value()).into());
             }
         } else if from_type == bool_type {
             if to_type == number_type {
-                return self.inst_builder.build_int_z_extend(
+                return Ok(self.inst_builder.build_int_z_extend(
                         v.into_int_value(),
                         to_type.into_int_type(),
                         "b2i",
-                );
+                ).into());
             }
         }
         Err(TranslationError::InvalidCast {
-            from: from_type,
-            to: to_type,
+            from: format!("{:?}", from_type),
+            to: format!("{:?}", to_type),
         }.into())
     }
 
@@ -274,8 +274,8 @@ impl<'a> Builder<'a> {
         then_block: &Block,
         else_block: &Block,
     ) -> Result<(), Error> {
-        let bool_type = types::IntType::bool_type;
-        if self.type_of(condition) != bool_type {
+        let bool_type = types::IntType::bool_type();
+        if self.type_of(condition) != bool_type.into() {
             return Err(TranslationError::InvalidType.into());
         }
         self.inst_builder.build_conditional_branch(
@@ -303,15 +303,14 @@ impl<'a> Builder<'a> {
 
     pub fn ret_int(&mut self, v: values::BasicValueEnum) -> Result<(), Error> {
         // TODO: Generic return
-        let number_type = types::IntType::i64_type;
-        let return_value = if self.type_of(v) != number_type {
+        let number_type: types::BasicTypeEnum = types::IntType::i64_type().into();
+        let return_value: values::BasicValueEnum = if self.type_of(v) != number_type {
             self.cast_to(v, number_type)?
         } else {
             v
         };
         // Emit the return instruction.
-        let cl = return_value.into_int_value();
-        self.inst_builder.build_return(Some(&cl));
+        self.inst_builder.build_return(Some(&return_value));
         Ok(())
     }
 }
