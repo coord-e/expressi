@@ -8,6 +8,10 @@ pub struct Printer<'a> {
 }
 
 impl<'a> Printer<'a> {
+    pub fn new(type_store: &'a mut TypeStore) -> Self {
+        Self { type_store }
+    }
+
     pub fn print(&self, v: &Value, f: &mut fmt::Formatter) -> fmt::Result {
         match v {
             Value::Constant(c) => match c {
