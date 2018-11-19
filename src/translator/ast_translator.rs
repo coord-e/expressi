@@ -1,8 +1,6 @@
 use expression::Expression;
 use ir::{Constant, Value};
-use value::manager::PrimitiveKind;
-use value::ValueManagerRef;
-use value::TypeStore;
+use value::{PrimitiveKind, TypeStore};
 
 use failure::Error;
 

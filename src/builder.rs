@@ -1,9 +1,8 @@
 use error::TranslationError;
 use expression::Operator;
 use scope::{Scope, ScopedEnv, Env};
-use value::manager::PrimitiveKind;
 use value::type_::EnumTypeData;
-use value::{TypeID, TypeStore, ValueData, ValueManager, ValueManagerRef, ValueStore};
+use value::{TypeID, TypeStore, PrimitiveKind};
 use expression::Expression;
 
 use failure::Error;

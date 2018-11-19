@@ -5,7 +5,7 @@ use error::TranslationError;
 use ir;
 use scope::Scope;
 use value::type_::{EnumTypeData, TypeID};
-use value::{Atom, ValueData, ValueID};
+use value::Atom;
 
 use failure::Error;
 
