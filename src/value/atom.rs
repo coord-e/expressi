@@ -13,7 +13,7 @@ pub enum Atom {
 impl Atom {
     pub fn expect_value(self) -> Result<BasicValueEnum, Error> {
         match self {
-            Atom::Value(v) => Ok(v),
+            Atom::LLVMValue(v) => Ok(v),
             _ => return Err(TranslationError::ValueExpected.into()),
         }
     }
@@ -28,7 +28,7 @@ impl Atom {
 
 impl From<BasicValueEnum> for Atom {
     fn from(v: BasicValueEnum) -> Self {
-        Atom::Value(v)
+        Atom::LLVMValue(v)
     }
 }
 
