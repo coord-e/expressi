@@ -142,8 +142,8 @@ impl<'a> Builder<'a> {
 
     pub fn index(
         &mut self,
-        lhs: values::BasicValueEnum,
-        rhs: values::BasicValueEnum,
+        _lhs: values::BasicValueEnum,
+        _rhs: values::BasicValueEnum,
     ) -> values::IntValue {
         unimplemented!()
     }
@@ -168,7 +168,7 @@ impl<'a> Builder<'a> {
         &mut self,
         name: &str,
         val: values::BasicValueEnum,
-        kind: BindingKind,
+        _kind: BindingKind,
     ) -> Result<values::BasicValueEnum, Error> {
         let llvm_type = self.type_of(val);
         let variable = self.inst_builder.build_alloca(llvm_type, name);
@@ -253,26 +253,26 @@ impl<'a> Builder<'a> {
 
     pub fn array_alloc(
         &mut self,
-        t: types::BasicTypeEnum,
-        size: u32,
+        _t: types::BasicTypeEnum,
+        _size: u32,
     ) -> Result<values::PointerValue, Error> {
         unimplemented!()
     }
 
     pub fn store(
         &mut self,
-        v: values::BasicValueEnum,
-        addr: values::PointerValue,
-        offset: u32,
+        _v: values::BasicValueEnum,
+        _addr: values::PointerValue,
+        _offset: u32,
     ) -> Result<(), Error> {
         unimplemented!()
     }
 
     pub fn load(
         &mut self,
-        t: TypeID,
-        addr: values::PointerValue,
-        offset: u32,
+        _t: TypeID,
+        _addr: values::PointerValue,
+        _offset: u32,
     ) -> Result<values::BasicValueEnum, Error> {
         unimplemented!()
     }

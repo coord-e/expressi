@@ -33,8 +33,8 @@ impl<'a> ASTTranslator<'a> {
                 let body = self.translate_expr(*body)?;
                 Value::Function(ident, Box::new(body))
             }
-            Expression::Array(expr) => unimplemented!(),
-            Expression::Type(expr) => unimplemented!(),
+            Expression::Array(_) => unimplemented!(),
+            Expression::Type(_) => unimplemented!(),
             Expression::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?;
                 let rhs = self.translate_expr(*rhs)?;
@@ -59,9 +59,9 @@ impl<'a> ASTTranslator<'a> {
                 let lhs_value = self.translate_expr(*lhs)?;
                 Value::Assign(Box::new(lhs_value), Box::new(rhs_value))
             }
-            Expression::TypeIdentifier(id) => unimplemented!(),
+            Expression::TypeIdentifier(_) => unimplemented!(),
             Expression::Identifier(name) => Value::Variable(name),
-            Expression::Cast(lhs, rhs) => unimplemented!(),
+            Expression::Cast(_lhs, _rhs) => unimplemented!(),
             Expression::Scope(expr) => {
                 let content = self.translate_expr(*expr)?;
                 Value::Scope(Box::new(content))
