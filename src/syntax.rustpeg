@@ -1,6 +1,6 @@
 use expression::Expression;
 use expression::Operator;
-use translator::eir_translator::builder::BindingKind;
+use ir::BindingKind;
 
 #[pub]
 expression -> Expression

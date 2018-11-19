@@ -4,18 +4,13 @@ use expression::Operator;
 use scope::{Env, Scope, ScopedEnv};
 use type_::type_::EnumTypeData;
 use type_::{PrimitiveKind, TypeID, TypeStore};
+use ir::BindingKind;
 
 use failure::Error;
 
 use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPredicate};
 
 use std::rc::Rc;
-
-#[derive(PartialEq, Debug, Clone, Eq)]
-pub enum BindingKind {
-    Mutable,
-    Immutable,
-}
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum CondCode {

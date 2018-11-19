@@ -1,9 +1,14 @@
-use translator::eir_translator::builder::BindingKind;
 use expression::Operator;
 use transform::Transform;
 use type_::TypeID;
 
 use failure::Error;
+
+#[derive(PartialEq, Debug, Clone, Eq)]
+pub enum BindingKind {
+    Mutable,
+    Immutable,
+}
 
 #[derive(Debug, Clone)]
 pub enum Constant {
