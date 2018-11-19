@@ -8,7 +8,7 @@ pub struct Printer<'a> {
 }
 
 impl<'a> Printer<'a> {
-    pub fn new(type_store: &'a mut TypeStore) -> Self {
+    pub fn new(type_store: &'a TypeStore) -> Self {
         Self { type_store }
     }
 
