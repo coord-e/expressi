@@ -2,6 +2,7 @@ use error::TranslationError;
 
 use failure::Error;
 use inkwell::types::{BasicTypeEnum, IntType};
+use value::PrimitiveKind;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -89,14 +90,32 @@ impl fmt::Display for TypeData {
 }
 
 pub struct TypeStore {
-    data: HashMap<TypeID, TypeData>
+    data: HashMap<TypeID, TypeData>,
+    primitives: HashMap<PrimitiveKind, TypeID>
 }
 
 impl TypeStore {
     pub fn new() -> Self {
-        Self {
-            data: HashMap::new()
+        let mut inst = Self {
+            data: HashMap::new(),
+            primitives: HashMap::new()
         }
+
+        let number_ty = manager.type_store.new_type(TypeData::Number);
+        let boolean_ty = manager.type_store.new_type(TypeData::Boolean);
+        let empty_ty = manager.type_store.new_type(TypeData::Empty);
+
+        inst
+            .primitives
+            .insert(PrimitiveKind::Number, number_ty);
+        inst
+            .primitives
+            .insert(PrimitiveKind::Boolean, boolean_ty);
+        inst
+            .primitives
+            .insert(PrimitiveKind::Empty, empty_ty);
+
+        inst
     }
 
     pub fn new_function(&mut self, param_type: TypeID, ret_type: TypeID) -> TypeID {
@@ -123,5 +142,9 @@ impl TypeStore {
 
     pub fn get_mut(&mut self, id: TypeID) -> Option<&mut TypeData> {
         self.data.get_mut(&id)
+    }
+
+    pub fn primitive(&self, kind: PrimitiveKind) -> TypeID {
+        self.primitives.get(&kind).unwrap().clone()
     }
 }

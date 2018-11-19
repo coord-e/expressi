@@ -65,8 +65,8 @@ impl TypeInfer {
             return Ok(new_inst);
         }
 
-        let number_type = self.type_store.primitive_type(PrimitiveKind::Number);
-        let boolean_type = self.type_store.primitive_type(PrimitiveKind::Boolean);
+        let number_type = self.type_store.primitive(PrimitiveKind::Number);
+        let boolean_type = self.type_store.primitive(PrimitiveKind::Boolean);
         Ok(match op {
             Operator::Index => unimplemented!(),
             Operator::Lt
@@ -203,7 +203,7 @@ impl Transform for TypeInfer {
                 let then_ty = Self::type_of(&then_)?;
                 let else_ty = Self::type_of(&else_)?;
 
-                let boolean_type = self.type_store.primitive_type(PrimitiveKind::Boolean);
+                let boolean_type = self.type_store.primitive(PrimitiveKind::Boolean);
 
                 self.check_type(cond_ty, boolean_type)?;
                 self.check_type(then_ty, else_ty)?;
