@@ -78,7 +78,7 @@ impl<'a> EIRTranslator<'a> {
                 let then_return = self.translate_expr(*then_expr)?.expect_value()?;
 
                 self.builder.switch_to_block(&initial_block);
-                let then_type = self.builder.type_of(then_return)?;
+                let then_type = self.builder.type_of(then_return);
                 let var_name = self.builder.declare_mut_var("__cond", then_type, true)?;
                 self.builder
                     .brz(condition_value, &then_block, &else_block)?;
@@ -90,7 +90,7 @@ impl<'a> EIRTranslator<'a> {
                 // Start writing 'else' block
                 self.builder.switch_to_block(&else_block);
                 let else_return = self.translate_expr(*else_expr)?.expect_value()?;
-                let else_type = self.builder.type_of(else_return)?;
+                let else_type = self.builder.type_of(else_return);
                 if then_type != else_type {
                     panic!("Using different type value in if-else")
                 }
