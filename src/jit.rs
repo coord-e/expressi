@@ -77,17 +77,18 @@ impl JIT {
 
         self.builder.position_at_end(&basic_block);
 
-        let manager = Rc::new(RefCell::new(ValueManager::new()));
+        let mut type_store = TypeStore::new();
 
-        let mut a_trans = ASTTranslator {
-            manager: manager.clone(),
+        let eir = {
+            let mut a_trans = ASTTranslator {
+                type_store: &mut type_store,
+            };
+            a_trans.translate_expr(expr)?
         };
-        let eir = a_trans.translate_expr(expr)?;
         if self.print_eir {
             eprintln!("EIR:\n{:#?}", eir);
         }
 
-        let mut type_store = TypeStore::new();
         let transformed = {
             let mut ti = TypeInfer::new(&mut type_store);
             eir.apply(ti)?

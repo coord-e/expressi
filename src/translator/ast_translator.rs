@@ -2,21 +2,21 @@ use expression::Expression;
 use ir::{Constant, Value};
 use value::manager::PrimitiveKind;
 use value::ValueManagerRef;
+use value::TypeStore;
 
 use failure::Error;
 
-pub struct ASTTranslator {
-    pub manager: ValueManagerRef,
+pub struct ASTTranslator<'a> {
+    pub type_store: &'a mut TypeStore
 }
 
-impl ASTTranslator {
+impl<'a> ASTTranslator<'a> {
     pub fn translate_expr(&mut self, expr: Expression) -> Result<Value, Error> {
         Ok(match expr {
             Expression::Number(number) => {
                 let number_type = self
-                    .manager
-                    .try_borrow()?
-                    .primitive_type(PrimitiveKind::Number);
+                    .type_store
+                    .primitive(PrimitiveKind::Number);
                 Value::Typed(
                     number_type,
                     Box::new(Value::Constant(Constant::Number(number))),
@@ -24,9 +24,8 @@ impl ASTTranslator {
             }
             Expression::Boolean(value) => {
                 let boolean_type = self
-                    .manager
-                    .try_borrow()?
-                    .primitive_type(PrimitiveKind::Boolean);
+                    .type_store
+                    .primitive(PrimitiveKind::Boolean);
                 Value::Typed(
                     boolean_type,
                     Box::new(Value::Constant(Constant::Boolean(value))),
@@ -34,9 +33,8 @@ impl ASTTranslator {
             }
             Expression::Empty => {
                 let empty_type = self
-                    .manager
-                    .try_borrow()?
-                    .primitive_type(PrimitiveKind::Empty);
+                    .type_store
+                    .primitive(PrimitiveKind::Empty);
                 Value::Typed(empty_type, Box::new(Value::Constant(Constant::Empty)))
             }
             Expression::Function(ident, body) => {
