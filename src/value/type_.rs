@@ -13,13 +13,16 @@ pub struct TypeID(usize);
 
 pub type EnumTypeData = Vec<(String, Vec<TypeID>)>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TypeData {
     Number,
     Boolean,
     Array(NonNull<TypeData>, usize),
+    Function(TypeID, TypeID),
     Empty,
     Enum(EnumTypeData),
+    Variable(Option<TypeID>),
+    PolyVariable(Vec<TypeID>),
 }
 
 unsafe impl Send for TypeID {}
@@ -58,8 +61,12 @@ impl TypeData {
             TypeData::Number => 8,
             TypeData::Boolean => 1,
             TypeData::Array(_, _) => unimplemented!(),
+            // TODO: Architecture-independent pointer size
+            TypeData::Function(_, _) => 8,
             TypeData::Empty => 0,
             TypeData::Enum(_) => unimplemented!(),
+            TypeData::Variable(_) => unimplemented!(),
+            TypeData::PolyVariable(_) => unimplemented!(),
         }
     }
 }
@@ -70,8 +77,11 @@ impl fmt::Display for TypeData {
             TypeData::Number => "Number".to_string(),
             TypeData::Boolean => "Boolean".to_string(),
             TypeData::Array(_, _) => unimplemented!(),
+            TypeData::Function(param, ret) => format!("{:?} -> {:?}", param, ret),
             TypeData::Empty => "Empty".to_string(),
             TypeData::Enum(data) => format!("{:?}", data),
+            TypeData::Variable(instance) => format!("var({:?})", instance),
+            TypeData::PolyVariable(types) => format!("pvar({:?})", types),
         };
 
         write!(f, "{}", rep)
@@ -79,14 +89,18 @@ impl fmt::Display for TypeData {
 }
 
 pub struct TypeStore {
-    data: HashMap<TypeID, TypeData>,
+    data: HashMap<TypeID, TypeData>
 }
 
 impl TypeStore {
     pub fn new() -> Self {
         Self {
-            data: HashMap::new(),
+            data: HashMap::new()
         }
+    }
+
+    pub fn new_function_type(&mut self, param_type: TypeID, ret_type: TypeID) -> TypeID {
+        self.new_type(TypeData::Function(param_type, ret_type))
     }
 
     pub fn new_type(&mut self, data: TypeData) -> TypeID {
@@ -95,11 +109,19 @@ impl TypeStore {
         id
     }
 
+    pub fn new_variable(&mut self) -> TypeID {
+        self.new_type(TypeData::Variable(None))
+    }
+
     pub fn new_enum(&mut self, data: EnumTypeData) -> TypeID {
         self.new_type(TypeData::Enum(data))
     }
 
     pub fn get(&self, id: TypeID) -> Option<&TypeData> {
         self.data.get(&id)
+    }
+
+    pub fn get_mut(&mut self, id: TypeID) -> Option<&mut TypeData> {
+        self.data.get_mut(&id)
     }
 }

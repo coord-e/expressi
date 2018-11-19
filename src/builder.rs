@@ -4,6 +4,7 @@ use scope::{BindingKind, Scope, ScopeStack};
 use value::manager::PrimitiveKind;
 use value::type_::EnumTypeData;
 use value::{TypeID, TypeStore, ValueData, ValueID, ValueManager, ValueManagerRef, ValueStore};
+use expression::Expression;
 
 use failure::Error;
 

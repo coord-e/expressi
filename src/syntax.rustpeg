@@ -40,16 +40,20 @@ cast -> Expression
 index -> Expression
   = l:atom _ "[" r:expression "]" { Expression::BinOp(Operator::Index, Box::new(l), Box::new(r)) }
 
+apply -> Expression
+  = l:atom _ "(" r:expression ")" { Expression::Apply(Box::new(l), Box::new(r)) }
+
 bind -> Expression
   = "let" _ kind:("mut" ?) _ l:identifier _ "=" r:assign { Expression::Bind(if kind.is_some() { BindingKind::Mutable } else { BindingKind::Immutable }, l.to_string(), Box::new(r)) }
 
 spaced_atom -> Expression
-  = _ v:(bind / cast / index / if_else / atom) _ { v }
+  = _ v:(bind / cast / index / apply / if_else / atom) _ { v }
 
 atom -> Expression
   = number
   / boolean
   / array
+  / function
   / value_identifier
   / type_
   / "{" v:expression "}" { Expression::Scope(Box::new(v)) }
@@ -69,6 +73,9 @@ boolean -> Expression
 
 array -> Expression
   = "[" e:(expression ** ',') "]" { Expression::Array(e.into_iter().map(|v| Box::new(v)).collect()) }
+
+function -> Expression
+  = param:identifier _ "->" e:expression { Expression::Function(param.to_string(), Box::new(e)) }
 
 type_ -> Expression
   = "<" e:(type_elem  ++ "|") ">" { Expression::Type(e) }

@@ -23,6 +23,8 @@ impl<'a> EIRTranslator<'a> {
                 ir::Constant::Boolean(tf) => self.builder.boolean_constant(tf)?.into(),
                 ir::Constant::Empty => self.builder.empty_constant()?.into(),
             },
+            ir::Value::Function(_, _) => unimplemented!(),
+            ir::Value::Apply(_, _) => unimplemented!(),
             ir::Value::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?.expect_value()?;
                 let rhs = self.translate_expr(*rhs)?.expect_value()?;
@@ -43,7 +45,7 @@ impl<'a> EIRTranslator<'a> {
             ir::Value::Assign(lhs, rhs) => {
                 let new_value = self.translate_expr(*rhs)?.expect_value()?;
                 let name = match *lhs {
-                    ir::Value::Variable(name) => name,
+                    ir::Value::Typed(_, box ir::Value::Variable(name)) => name,
                     _ => panic!("Non-variable identifier"),
                 };
                 self.builder.assign_var(&name, new_value)?;

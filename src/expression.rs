@@ -1,7 +1,7 @@
 use scope::BindingKind;
 use std::str::FromStr;
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Operator {
     Add,
     Sub,
@@ -50,6 +50,7 @@ pub enum Expression {
     Number(i64),
     Boolean(bool),
     Array(Vec<Box<Expression>>),
+    Function(String, Box<Expression>),
     Identifier(String),
     TypeIdentifier(String),
     Empty,
@@ -57,6 +58,7 @@ pub enum Expression {
     Bind(BindingKind, String, Box<Expression>),
     Follow(Box<Expression>, Box<Expression>),
     BinOp(Operator, Box<Expression>, Box<Expression>),
+    Apply(Box<Expression>, Box<Expression>),
     IfElse(Box<Expression>, Box<Expression>, Box<Expression>),
     Cast(Box<Expression>, Box<Expression>),
     Scope(Box<Expression>),
