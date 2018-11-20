@@ -35,22 +35,22 @@ if_else -> Expression
   = "if" cond:expression then_expr:expression else_expr:("else" v:spaced_atom {v})? { Expression::IfElse(Box::new(cond), Box::new(then_expr), Box::new(else_expr.unwrap_or(Expression::Empty))) }
 
 cast -> Expression
-  = l:index _ r:cast_right * { r.iter().fold(l, |e, r| Expression::Cast(box e, box r.clone())) }
+  = l:index r:cast_right * { r.iter().fold(l, |e, r| Expression::Cast(box e, box r.clone())) }
 
 cast_right -> Expression
-  = "as" _ r:type_identifier { r }
+  = _ "as" _ r:type_identifier { r }
 
 index -> Expression
-  = l:apply _ r:index_right * { r.iter().fold(l, |e, r| Expression::BinOp(Operator::Index, box e, box r.clone())) }
+  = l:apply r:index_right * { r.iter().fold(l, |e, r| Expression::BinOp(Operator::Index, box e, box r.clone())) }
 
 index_right -> Expression
-  = "[" r:expression "]" { r }
+  = _ "[" r:expression "]" { r }
 
 apply -> Expression
-  = l:spaced_atom _ r:apply_right * { r.iter().fold(l, |e, r| Expression::Apply(box e, box r.clone())) }
+  = l:spaced_atom r:apply_right * { r.iter().fold(l, |e, r| Expression::Apply(box e, box r.clone())) }
 
 apply_right -> Expression
-  = "(" r:expression ")" { r }
+  = _ "(" r:expression ")" { r }
 
 bind -> Expression
   = "let" _ kind:("mut" ?) _ l:identifier _ "=" r:assign { Expression::Bind(if kind.is_some() { BindingKind::Mutable } else { BindingKind::Immutable }, l.to_string(), Box::new(r)) }
