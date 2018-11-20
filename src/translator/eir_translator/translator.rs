@@ -1,4 +1,4 @@
-use error::{TranslationError, InternalError};
+use error::{InternalError, TranslationError};
 use ir;
 use translator::eir_translator::{Atom, Builder};
 
@@ -20,7 +20,15 @@ impl<'a> EIRTranslator<'a> {
                         ir::Constant::Boolean(tf) => self.builder.boolean_constant(tf)?.into(),
                         ir::Constant::Empty => self.builder.empty_constant()?.into(),
                     },
-                    ir::Value::Function(_, _) => unimplemented!(),
+                    ir::Value::Function(param, box body) => {
+                        let previous_block =
+                            self.builder.inst_builder().get_insert_block().unwrap();
+                        let function = self.builder.function_constant(ty, param)?;
+                        let ret = self.translate_expr(body)?.expect_value()?;
+                        self.builder.inst_builder().build_return(Some(&ret));
+                        self.builder.inst_builder().position_at_end(&previous_block);
+                        function.into()
+                    }
                     ir::Value::Apply(_, _) => unimplemented!(),
                     ir::Value::BinOp(op, lhs, rhs) => {
                         let lhs = self.translate_expr(*lhs)?.expect_value()?;
@@ -99,10 +107,10 @@ impl<'a> EIRTranslator<'a> {
                         self.builder.switch_to_block(&merge_block);
                         self.builder.get_var(&var_name)?.unwrap().into()
                     }
-                    ir::Value::Typed(..) => bail!(InternalError::DoubleTyped)
+                    ir::Value::Typed(..) => bail!(InternalError::DoubleTyped),
                 }
             }
-            _ => bail!(TranslationError::NotTyped)
+            _ => bail!(TranslationError::NotTyped),
         })
     }
 }

@@ -49,7 +49,10 @@ pub enum TranslationError {
     },
 
     #[fail(display = "Attempt to translate untyped value")]
-    NotTyped
+    NotTyped,
+
+    #[fail(display = "Attempt to translate a value with unresolved type variable")]
+    UnresolvedType,
 }
 
 #[derive(Debug, Fail)]
