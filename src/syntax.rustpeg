@@ -31,9 +31,6 @@ bin_op -> Expression
      x "/" y { Expression::BinOp(Operator::Div, Box::new(x), Box::new(y)) }
 }
 
-if_else -> Expression
-  = "if" cond:expression then_expr:expression else_expr:("else" v:spaced_atom {v})? { Expression::IfElse(Box::new(cond), Box::new(then_expr), Box::new(else_expr.unwrap_or(Expression::Empty))) }
-
 cast -> Expression
   = l:index r:cast_right * { r.iter().fold(l, |e, r| Expression::Cast(box e, box r.clone())) }
 
@@ -51,6 +48,9 @@ apply -> Expression
 
 apply_right -> Expression
   = _ "(" r:expression ")" { r }
+
+if_else -> Expression
+  = "if" cond:expression then_expr:expression else_expr:("else" v:spaced_atom {v})? { Expression::IfElse(Box::new(cond), Box::new(then_expr), Box::new(else_expr.unwrap_or(Expression::Empty))) }
 
 bind -> Expression
   = "let" _ kind:("mut" ?) _ l:identifier _ "=" r:assign { Expression::Bind(if kind.is_some() { BindingKind::Mutable } else { BindingKind::Immutable }, l.to_string(), Box::new(r)) }
