@@ -18,7 +18,7 @@ mod tests {
     }
 
     mod literal {
-        use expression::{Expression, Operator};
+        use expression::Expression;
         use parser::parse;
 
         #[test]
@@ -98,6 +98,68 @@ mod tests {
             test_binop!("0>=0", Operator::Ge);
             test_binop!("0==0", Operator::Eq);
             test_binop!("0!=0", Operator::Ne);
+        }
+
+        #[test]
+        fn operator_index() {
+            test_binop!("0[0]", Operator::Index);
+        }
+
+        #[test]
+        fn operator_index_spaced() {
+            test_binop!("0 [0]", Operator::Index);
+        }
+
+        #[test]
+        fn operator_index_multi() {
+            assert_eq!(
+                parse("a[0][0]"),
+                Ok(Expression::BinOp(
+                    Operator::Index,
+                    Box::new(Expression::BinOp(
+                        Operator::Index,
+                        Box::new(Expression::Identifier("a".to_owned())),
+                        Box::new(Expression::Number(0))
+                    )),
+                    Box::new(Expression::Number(0))
+                ))
+            )
+        }
+
+        #[test]
+        fn apply() {
+            assert_eq!(
+                parse("a(0)"),
+                Ok(Expression::Apply(
+                    Box::new(Expression::Identifier("a".to_owned())),
+                    Box::new(Expression::Number(0))
+                ))
+            )
+        }
+
+        #[test]
+        fn apply_spaced() {
+            assert_eq!(
+                parse("a (0)"),
+                Ok(Expression::Apply(
+                    Box::new(Expression::Identifier("a".to_owned())),
+                    Box::new(Expression::Number(0))
+                ))
+            )
+        }
+
+        #[test]
+        fn apply_multi() {
+            assert_eq!(
+                parse("a(0)(0)"),
+                Ok(Expression::Apply(
+                    Box::new(Expression::Apply(
+                        Box::new(Expression::Identifier("a".to_owned())),
+                        Box::new(Expression::Number(0))
+                    )),
+                    Box::new(Expression::Number(0))
+                ))
+            )
         }
 
         #[test]
