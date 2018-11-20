@@ -1,9 +1,9 @@
-use error::TranslationError;
+use error::{TranslationError, InternalError};
 use expression::Operator;
 use ir::BindingKind;
 use scope::{Env, Scope, ScopedEnv};
 use translator::eir_translator::BoundPointer;
-use type_::type_::EnumTypeData;
+use type_::type_::{EnumTypeData, TypeData};
 use type_::{TypeID, TypeStore};
 
 use failure::Error;
@@ -70,6 +70,32 @@ impl<'a> Builder<'a> {
             values::BasicValueEnum::StructValue(v) => v.get_type().into(),
             values::BasicValueEnum::VectorValue(v) => v.get_type().into(),
         }
+    }
+
+    pub fn type_data(&self, ty: TypeID) -> Result<&TypeData, Error> {
+        match self.type_data(ty)? {
+            TypeData::Variable(opt_id) => {
+                match opt_id {
+                    Some(id) => self.f(id),
+                    None => Err(TranslationError::UnresolvedType.into())
+                }
+            }
+            data @ _ => Ok(data)
+        }
+    }
+
+    pub fn llvm_type(&self, ty: TypeID) -> Result<BasicTypeEnum, Error> {
+        Ok(match self.type_data(ty)? {
+            TypeData::Operator(OperatorKind::Number, _) => types::IntType::i64_type(),
+            TypeData::Operator(OperatorKind::Boolean, _) => types::IntType::bool_type(),
+            TypeData::Operator(OperatorKind::Empty, _) => types::VoidType::void_type().ptr_type(AddressSpace::Generic),
+            TypeData::Operator(OperatorKind::Function, types) => {
+                let param = self.llvm_type(types[0])?;
+                let ret = self.llvm_type(types[1])?;
+                ret.fn_type(&[param], false).into()
+            }
+            _ => unimplemented!()
+        })
     }
 
     pub fn number_constant(&mut self, v: i64) -> Result<values::BasicValueEnum, Error> {
