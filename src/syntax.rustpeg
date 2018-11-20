@@ -15,7 +15,7 @@ assign -> Expression
     / bin_op
 
 bin_op -> Expression
-  = #infix<spaced_atom> {
+  = #infix<cast> {
   #L x "|" y { Expression::BinOp(Operator::BitOr, Box::new(x), Box::new(y)) }
      x "^" y { Expression::BinOp(Operator::BitXor, Box::new(x), Box::new(y)) }
      x "&" y { Expression::BinOp(Operator::BitAnd, Box::new(x), Box::new(y)) }
@@ -35,19 +35,27 @@ if_else -> Expression
   = "if" cond:expression then_expr:expression else_expr:("else" v:spaced_atom {v})? { Expression::IfElse(Box::new(cond), Box::new(then_expr), Box::new(else_expr.unwrap_or(Expression::Empty))) }
 
 cast -> Expression
-  = l:atom _ "as" _ r:type_identifier { Expression::Cast(Box::new(l), Box::new(r)) }
+  = l:index _ "as" _ r:type_identifier { Expression::Cast(Box::new(l), Box::new(r)) }
+    / index
 
 index -> Expression
-  = l:atom _ "[" r:expression "]" { Expression::BinOp(Operator::Index, Box::new(l), Box::new(r)) }
+  = l:apply _ "[" r:expression "]" { Expression::BinOp(Operator::Index, Box::new(l), Box::new(r)) }
+    / apply
 
 apply -> Expression
-  = l:atom _ "(" r:expression ")" { Expression::Apply(Box::new(l), Box::new(r)) }
+  = l:spaced_atom _ r:apply_tail { r.iter().fold(l, |e, r| Expression::Apply(box e, box r.clone())) }
+
+apply_tail -> Vec<Expression>
+  = r:apply_com * { r }
+
+apply_com -> Expression
+  = "(" r:expression ")" { r }
 
 bind -> Expression
   = "let" _ kind:("mut" ?) _ l:identifier _ "=" r:assign { Expression::Bind(if kind.is_some() { BindingKind::Mutable } else { BindingKind::Immutable }, l.to_string(), Box::new(r)) }
 
 spaced_atom -> Expression
-  = _ v:(bind / cast / index / apply / if_else / atom) _ { v }
+  = _ v:(bind / if_else / atom) _ { v }
 
 atom -> Expression
   = number
