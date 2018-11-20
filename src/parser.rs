@@ -194,5 +194,19 @@ mod tests {
                 ))
             )
         }
+
+        #[test]
+        fn precedence_function_follow() {
+            assert_eq!(
+                parse("a -> a; 0"),
+                Ok(Expression::Follow(
+                    Box::new(Expression::Function(
+                        "a".to_string(),
+                        Box::new(Expression::Identifier("a".to_string()))
+                    )),
+                    Box::new(Expression::Number(0))
+                ))
+            )
+        }
     }
 }
