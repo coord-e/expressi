@@ -47,6 +47,9 @@ pub enum TranslationError {
         // TODO: Use better representation than string
         type_description: String,
     },
+
+    #[fail(display = "Attempt to translate untyped value")]
+    NotTyped
 }
 
 #[derive(Debug, Fail)]
@@ -56,6 +59,9 @@ pub enum InternalError {
 
     #[fail(display = "Use of invalid type ID")]
     InvalidTypeID,
+
+    #[fail(display = "Typed Typed Value detected")]
+    DoubleTyped,
 }
 
 #[derive(Debug, Fail)]
