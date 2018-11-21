@@ -12,6 +12,7 @@ use inkwell::types::{AnyType, BasicType};
 use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPredicate};
 
 use std::rc::Rc;
+use std::mem;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum CondCode {
@@ -136,8 +137,8 @@ impl<'a> Builder<'a> {
             .append_basic_block(&function, "entry");
         self.inst_builder.position_at_end(&basic_block);
 
-        let fn_any: values::AnyValueEnum = function.into();
-        Ok(fn_any.into_pointer_value().into())
+        let ptr: values::PointerValue = unsafe { mem::transmute(function) };
+        Ok(ptr.into())
     }
 
     pub fn register_type(&mut self, data: EnumTypeData) -> Result<TypeID, Error> {
