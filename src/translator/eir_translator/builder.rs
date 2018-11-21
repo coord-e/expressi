@@ -124,7 +124,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn function_constant(
-        &self,
+        &mut self,
         ty: TypeID,
         param_name: String,
     ) -> Result<values::BasicValueEnum, Error> {
@@ -136,6 +136,9 @@ impl<'a> Builder<'a> {
             .get_context()
             .append_basic_block(&function, "entry");
         self.inst_builder.position_at_end(&basic_block);
+        let arg_ptr = self.inst_builder.build_alloca(fn_type.get_param_types()[0], "");
+        self.inst_builder.build_store(arg_ptr, function.get_first_param().unwrap());
+        self.env.insert(&param_name, BoundPointer::new(BindingKind::Immutable, arg_ptr));
 
         let ptr: values::PointerValue = unsafe { mem::transmute(function) };
         Ok(ptr.into())
