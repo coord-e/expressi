@@ -11,8 +11,8 @@ use failure::Error;
 use inkwell::types::{AnyType, BasicType};
 use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPredicate};
 
-use std::rc::Rc;
 use std::mem;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum CondCode {
@@ -98,7 +98,9 @@ impl<'a> Builder<'a> {
             TypeData::Operator(OperatorKind::Function, types) => {
                 let param = self.llvm_type(types[0])?;
                 let ret = self.llvm_type(types[1])?;
-                ret.fn_type(&[param], false).ptr_type(AddressSpace::Global).into()
+                ret.fn_type(&[param], false)
+                    .ptr_type(AddressSpace::Generic)
+                    .into()
             }
             _ => unimplemented!(),
         })
@@ -128,7 +130,11 @@ impl<'a> Builder<'a> {
         ty: TypeID,
         param_name: String,
     ) -> Result<values::BasicValueEnum, Error> {
-        let fn_type = self.llvm_type(ty)?.into_pointer_type().get_element_type().into_function_type();
+        let fn_type = self
+            .llvm_type(ty)?
+            .into_pointer_type()
+            .get_element_type()
+            .into_function_type();
 
         let function = self.module.add_function("", fn_type, None);
         let basic_block = self
@@ -136,15 +142,25 @@ impl<'a> Builder<'a> {
             .get_context()
             .append_basic_block(&function, "entry");
         self.inst_builder.position_at_end(&basic_block);
-        let arg_ptr = self.inst_builder.build_alloca(fn_type.get_param_types()[0], "");
-        self.inst_builder.build_store(arg_ptr, function.get_first_param().unwrap());
-        self.env.insert(&param_name, BoundPointer::new(BindingKind::Immutable, arg_ptr));
+        let arg_ptr = self
+            .inst_builder
+            .build_alloca(fn_type.get_param_types()[0], "");
+        self.inst_builder
+            .build_store(arg_ptr, function.get_first_param().unwrap());
+        self.env.insert(
+            &param_name,
+            BoundPointer::new(BindingKind::Immutable, arg_ptr),
+        );
 
         let ptr: values::PointerValue = unsafe { mem::transmute(function) };
         Ok(ptr.into())
     }
 
-    pub fn call(&self, func: values::BasicValueEnum, arg: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
+    pub fn call(
+        &self,
+        func: values::BasicValueEnum,
+        arg: values::BasicValueEnum,
+    ) -> Result<values::BasicValueEnum, Error> {
         let func_ptr = func.into_pointer_value();
         let func_v: values::FunctionValue = unsafe { mem::transmute(func_ptr) };
         let call_inst = self.inst_builder.build_call(func_v, &[arg], "");
