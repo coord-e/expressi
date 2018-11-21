@@ -110,6 +110,12 @@ impl JIT {
         let evaluated_value = trans.translate_expr(transformed)?.expect_value()?;
         trans.builder.ret_int(evaluated_value)?;
 
+
+        if self.print_ir {
+            eprintln!("LLVM IR:");
+            module.print_to_stderr();
+        }
+
         if !function.verify(true) {
             eprintln!(""); // function.verify print results to stderr directory but it doesn't contain \n on the end
             return Err(LLVMError::FunctionVerificationError {
@@ -123,10 +129,6 @@ impl JIT {
             }.into());
         }
 
-        if self.print_ir {
-            eprintln!("LLVM IR:");
-            module.print_to_stderr();
-        }
 
         Ok(())
     }
