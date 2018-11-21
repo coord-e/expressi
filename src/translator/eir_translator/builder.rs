@@ -141,6 +141,13 @@ impl<'a> Builder<'a> {
         Ok(ptr.into())
     }
 
+    pub fn call(&self, func: values::BasicValueEnum, arg: values::BasicValueEnum) -> Result<values::BasicValueEnum, Error> {
+        let func_ptr = func.into_pointer_value();
+        let func_v: values::FunctionValue = unsafe { mem::transmute(func_ptr) };
+        let call_inst = self.inst_builder.build_call(func_v, &[arg], "");
+        Ok(call_inst.try_as_basic_value().left().unwrap().into())
+    }
+
     pub fn register_type(&mut self, data: EnumTypeData) -> Result<TypeID, Error> {
         Ok(self.type_store.new_enum(data))
     }

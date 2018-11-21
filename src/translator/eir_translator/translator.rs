@@ -29,7 +29,11 @@ impl<'a> EIRTranslator<'a> {
                         self.builder.inst_builder().position_at_end(&previous_block);
                         function.into()
                     }
-                    ir::Value::Apply(_, _) => unimplemented!(),
+                    ir::Value::Apply(box func, box arg) => {
+                        let func = self.translate_expr(func)?.expect_value()?;
+                        let arg = self.translate_expr(arg)?.expect_value()?;
+                        self.builder.call(func, arg)?.into()
+                    },
                     ir::Value::BinOp(op, lhs, rhs) => {
                         let lhs = self.translate_expr(*lhs)?.expect_value()?;
                         let rhs = self.translate_expr(*rhs)?.expect_value()?;
