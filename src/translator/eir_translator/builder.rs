@@ -97,10 +97,7 @@ impl<'a> Builder<'a> {
             TypeData::Operator(OperatorKind::Function, types) => {
                 let param = self.llvm_type(types[0])?;
                 let ret = self.llvm_type(types[1])?;
-                ret.fn_type(&[param], false)
-                    .as_any_type_enum()
-                    .into_pointer_type()
-                    .into()
+                ret.fn_type(&[param], false).ptr_type(AddressSpace::Global).into()
             }
             _ => unimplemented!(),
         })
@@ -130,7 +127,7 @@ impl<'a> Builder<'a> {
         ty: TypeID,
         param_name: String,
     ) -> Result<values::BasicValueEnum, Error> {
-        let fn_type = self.llvm_type(ty)?.as_any_type_enum().into_function_type();
+        let fn_type = self.llvm_type(ty)?.into_pointer_type().get_element_type().into_function_type();
 
         let function = self.module.add_function("", fn_type, None);
         let basic_block = self
