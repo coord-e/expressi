@@ -8,6 +8,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
+use expression::Operator;
 use ir;
 use transform::error::TypeInferError;
 use transform::Transform;
@@ -93,9 +94,32 @@ impl TypeInfer {
 
                 Ok((s1.compose(&s2), eir.with_type(t.clone())?))
             }
+            ir::Value::BinOp(op, box rhs, box lhs) => {
+                let (s1, lhs) = self.transform_with_env(&lhs, env)?;
+                let lhs_ty = lhs.type_().unwrap();
+                let (s2, rhs) = self.transform_with_env(&rhs, env)?;
+                let rhs_ty = rhs.type_().unwrap();
+                Ok(match op {
+                    Operator::Index => unimplemented!(),
+                    Operator::Lt
+                    | Operator::Gt
+                    | Operator::Le
+                    | Operator::Ge
+                    | Operator::Eq
+                    | Operator::Ne => {
+                        let sl = lhs_ty.mgu(&Type::Number)?;
+                        let sr = rhs_ty.mgu(&Type::Number)?;
+                        (s1.compose(&s2.compose(&sl.compose(&sr))), eir.with_type(Type::Boolean)?)
+                    }
+                    _ => {
+                        let sl = lhs_ty.mgu(&Type::Number)?;
+                        let sr = rhs_ty.mgu(&Type::Number)?;
+                        (s1.compose(&s2.compose(&sl.compose(&sr))), eir.with_type(Type::Number)?)
+                    }
+                })
+            }
             _ => unimplemented!()
             // Assign(Box<Value>, Box<Value>),
-            // BinOp(Operator, Box<Value>, Box<Value>),
             // IfElse(Box<Value>, Box<Value>, Box<Value>),
         }
     }
