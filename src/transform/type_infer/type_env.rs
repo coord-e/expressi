@@ -13,16 +13,14 @@ use transform::type_infer::subst::Subst;
 use transform::type_infer::traits::Types;
 use transform::type_infer::type_::{Type, TypeVarID};
 
-use scope::{Scope, ScopedEnv};
-
 use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
 
 #[derive(Clone, Debug)]
-pub struct TypeEnv(ScopedEnv<PolyType>);
+pub struct TypeEnv(HashMap<String, PolyType>);
 
 impl Deref for TypeEnv {
-    type Target = ScopedEnv<PolyType>;
+    type Target = HashMap<String, PolyType>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -38,43 +36,22 @@ impl Types for TypeEnv {
     /// The free type variables of a type environment is the union of the free type variables of
     /// each polytype in the environment.
     fn ftv(&self) -> HashSet<TypeVarID> {
-        self.data()
-            .values()
-            .cloned()
-            .cloned()
+        self.values()
+            .map(|x| x.clone())
             .collect::<Vec<PolyType>>()
             .ftv()
     }
 
     /// To apply a substitution, we just apply it to each polytype in the type environment.
     fn apply(&self, s: &Subst) -> TypeEnv {
-        let mut applied: Vec<String> = Vec::new();
-        TypeEnv(
-            self.0
-                .iter()
-                .rev()
-                .map(|env| {
-                    env.iter()
-                        .map(|(k, v)| {
-                            (
-                                k.clone(),
-                                if applied.contains(k) {
-                                    v.clone()
-                                } else {
-                                    applied.push(k.to_string());
-                                    v.apply(s)
-                                },
-                            )
-                        }).collect()
-                }).collect(),
-        )
+        TypeEnv(self.iter().map(|(k, v)| (k.clone(), v.apply(s))).collect())
     }
 }
 
 impl TypeEnv {
     /// Construct an empty type environment.
     pub fn new() -> TypeEnv {
-        TypeEnv(ScopedEnv::new())
+        TypeEnv(HashMap::new())
     }
 
     /// Generalize creates a polytype
