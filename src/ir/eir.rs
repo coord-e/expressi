@@ -1,6 +1,7 @@
+use error::InternalError;
 use expression::Operator;
+use transform::type_infer::Type;
 use transform::Transform;
-use type_::Type;
 
 use failure::Error;
 
@@ -61,6 +62,13 @@ impl Value {
         match self {
             Value::Typed(t, _) => Some(t),
             _ => None,
+        }
+    }
+
+    pub fn with_type(&self, ty: Type) -> Result<Value, Error> {
+        match self {
+            Value::Typed(..) => Err(InternalError::AlreadyTyped.into()),
+            _ => Ok(Value::Typed(ty, box self.clone())),
         }
     }
 }

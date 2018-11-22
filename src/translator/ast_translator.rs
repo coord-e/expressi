@@ -1,27 +1,22 @@
 use expression::Expression;
 use ir::{Constant, Value};
-use type_::Type;
+use transform::type_infer::Type;
 
 use failure::Error;
 
-pub struct ASTTranslator<'a> {
-}
+pub struct ASTTranslator {}
 
-impl<'a> ASTTranslator<'a> {
+impl ASTTranslator {
     pub fn translate_expr(&mut self, expr: Expression) -> Result<Value, Error> {
         Ok(match expr {
-            Expression::Number(number) => {
-                Value::Typed(
-                    Type::Number,
-                    Box::new(Value::Constant(Constant::Number(number))),
-                )
-            }
-            Expression::Boolean(value) => {
-                Value::Typed(
-                    Type::Boolean,
-                    Box::new(Value::Constant(Constant::Boolean(value))),
-                )
-            }
+            Expression::Number(number) => Value::Typed(
+                Type::Number,
+                Box::new(Value::Constant(Constant::Number(number))),
+            ),
+            Expression::Boolean(value) => Value::Typed(
+                Type::Boolean,
+                Box::new(Value::Constant(Constant::Boolean(value))),
+            ),
             Expression::Empty => {
                 Value::Typed(Type::Empty, Box::new(Value::Constant(Constant::Empty)))
             }

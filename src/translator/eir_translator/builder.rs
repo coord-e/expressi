@@ -1,13 +1,13 @@
-use error::{InternalError, TranslationError};
+use error::TranslationError;
 use expression::Operator;
 use ir::BindingKind;
 use scope::{Env, Scope, ScopedEnv};
+use transform::type_infer::Type;
 use translator::eir_translator::BoundPointer;
-use type_::Type;
 
 use failure::Error;
 
-use inkwell::types::{AnyType, BasicType};
+use inkwell::types::BasicType;
 use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPredicate};
 
 use std::mem;
@@ -40,10 +40,7 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(
-        inst_builder: &'a mut builder::Builder,
-        module: Rc<module::Module>,
-    ) -> Self {
+    pub fn new(inst_builder: &'a mut builder::Builder, module: Rc<module::Module>) -> Self {
         Builder {
             inst_builder,
             module,
@@ -73,11 +70,18 @@ impl<'a> Builder<'a> {
     pub fn llvm_type(&self, ty: &Type) -> Result<types::BasicTypeEnum, Error> {
         Ok(match ty {
             Type::Number => types::IntType::i64_type().into(),
-            Type::Boolean => types::IntTyoe::bool_type().into(),
+            Type::Boolean => types::IntType::bool_type().into(),
             Type::Empty => types::VoidType::void_type()
                 .ptr_type(AddressSpace::Generic)
                 .into(),
-            Type::Variable(_) => Err(TranslationError::UnresolvedType.into()),
+            Type::Variable(_) => return Err(TranslationError::UnresolvedType.into()),
+            Type::Function(box param, box body) => {
+                let param = self.llvm_type(param)?;
+                let ret = self.llvm_type(body)?;
+                ret.fn_type(&[param], false)
+                    .ptr_type(AddressSpace::Generic)
+                    .into()
+            }
         })
     }
 

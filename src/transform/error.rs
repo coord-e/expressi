@@ -1,4 +1,5 @@
-use type_::Type;
+use transform::type_infer::type_::TypeVarID;
+use transform::type_infer::Type;
 
 #[derive(Debug, Fail)]
 pub enum TypeInferError {
@@ -8,6 +9,9 @@ pub enum TypeInferError {
         found
     )]
     MismatchedTypes { expected: Type, found: Type },
+
+    #[fail(display = "Recursive type detected: {} vs {}", t1, t2)]
+    RecursiveType { t1: TypeVarID, t2: Type },
 
     #[fail(display = "Undeclared identifier \"{}\"", ident)]
     UndeclaredIdentifier { ident: String },

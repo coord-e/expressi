@@ -5,7 +5,7 @@ use inkwell::values::BasicValueEnum;
 
 #[derive(Debug, Clone)]
 pub enum Atom {
-    LLVMValue(BasicValueEnum)
+    LLVMValue(BasicValueEnum),
 }
 
 impl Atom {

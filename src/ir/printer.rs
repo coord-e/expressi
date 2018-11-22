@@ -1,16 +1,12 @@
 use ir::{Constant, Value};
-use type_::type_::OperatorKind;
-use type_::type_::TypeData;
 
 use std::io;
 
-pub struct Printer<'a> {
-    type_store: &'a TypeStore,
-}
+pub struct Printer {}
 
-impl<'a> Printer<'a> {
-    pub fn new(type_store: &'a TypeStore) -> Self {
-        Self { type_store }
+impl Printer {
+    pub fn new() -> Self {
+        Self {}
     }
 
     pub fn print<T>(&self, v: &Value, f: &mut T) -> io::Result<()>
@@ -71,7 +67,7 @@ impl<'a> Printer<'a> {
             }
             Value::Typed(ty, val) => {
                 self.print(val, f)?;
-                write!(f, " :: {}", ty)?;
+                write!(f, " :: {}", ty)
             }
         }
     }

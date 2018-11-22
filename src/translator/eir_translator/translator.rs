@@ -22,7 +22,7 @@ impl<'a> EIRTranslator<'a> {
                 ir::Value::Function(param, box body) => {
                     let previous_block = self.builder.inst_builder().get_insert_block().unwrap();
                     self.builder.enter_new_scope();
-                    let function = self.builder.function_constant(ty, param)?;
+                    let function = self.builder.function_constant(&ty, param)?;
                     let ret = self.translate_expr(body)?.expect_value()?;
                     self.builder.exit_scope()?;
                     self.builder.inst_builder().build_return(Some(&ret));

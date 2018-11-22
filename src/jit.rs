@@ -5,7 +5,6 @@ use parser;
 use transform::TypeInfer;
 use translator::eir_translator::Builder;
 use translator::{ASTTranslator, EIRTranslator};
-use type_::TypeStore;
 
 use failure::Error;
 use std::io;
@@ -77,39 +76,34 @@ impl JIT {
 
         self.builder.position_at_end(&basic_block);
 
-        let mut type_store = TypeStore::new();
-
         let eir = {
-            let mut a_trans = ASTTranslator {
-                type_store: &mut type_store,
-            };
+            let mut a_trans = ASTTranslator {};
             a_trans.translate_expr(expr)?
         };
         if self.print_eir {
             eprintln!("EIR:");
-            let printer = Printer::new(&type_store);
+            let printer = Printer::new();
             printer.print(&eir, &mut io::stderr())?;
             eprintln!();
         }
 
         let transformed = {
-            let mut ti = TypeInfer::new(&mut type_store);
+            let mut ti = TypeInfer::new();
             eir.apply(ti)?
         };
 
         if self.print_eir {
             eprintln!("Transformed EIR:");
-            let printer = Printer::new(&type_store);
+            let printer = Printer::new();
             printer.print(&transformed, &mut io::stderr())?;
             eprintln!();
         }
 
-        let builder = Builder::new(&mut type_store, &mut self.builder, module.clone());
+        let builder = Builder::new(&mut self.builder, module.clone());
         let mut trans = EIRTranslator { builder };
 
         let evaluated_value = trans.translate_expr(transformed)?.expect_value()?;
         trans.builder.ret_int(evaluated_value)?;
-
 
         if self.print_ir {
             eprintln!("LLVM IR:");
@@ -128,7 +122,6 @@ impl JIT {
                 message: message.to_string(),
             }.into());
         }
-
 
         Ok(())
     }
