@@ -1,13 +1,13 @@
-use type_::TypeID;
+use type_::Type;
 
 #[derive(Debug, Fail)]
 pub enum TypeInferError {
     #[fail(
-        display = "Mismatched types. expected: {:?}, found: {:?}",
+        display = "Mismatched types. expected: {}, found: {}",
         expected,
         found
     )]
-    MismatchedTypes { expected: TypeID, found: TypeID },
+    MismatchedTypes { expected: Type, found: Type },
 
     #[fail(display = "Undeclared identifier \"{}\"", ident)]
     UndeclaredIdentifier { ident: String },
