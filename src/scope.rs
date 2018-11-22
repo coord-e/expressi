@@ -1,6 +1,8 @@
 use error::TranslationError;
 
 use std::collections::HashMap;
+use std::iter::{DoubleEndedIterator, FromIterator};
+use std::ops::Deref;
 
 use failure::Error;
 
@@ -12,11 +14,26 @@ pub trait Scope {
     fn get(&self, key: &str) -> Option<Self::V>;
 }
 
+#[derive(Debug, Clone)]
 pub struct Env<T>(HashMap<String, T>);
 
 impl<T> Env<T> {
     pub fn new() -> Self {
         Env(HashMap::new())
+    }
+}
+
+impl<T> Deref for Env<T> {
+    type Target = HashMap<String, T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T> FromIterator<(String, T)> for Env<T> {
+    fn from_iter<I: IntoIterator<Item = (String, T)>>(iter: I) -> Self {
+        Env(iter.into_iter().collect())
     }
 }
 
@@ -39,6 +56,7 @@ where
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ScopedEnv<T>(Vec<Env<T>>);
 
 impl<T> ScopedEnv<T> {
@@ -66,6 +84,16 @@ impl<T> ScopedEnv<T> {
     pub fn unique_name(&self, s: &str) -> String {
         let num_vars = self.0.len();
         format!("{}.{}", s, num_vars)
+    }
+
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &Env<T>> {
+        self.0.iter()
+    }
+}
+
+impl<T> FromIterator<Env<T>> for ScopedEnv<T> {
+    fn from_iter<I: IntoIterator<Item = Env<T>>>(iter: I) -> Self {
+        ScopedEnv(iter.into_iter().collect())
     }
 }
 

@@ -18,6 +18,8 @@ use transform::type_infer::traits::Types;
 use transform::type_infer::type_::{Type, TypeVarGen};
 use transform::type_infer::type_env::TypeEnv;
 
+use scope::Scope;
+
 use failure::Error;
 
 pub struct TypeInfer {
@@ -50,8 +52,7 @@ impl TypeInfer {
             ir::Value::Function(ident, box body) => {
                 let tv = self.tvg.new_variable();
                 let mut new_env = env.clone();
-                new_env.remove(ident);
-                new_env.insert(ident.clone(),
+                new_env.insert(ident,
                 PolyType {
                     vars: Vec::new(),
                     ty: tv.clone(),
