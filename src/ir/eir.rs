@@ -1,6 +1,6 @@
 use expression::Operator;
 use transform::Transform;
-use type_::TypeID;
+use type_::Type;
 
 use failure::Error;
 
@@ -46,7 +46,7 @@ pub enum Value {
     Variable(Identifier),
     Constant(Constant),
     Function(Identifier, Box<Value>),
-    Typed(TypeID, Box<Value>),
+    Typed(Type, Box<Value>),
 }
 
 impl Value {
@@ -57,9 +57,9 @@ impl Value {
         transformer.transform(self)
     }
 
-    pub fn type_(&self) -> Option<TypeID> {
+    pub fn type_(&self) -> Option<&Type> {
         match self {
-            Value::Typed(t, _) => Some(t.clone()),
+            Value::Typed(t, _) => Some(t),
             _ => None,
         }
     }
