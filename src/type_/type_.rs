@@ -5,11 +5,13 @@ use std::fmt;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct VariableID(usize);
 
-impl fmt::Display for VariableID {
+impl VariableID {
     pub(crate) fn with_usize(id: usize) -> Self {
         Self(id)
     }
+}
 
+impl fmt::Display for VariableID {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "a{}", self.0);
     }
