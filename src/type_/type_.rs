@@ -3,15 +3,15 @@ use type_::TypeID;
 use std::fmt;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct VariableID(usize);
+pub struct TypeVarID(usize);
 
-impl VariableID {
+impl TypeVarID {
     pub(crate) fn with_usize(id: usize) -> Self {
         Self(id)
     }
 }
 
-impl fmt::Display for VariableID {
+impl fmt::Display for TypeVarID {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "a{}", self.0);
     }
@@ -19,7 +19,7 @@ impl fmt::Display for VariableID {
 
 #[derive(Debug, Clone)]
 pub enum Type {
-    Variable(VariableID),
+    Variable(TypeVarID),
     Number,
     Boolean,
     Empty,
