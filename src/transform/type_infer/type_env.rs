@@ -55,7 +55,7 @@ impl TypeEnv {
     }
 
     /// Generalize creates a polytype
-    fn generalize(&self, ty: &Type) -> PolyType {
+    pub fn generalize(&self, ty: &Type) -> PolyType {
         PolyType {
             vars: ty.ftv().difference(&self.ftv()).cloned().collect(),
             ty: ty.clone(),
