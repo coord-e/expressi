@@ -2,22 +2,25 @@ use type_::TypeID;
 
 use std::fmt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum OperatorKind {
-    Number,
-    Boolean,
-    Empty,
-    Function,
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct VariableID(usize);
+
+impl fmt::Display for VariableID {
+    pub(crate) fn with_usize(id: usize) -> Self {
+        Self(id)
+    }
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "a{}", self.0);
+    }
 }
 
-pub type EnumTypeData = Vec<(String, Vec<TypeID>)>;
-
 #[derive(Debug, Clone)]
-pub enum TypeData {
-    Operator(OperatorKind, Vec<TypeID>),
-    Enum(EnumTypeData),
-    Variable(Option<TypeID>),
-    PolyVariable(Vec<TypeID>),
+pub enum Type {
+    Variable(VariableID),
+    Number,
+    Boolean,
+    Function(Box<Type>, Box<Type>)
 }
 
 impl fmt::Display for TypeData {
