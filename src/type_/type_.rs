@@ -22,6 +22,7 @@ pub enum Type {
     Variable(VariableID),
     Number,
     Boolean,
+    Empty,
     Function(Box<Type>, Box<Type>)
 }
 
