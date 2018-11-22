@@ -1,225 +1,101 @@
-use error::InternalError;
-use expression::Operator;
+//
+// this code is based on https://github.com/nwoeanhinnogaehr/algorithmw-rust
+//
+// Copyright 2016 Noah Weninger
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+
 use ir;
-use scope::{Scope, ScopedEnv};
 use transform::error::TypeInferError;
 use transform::Transform;
-use type_::type_::TypeData;
-use type_::{PrimitiveKind, TypeID, TypeStore};
+
+use transform::type_infer::poly_type::PolyType;
+use transform::type_infer::subst::Subst;
+use transform::type_infer::traits::Types;
+use transform::type_infer::type_::{Type, TypeVarGen};
+use transform::type_infer::type_env::TypeEnv;
 
 use failure::Error;
 
-pub struct TypeInfer<'a> {
-    type_store: &'a mut TypeStore,
-    env: ScopedEnv<TypeID>,
+pub struct TypeInfer {
+    tvg: TypeVarGen,
 }
 
-impl<'a> TypeInfer<'a> {
-    pub fn new(type_store: &'a mut TypeStore) -> Self {
+impl TypeInfer {
+    pub fn new() -> Self {
         Self {
-            type_store,
-            env: ScopedEnv::new(),
+            tvg: TypeVarGen::new(),
         }
     }
 
-    fn bin_op(
+    fn transform_with_env(
         &mut self,
-        op: Operator,
-        lhs: &ir::Value,
-        rhs: &ir::Value,
-    ) -> Result<ir::Value, Error> {
-        let new_inst = ir::Value::BinOp(op, box lhs.clone(), box rhs.clone());
-        if lhs.type_().is_none() || rhs.type_().is_none() {
-            return Ok(new_inst);
-        }
-
-        let number_type = self.type_store.primitive(PrimitiveKind::Number);
-        let boolean_type = self.type_store.primitive(PrimitiveKind::Boolean);
-        Ok(match op {
-            Operator::Index => unimplemented!(),
-            Operator::Lt
-            | Operator::Gt
-            | Operator::Le
-            | Operator::Ge
-            | Operator::Eq
-            | Operator::Ne => {
-                self.unify(lhs.type_().unwrap(), number_type)?;
-                self.unify(rhs.type_().unwrap(), number_type)?;
-                ir::Value::Typed(boolean_type, box new_inst)
-            }
-            _ => {
-                self.unify(lhs.type_().unwrap(), number_type)?;
-                self.unify(rhs.type_().unwrap(), number_type)?;
-                ir::Value::Typed(number_type, box new_inst)
-            }
-        })
-    }
-
-    fn type_data(&self, t: TypeID) -> Result<&TypeData, Error> {
-        self.type_store
-            .get(t)
-            .ok_or(InternalError::InvalidTypeID.into())
-    }
-
-    fn type_data_mut(&mut self, t: TypeID) -> Result<&mut TypeData, Error> {
-        self.type_store
-            .get_mut(t)
-            .ok_or(InternalError::InvalidTypeID.into())
-    }
-
-    fn prune(&self, t: TypeID) -> Result<TypeID, Error> {
-        Ok(match self.type_data(t)? {
-            TypeData::Variable(Some(v)) => v.clone(),
-            _ => t,
-        })
-    }
-
-    fn unify(&mut self, t1: TypeID, t2: TypeID) -> Result<(), Error> {
-        let t1 = self.prune(t1)?;
-        let t2 = self.prune(t2)?;
-
-        if t1 == t2 {
-            return Ok(());
-        }
-
-        match (self.type_data(t1)?.clone(), self.type_data(t2)?.clone()) {
-            (TypeData::Variable(..), _) => {
-                if let TypeData::Variable(ref mut instance) = self.type_data_mut(t1)? {
-                    *instance = Some(t2);
-                }
-            }
-            (_, TypeData::Variable(..)) => {
-                self.unify(t2, t1)?;
-            }
-            (TypeData::Operator(kind1, types1), TypeData::Operator(kind2, types2)) => {
-                if kind1 != kind2 || types1.len() != types2.len() {
-                    return Err(TypeInferError::MismatchedTypes {
-                        expected: t1,
-                        found: t2,
-                    }.into());
-                }
-
-                for (p, q) in types1.iter().zip(types2.iter()) {
-                    self.unify(*p, *q)?;
-                }
-            }
-            (_, _) => unimplemented!(),
-        }
-        Ok(())
-    }
-
-    fn type_of(val: &ir::Value) -> Result<TypeID, Error> {
-        val.type_().ok_or(TypeInferError::NotTyped.into())
-    }
-}
-
-impl<'a> Transform for TypeInfer<'a> {
-    fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
-        Ok(match eir {
-            ir::Value::Typed(_, _) => eir.clone(),
-            ir::Value::BinOp(op, box lhs, box rhs) => {
-                let lhs = self.transform(&lhs)?;
-                let rhs = self.transform(&rhs)?;
-                self.bin_op(*op, &lhs, &rhs)?
-            }
-            ir::Value::Bind(kind, ident, box rhs) => {
-                let rhs = self.transform(&rhs)?;
-                let rhs_ty = Self::type_of(&rhs)?;
-                self.env.insert(ident, rhs_ty);
-
-                let new_inst = ir::Value::Bind(kind.clone(), ident.clone(), box rhs);
-
-                ir::Value::Typed(rhs_ty, box new_inst)
-            }
-            ir::Value::Assign(box lhs, box rhs) => {
-                let lhs = self.transform(&lhs)?;
-                let rhs = self.transform(&rhs)?;
-
-                let lhs_ty = Self::type_of(&lhs)?;
-                let rhs_ty = Self::type_of(&rhs)?;
-
-                self.unify(lhs_ty, rhs_ty)?;
-
-                let new_inst = ir::Value::Assign(box lhs, box rhs);
-
-                ir::Value::Typed(rhs_ty, box new_inst)
-            }
-            ir::Value::Follow(box lhs, box rhs) => {
-                let lhs = self.transform(&lhs)?;
-                let rhs = self.transform(&rhs)?;
-                let rhs_ty = Self::type_of(&rhs)?;
-
-                let new_inst = ir::Value::Follow(box lhs, box rhs);
-
-                ir::Value::Typed(rhs_ty, box new_inst)
-            }
-            ir::Value::Scope(box inside) => {
-                let new_scope = self.env.new_scope();
-                self.env.push(new_scope);
-                let inside = self.transform(&inside)?;
-                self.env.pop()?;
-
-                let inside_ty = Self::type_of(&inside)?;
-
-                let new_inst = ir::Value::Scope(box inside);
-
-                ir::Value::Typed(inside_ty, box new_inst)
-            }
+        eir: &ir::Value,
+        env: &mut TypeEnv,
+    ) -> Result<(Subst, ir::Value), Error> {
+        match eir {
+            ir::Value::Typed(_, _) => Ok((Subst::new(), eir.clone())),
+            ir::Value::Constant(_) => Err(TypeInferError::NotTyped.into()),
             ir::Value::Variable(ident) => {
-                let type_ = self
-                    .env
-                    .get(ident)
-                    .ok_or(TypeInferError::UndeclaredIdentifier {
+                match env.get(ident) {
+                    Some(s) => Ok((Subst::new(), eir.with_type(s.instantiate(&mut self.tvg))?)),
+                    None => Err(TypeInferError::UndeclaredIdentifier {
                         ident: ident.clone(),
-                    })?;
-
-                ir::Value::Typed(type_, box eir.clone())
-            }
-            ir::Value::IfElse(box cond, box then_, box else_) => {
-                let cond = self.transform(&cond)?;
-                let then_ = self.transform(&then_)?;
-                let else_ = self.transform(&else_)?;
-
-                let cond_ty = Self::type_of(&cond)?;
-                let then_ty = Self::type_of(&then_)?;
-                let else_ty = Self::type_of(&else_)?;
-
-                let boolean_type = self.type_store.primitive(PrimitiveKind::Boolean);
-
-                self.unify(cond_ty, boolean_type)?;
-                self.unify(then_ty, else_ty)?;
-
-                let new_inst = ir::Value::IfElse(box cond, box then_, box else_);
-
-                ir::Value::Typed(then_ty, box new_inst)
+                    }.into()),
+                }
             }
             ir::Value::Function(ident, box body) => {
-                let param_ty = self.type_store.new_variable();
-                let new_scope = self.env.new_scope();
-                self.env.push(new_scope);
-                self.env.insert(&ident, param_ty);
-                let body = self.transform(&body)?;
-                self.env.pop()?;
-                let return_ty = Self::type_of(&body)?;
-
-                let f_ty = self.type_store.new_function(param_ty, return_ty);
-                ir::Value::Typed(f_ty, box eir.clone())
+                let tv = self.tvg.new_variable();
+                let mut new_env = env.clone();
+                new_env.remove(ident);
+                new_env.insert(ident.clone(),
+                PolyType {
+                    vars: Vec::new(),
+                    ty: tv.clone(),
+                });
+                let (s1, v) = self.transform_with_env(body, &mut new_env)?;
+                let t1 = v.type_().unwrap();
+                let new_type = Type::Function(box tv.apply(&s1), box t1.clone());
+                Ok((s1.clone(), eir.with_type(new_type)?))
             }
-            ir::Value::Apply(box lhs, box rhs) => {
-                let lhs = self.transform(&lhs)?;
-                let rhs = self.transform(&rhs)?;
+            ir::Value::Apply(box f, box arg) => {
+                let (s1, v1) = self.transform_with_env(f, env)?;
+                let t1 = v1.type_().unwrap();
+                let (s2, v2) = self.transform_with_env(arg, &mut env.apply(&s1))?;
+                let t2 = v2.type_().unwrap();
 
-                let lhs_ty = Self::type_of(&lhs)?;
-                let rhs_ty = Self::type_of(&rhs)?;
-
-                let result_ty = self.type_store.new_variable();
-                let fn_ty = self.type_store.new_function(rhs_ty, result_ty);
-                self.unify(fn_ty, lhs_ty)?;
-
-                let new_inst = ir::Value::Apply(box lhs, box rhs);
-                ir::Value::Typed(result_ty, box new_inst)
+                let tv = self.tvg.new_variable();
+                let s3 = t1.apply(&s2).mgu(&Type::Function(box t2.clone(), box tv.clone()))?;
+                Ok((s3.compose(&s2.compose(&s1)), eir.with_type(tv.apply(&s3))?))
             }
-            ir::Value::Constant(_) => bail!(TypeInferError::NotTyped),
-        })
+            _ => unimplemented!()
+            // ir::Value::Bind(_, ident, box value) => {
+            //     let mut new_env = env.clone();
+            //     new_env.remove(ident);
+            //     let (s1, v1) = self.transform_with_env(value, new_env);
+            //     let t1 = v1.type_().unwrap();
+            //
+            //     let tp = new_env.apply(&s1).generalize(&t1);
+            //     new_env.insert(ident.clone(), tp);
+            //     let (s2, v2) = self.transform_with_env(, &mut new_env.apply(&s1));
+            //     let t2 = v2.type_().unwrap();
+            //     Ok((s2.compose(&s1), eir.with_type(t2)))
+            // }
+            // Scope(Box<Value>)
+            // Assign(Box<Value>, Box<Value>),
+            // Follow(Box<Value>, Box<Value>),
+            // BinOp(Operator, Box<Value>, Box<Value>),
+            // IfElse(Box<Value>, Box<Value>, Box<Value>),
+        }
+    }
+}
+
+impl Transform for TypeInfer {
+    fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
+        let (_, v) = self.transform_with_env(eir, &mut TypeEnv::new())?;
+        Ok(v)
     }
 }
