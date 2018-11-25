@@ -249,8 +249,8 @@ impl<'a> Builder<'a> {
     pub fn assign_var(
         &mut self,
         name: &str,
-        val: values::BasicValueEnum,
-    ) -> Result<values::BasicValueEnum, Error> {
+        val: &Atom<values::BasicValueEnum>,
+    ) -> Result<(), Error> {
         let var = self
             .env
             .get(name)
@@ -260,9 +260,21 @@ impl<'a> Builder<'a> {
             return Err(TranslationError::ImmutableAssign.into());
         }
 
-        self.inst_builder
-            .build_store(var.ptr_value().clone().expect_value()?, val);
-        Ok(val)
+        match var.ptr_value() {
+            Atom::LLVMValue(var) => {
+                self.inst_builder.build_store(*var, val.expect_value()?);
+            }
+            Atom::PolyValue(var_table) => {
+                var_table
+                    .iter()
+                    .map(|(k, v)| {
+                        self.inst_builder
+                            .build_store(*v, *val.expect_poly_value()?.get(k).unwrap());
+                        Ok(())
+                    }).collect::<Result<(), Error>>()?;
+            }
+        };
+        Ok(())
     }
 
     pub fn get_var(&mut self, name: &str) -> Result<Option<Atom<values::BasicValueEnum>>, Error> {

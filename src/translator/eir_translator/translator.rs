@@ -88,13 +88,13 @@ impl<'a> EIRTranslator<'a> {
             }
 
             ir::Value::Assign(lhs, rhs) => {
-                let new_value = self.translate_expr(*rhs)?.expect_value()?;
+                let new_value = self.translate_expr(*rhs)?;
                 let name = match *lhs {
                     ir::Value::Typed(_, _, box ir::Value::Variable(name)) => name,
                     _ => panic!("Non-variable identifier"),
                 };
-                self.builder.assign_var(&name, new_value)?;
-                new_value.into()
+                self.builder.assign_var(&name, &new_value)?;
+                new_value
             }
 
             ir::Value::Variable(name) => self
@@ -119,7 +119,7 @@ impl<'a> EIRTranslator<'a> {
                 let initial_block = self.builder.current_block()?;
 
                 self.builder.switch_to_block(&then_block);
-                let then_return = self.translate_expr(*then_expr)?.expect_value()?;
+                let then_return = self.translate_expr(*then_expr)?;
 
                 self.builder.switch_to_block(&initial_block);
                 let then_type = self.builder.type_of(then_return);
@@ -133,7 +133,7 @@ impl<'a> EIRTranslator<'a> {
 
                 // Start writing 'else' block
                 self.builder.switch_to_block(&else_block);
-                let else_return = self.translate_expr(*else_expr)?.expect_value()?;
+                let else_return = self.translate_expr(*else_expr)?;
                 let else_type = self.builder.type_of(else_return);
                 if then_type != else_type {
                     panic!("Using different type value in if-else")
