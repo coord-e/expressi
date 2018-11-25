@@ -24,12 +24,14 @@ use failure::Error;
 
 pub struct TypeInfer {
     tvg: TypeVarGen,
+    instantiation_table: Vec<(Type, Type)>
 }
 
 impl TypeInfer {
     pub fn new() -> Self {
         Self {
             tvg: TypeVarGen::new(),
+            instantiation_table: Vec::new()
         }
     }
 
@@ -42,7 +44,11 @@ impl TypeInfer {
             ir::Value::Typed(_, _) => Ok((Subst::new(), eir.clone())),
             ir::Value::Constant(_) => Err(TypeInferError::NotTyped.into()),
             ir::Value::Variable(ident) => match env.get(ident) {
-                Some(s) => Ok((Subst::new(), eir.with_type(s.instantiate(&mut self.tvg))?)),
+                Some(s) => {
+                    let instance = s.instantiate(&mut self.tvg);
+                    self.instantiation_table.push((s.ty.clone(), instance.clone()));
+                    Ok((Subst::new(), eir.with_type(instance)?))
+                }
                 None => Err(TypeInferError::UndeclaredIdentifier {
                     ident: ident.clone(),
                 }.into()),
@@ -222,8 +228,12 @@ impl ApplySubst {
 impl Transform for TypeInfer {
     fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
         let (subst, v) = self.transform_with_env(eir, &mut TypeEnv::new())?;
-        let a = ApplySubst { subst };
+        let a = ApplySubst { subst: subst.clone() };
         let box v = a.apply_all(&v)?;
+        println!("Candidates:");
+        for (k, v) in self.instantiation_table.clone() {
+            println!("susb: {} => {}", k.apply(&subst), v.apply(&subst));
+        }
         Ok(v)
     }
 }
