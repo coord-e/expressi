@@ -28,7 +28,7 @@ impl<'a> EIRTranslator<'a> {
         Ok(function)
     }
 
-    pub fn translate_expr(&mut self, expr: ir::Value) -> Result<Atom, Error> {
+    pub fn translate_expr(&mut self, expr: ir::Value) -> Result<Atom<BasicValueEnum>, Error> {
         Ok(match expr {
             ir::Value::Typed(ty, ty_candidates, box value) => match value {
                 ir::Value::Constant(c) => match c {
