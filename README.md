@@ -20,7 +20,7 @@ In this example, `x` is evaluated to `42`.
 ## TODO
 
 - High-order function evaluation
-- Outer variable capturing in function
+  - Outer variable capturing in function
 - Refine EIR
   - Delete `Typed` constructor and provide another way to express typed value
   - Convert `Follow`, `Bind`, `Scope` to let-in expression
@@ -35,6 +35,8 @@ In this example, `x` is evaluated to `42`.
   - Tuple
   - Enum
   - Struct
+- Comment syntax
+- Multi-line input in REPL
 
 ## License
 
