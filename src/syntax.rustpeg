@@ -38,16 +38,16 @@ cast_right -> Expression
   = _ "as" _ r:type_identifier { r }
 
 index -> Expression
-  = l:apply r:index_right * { r.iter().fold(l, |e, r| Expression::BinOp(Operator::Index, box e, box r.clone())) }
+  = l:apply r:index_right * _ { r.iter().fold(l, |e, r| Expression::BinOp(Operator::Index, box e, box r.clone())) }
 
 index_right -> Expression
-  = _ "[" r:expression "]" _ { r }
+  = _ "[" r:expression "]" { r }
 
 apply -> Expression
-  = l:spaced_atom r:apply_right * { r.iter().fold(l, |e, r| Expression::Apply(box e, box r.clone())) }
+  = l:spaced_atom r:apply_right * _ { r.iter().fold(l, |e, r| Expression::Apply(box e, box r.clone())) }
 
 apply_right -> Expression
-  = _ "(" r:expression ")" _ { r }
+  = _ "(" r:expression ")" { r }
 
 if_else -> Expression
   = "if" cond:expression then_expr:expression else_expr:("else" v:spaced_atom {v})? { Expression::IfElse(Box::new(cond), Box::new(then_expr), Box::new(else_expr.unwrap_or(Expression::Empty))) }
