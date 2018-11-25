@@ -58,9 +58,16 @@ impl<'a> EIRTranslator<'a> {
                 _ => self.translate_expr(value)?.into(),
             },
             ir::Value::Apply(box func, box arg) => {
-                let func = self.translate_expr(func)?.expect_value()?;
+                let func_ty = func.type_().ok_or(TranslationError::NotTyped)?;
+                let func = self.translate_expr(func.clone())?;
                 let arg = self.translate_expr(arg)?.expect_value()?;
-                self.builder.call(func, arg)?.into()
+                match func {
+                    Atom::LLVMValue(func) => self.builder.call(func, arg)?.into(),
+                    Atom::PolyValue(func_table) => self
+                        .builder
+                        .call(*func_table.get(func_ty).unwrap(), arg)?
+                        .into(),
+                }
             }
             ir::Value::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?.expect_value()?;
