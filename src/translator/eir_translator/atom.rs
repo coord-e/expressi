@@ -2,14 +2,13 @@ use error::TranslationError;
 use transform::type_infer::Type;
 
 use failure::Error;
-use inkwell::values::BasicValueEnum;
 
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub enum Atom<T> {
     LLVMValue(T),
-    PolyValue(HashMap<Type, T>)
+    PolyValue(HashMap<Type, T>),
 }
 
 impl<T> Atom<T> {

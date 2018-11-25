@@ -1,5 +1,5 @@
 use ir::BindingKind;
-use translator::eir_translato::atom::Atom;
+use translator::eir_translator::atom::Atom;
 
 use inkwell::values;
 
@@ -14,8 +14,8 @@ impl BoundPointer {
         Self { kind, ptr }
     }
 
-    pub fn ptr_value(&self) -> Atom<values::PointerValue> {
-        self.ptr
+    pub fn ptr_value(&self) -> &Atom<values::PointerValue> {
+        &self.ptr
     }
 
     pub fn kind(&self) -> BindingKind {

@@ -74,8 +74,8 @@ impl<'a> EIRTranslator<'a> {
             }
 
             ir::Value::Bind(kind, name, rhs) => {
-                let new_value = self.translate_expr(*rhs)?.expect_value()?;
-                self.builder.bind_var(&name, new_value, kind)?;
+                let new_value = self.translate_expr(*rhs)?;
+                self.builder.bind_var(&name, &new_value, kind)?;
                 new_value.into()
             }
 
@@ -92,12 +92,11 @@ impl<'a> EIRTranslator<'a> {
             ir::Value::Variable(name) => self
                 .builder
                 .get_var(&name)
-                .and_then(|v| v.ok_or(TranslationError::UndeclaredVariable.into()))?
-                .into(),
+                .and_then(|v| v.ok_or(TranslationError::UndeclaredVariable.into()))?,
 
             ir::Value::Scope(expr) => {
                 self.builder.enter_new_scope();
-                let content = self.translate_expr(*expr)?.expect_value()?;
+                let content = self.translate_expr(*expr)?;
                 self.builder.exit_scope()?;
                 content.into()
             }
