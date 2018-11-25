@@ -202,7 +202,7 @@ impl<'a> Builder<'a> {
         unimplemented!()
     }
 
-    pub fn declare_mut_var(
+    pub(crate) fn declare_mut_var(
         &mut self,
         name: &str,
         base_value: &Atom<values::BasicValueEnum>,
