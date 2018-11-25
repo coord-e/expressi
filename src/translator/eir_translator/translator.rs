@@ -1,17 +1,35 @@
 use error::{InternalError, TranslationError};
 use ir;
+use transform::type_infer::Type;
 use translator::eir_translator::{Atom, Builder};
 
 use failure::Error;
+use inkwell::values::BasicValueEnum;
 
 pub struct EIRTranslator<'a> {
     pub builder: Builder<'a>,
 }
 
 impl<'a> EIRTranslator<'a> {
+    fn translate_monotype_function(
+        &mut self,
+        param: String,
+        ty: &Type,
+        body: ir::Value,
+    ) -> Result<BasicValueEnum, Error> {
+        let previous_block = self.builder.inst_builder().get_insert_block().unwrap();
+        self.builder.enter_new_scope();
+        let function = self.builder.function_constant(&ty, param)?;
+        let ret = self.translate_expr(body)?.expect_value()?;
+        self.builder.exit_scope()?;
+        self.builder.inst_builder().build_return(Some(&ret));
+        self.builder.inst_builder().position_at_end(&previous_block);
+        Ok(function)
+    }
+
     pub fn translate_expr(&mut self, expr: ir::Value) -> Result<Atom, Error> {
         Ok(match expr {
-            ir::Value::Typed(ty, _, box value) => match value {
+            ir::Value::Typed(ty, ty_candidates, box value) => match value {
                 ir::Value::Constant(c) => match c {
                     ir::Constant::Number(number) => {
                         self.builder.number_constant(i64::from(number))?.into()
@@ -20,14 +38,7 @@ impl<'a> EIRTranslator<'a> {
                     ir::Constant::Empty => self.builder.empty_constant()?.into(),
                 },
                 ir::Value::Function(param, box body) => {
-                    let previous_block = self.builder.inst_builder().get_insert_block().unwrap();
-                    self.builder.enter_new_scope();
-                    let function = self.builder.function_constant(&ty, param)?;
-                    let ret = self.translate_expr(body)?.expect_value()?;
-                    self.builder.exit_scope()?;
-                    self.builder.inst_builder().build_return(Some(&ret));
-                    self.builder.inst_builder().position_at_end(&previous_block);
-                    function.into()
+                    self.translate_monotype_function(param, &ty, body)?.into()
                 }
                 ir::Value::Typed(..) => bail!(InternalError::DoubleTyped),
                 _ => self.translate_expr(value)?.into(),
