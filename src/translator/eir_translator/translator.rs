@@ -45,8 +45,11 @@ impl<'a> EIRTranslator<'a> {
                         ty_candidates
                             .into_iter()
                             .map(|(ty, body)| {
-                                self.translate_monotype_function(param.clone(), &ty, body)
-                                    .map(|v| (ty, v))
+                                self.translate_monotype_function(
+                                    param.clone(),
+                                    &ty,
+                                    ir::Value::Typed(ty.clone(), HashMap::new(), box body),
+                                ).map(|v| (ty, v))
                             }).collect::<Result<HashMap<_, _>, _>>()?
                             .into()
                     }
