@@ -180,6 +180,44 @@ impl TypeInfer {
         }
     }
 
+    fn inner_apply_subst_all(&self, value: &ir::Value, subst: &Subst) -> Result<ir::Value, Error> {
+        Ok(match value {
+            ir::Value::Constant(..) | ir::Value::Variable(..) => value.clone(),
+            ir::Value::Bind(kind, ident, box body) => {
+                ir::Value::Bind(*kind, ident.clone(), self.apply_subst_all(body, subst)?)
+            }
+            ir::Value::Assign(box lhs, box rhs) => ir::Value::Assign(
+                self.apply_subst_all(lhs, subst)?,
+                self.apply_subst_all(rhs, subst)?,
+            ),
+            ir::Value::Scope(box body) => {
+                ir::Value::Scope(self.apply_subst_all(body, subst)?)
+            }
+            ir::Value::Follow(box lhs, box rhs) => ir::Value::Follow(
+                self.apply_subst_all(lhs, subst)?,
+                self.apply_subst_all(rhs, subst)?,
+            ),
+            ir::Value::Apply(box lhs, box rhs) => ir::Value::Apply(
+                self.apply_subst_all(lhs, subst)?,
+                self.apply_subst_all(rhs, subst)?,
+            ),
+            ir::Value::BinOp(op, box lhs, box rhs) => ir::Value::BinOp(
+                *op,
+                self.apply_subst_all(lhs, subst)?,
+                self.apply_subst_all(rhs, subst)?,
+            ),
+            ir::Value::IfElse(box cond, box then_v, box else_v) => ir::Value::IfElse(
+                self.apply_subst_all(cond, subst)?,
+                self.apply_subst_all(then_v, subst)?,
+                self.apply_subst_all(else_v, subst)?,
+            ),
+            ir::Value::Function(ident, box body) => {
+                ir::Value::Function(ident.clone(), self.apply_subst_all(body, subst)?)
+            }
+            ir::Value::Typed(..) => return Err(InternalError::DoubleTyped.into()),
+        })
+    }
+
     fn apply_subst_all(&self, eir: &ir::Value, subst: &Subst) -> Result<Box<ir::Value>, Error> {
         match eir {
             ir::Value::Typed(ty, _, box value) => {
@@ -189,47 +227,16 @@ impl TypeInfer {
                     .iter()
                     .filter_map(|(k, v)| {
                         if k == &new_ty {
-                            let instance = k.apply(v).apply(subst);
-                            Some(instance)
+                            // TODO: compose v and subst, and call inner_apply_subst_all once
+                            let s = v.compose(&subst);
+                            let inner = self.inner_apply_subst_all(value, &v).unwrap();
+                            let instance_value = self.inner_apply_subst_all(&inner, &subst).unwrap();
+                            Some(ty.apply(&v).apply(&subst))
                         } else {
                             None
                         }
                     }).collect();
-                let new_v = match value {
-                    ir::Value::Constant(..) | ir::Value::Variable(..) => value.clone(),
-                    ir::Value::Bind(kind, ident, box body) => {
-                        ir::Value::Bind(*kind, ident.clone(), self.apply_subst_all(body, subst)?)
-                    }
-                    ir::Value::Assign(box lhs, box rhs) => ir::Value::Assign(
-                        self.apply_subst_all(lhs, subst)?,
-                        self.apply_subst_all(rhs, subst)?,
-                    ),
-                    ir::Value::Scope(box body) => {
-                        ir::Value::Scope(self.apply_subst_all(body, subst)?)
-                    }
-                    ir::Value::Follow(box lhs, box rhs) => ir::Value::Follow(
-                        self.apply_subst_all(lhs, subst)?,
-                        self.apply_subst_all(rhs, subst)?,
-                    ),
-                    ir::Value::Apply(box lhs, box rhs) => ir::Value::Apply(
-                        self.apply_subst_all(lhs, subst)?,
-                        self.apply_subst_all(rhs, subst)?,
-                    ),
-                    ir::Value::BinOp(op, box lhs, box rhs) => ir::Value::BinOp(
-                        *op,
-                        self.apply_subst_all(lhs, subst)?,
-                        self.apply_subst_all(rhs, subst)?,
-                    ),
-                    ir::Value::IfElse(box cond, box then_v, box else_v) => ir::Value::IfElse(
-                        self.apply_subst_all(cond, subst)?,
-                        self.apply_subst_all(then_v, subst)?,
-                        self.apply_subst_all(else_v, subst)?,
-                    ),
-                    ir::Value::Function(ident, box body) => {
-                        ir::Value::Function(ident.clone(), self.apply_subst_all(body, subst)?)
-                    }
-                    ir::Value::Typed(..) => return Err(InternalError::DoubleTyped.into()),
-                };
+                let new_v = self.inner_apply_subst_all(value, subst)?;
                 Ok(box ir::Value::Typed(new_ty, local_inst_table, box new_v))
             }
             _ => Err(TypeInferError::NotTyped.into()),
