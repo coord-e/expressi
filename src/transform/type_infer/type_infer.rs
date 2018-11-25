@@ -96,7 +96,7 @@ impl TypeInfer {
             ir::Value::Follow(box lhs, box rhs) => {
                 let (s1, v1) = self.transform_with_env(lhs, env)?;
                 let (s2, v2) = self.transform_with_env(rhs, env)?;
-                let t = v1.type_().unwrap();
+                let t = v2.type_().unwrap();
 
                 let new_node = ir::Value::Follow(box v1.clone(), box v2.clone());
                 Ok((s1.compose(&s2), new_node.with_type(t.clone())?))
