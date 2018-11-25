@@ -141,8 +141,17 @@ impl TypeInfer {
                 let new_node = ir::Value::IfElse(box cond_v.clone(), box then_v.clone(), box else_v.clone());
                 Ok((s1.compose(&s2.compose(&s3.compose(&cond_s.compose(&body_s)))), new_node.with_type(then_ty.clone())?))
             }
-            _ => unimplemented!()
-            // Assign(Box<Value>, Box<Value>),
+            ir::Value::Assign(box lhs, box rhs) => {
+                let (s1, lhs) = self.transform_with_env(&lhs, env)?;
+                let lhs_ty = lhs.type_().unwrap();
+                let (s2, rhs) = self.transform_with_env(&rhs, env)?;
+                let rhs_ty = rhs.type_().unwrap();
+
+                let subst = lhs_ty.mgu(&rhs_ty)?;
+
+                let new_node = ir::Value::Assign(box rhs.clone(), box lhs.clone());
+                Ok((s1.compose(&s2.compose(&subst)), new_node.with_type(lhs_ty.clone())?))
+            }
         }
     }
 }
