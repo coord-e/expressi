@@ -19,9 +19,11 @@ impl ASTTranslator {
                 Vec::new(),
                 Box::new(Value::Constant(Constant::Boolean(value))),
             ),
-            Expression::Empty => {
-                Value::Typed(Type::Empty, Vec::new(), Box::new(Value::Constant(Constant::Empty)))
-            }
+            Expression::Empty => Value::Typed(
+                Type::Empty,
+                Vec::new(),
+                Box::new(Value::Constant(Constant::Empty)),
+            ),
             Expression::Function(ident, body) => {
                 let body = self.translate_expr(*body)?;
                 Value::Function(ident, Box::new(body))

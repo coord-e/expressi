@@ -68,7 +68,7 @@ impl Printer {
             Value::Typed(ty, candidates, val) => {
                 self.print(val, f)?;
                 write!(f, " :: {}", ty)?;
-                if ! candidates.is_empty() {
+                if !candidates.is_empty() {
                     write!(f, " {:?}", candidates)?;
                 }
                 Ok(())

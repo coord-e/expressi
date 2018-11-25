@@ -24,14 +24,14 @@ use failure::Error;
 
 pub struct TypeInfer {
     tvg: TypeVarGen,
-    instantiation_table: Vec<(Type, Type)>
+    instantiation_table: Vec<(Type, Type)>,
 }
 
 impl TypeInfer {
     pub fn new() -> Self {
         Self {
             tvg: TypeVarGen::new(),
-            instantiation_table: Vec::new()
+            instantiation_table: Vec::new(),
         }
     }
 
@@ -46,7 +46,8 @@ impl TypeInfer {
             ir::Value::Variable(ident) => match env.get(ident) {
                 Some(s) => {
                     let instance = s.instantiate(&mut self.tvg);
-                    self.instantiation_table.push((s.ty.clone(), instance.clone()));
+                    self.instantiation_table
+                        .push((s.ty.clone(), instance.clone()));
                     Ok((Subst::new(), eir.with_type(instance)?))
                 }
                 None => Err(TypeInferError::UndeclaredIdentifier {
@@ -191,6 +192,16 @@ impl ApplySubst {
         match eir {
             ir::Value::Typed(ty, _, box value) => {
                 let new_ty = ty.apply(&self.subst);
+                let local_inst_table = self
+                    .instantiation_table
+                    .iter()
+                    .filter_map(|(k, v)| {
+                        if k == &new_ty {
+                            Some(v.apply(&self.subst))
+                        } else {
+                            None
+                        }
+                    }).collect();
                 let new_v = match value {
                     ir::Value::Constant(..) | ir::Value::Variable(..) => value.clone(),
                     ir::Value::Bind(kind, ident, box body) => {
@@ -219,7 +230,7 @@ impl ApplySubst {
                     }
                     ir::Value::Typed(..) => return Err(InternalError::DoubleTyped.into()),
                 };
-                Ok(box new_v.with_type(new_ty)?)
+                Ok(box ir::Value::Typed(new_ty, local_inst_table, box new_v))
             }
             _ => Err(TypeInferError::NotTyped.into()),
         }
@@ -229,12 +240,11 @@ impl ApplySubst {
 impl Transform for TypeInfer {
     fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
         let (subst, v) = self.transform_with_env(eir, &mut TypeEnv::new())?;
-        let a = ApplySubst { subst: subst.clone() };
+        let a = ApplySubst {
+            subst,
+            instantiation_table: self.instantiation_table.clone(),
+        };
         let box v = a.apply_all(&v)?;
-        println!("Candidates:");
-        for (k, v) in self.instantiation_table.clone() {
-            println!("susb: {} => {}", k.apply(&subst), v.apply(&subst));
-        }
         Ok(v)
     }
 }
