@@ -40,23 +40,23 @@ impl TypeInfer {
         match eir {
             ir::Value::Typed(_, _) => Ok((Subst::new(), eir.clone())),
             ir::Value::Constant(_) => Err(TypeInferError::NotTyped.into()),
-            ir::Value::Variable(ident) => {
-                match env.get(ident) {
-                    Some(s) => Ok((Subst::new(), eir.with_type(s.instantiate(&mut self.tvg))?)),
-                    None => Err(TypeInferError::UndeclaredIdentifier {
-                        ident: ident.clone(),
-                    }.into()),
-                }
-            }
+            ir::Value::Variable(ident) => match env.get(ident) {
+                Some(s) => Ok((Subst::new(), eir.with_type(s.instantiate(&mut self.tvg))?)),
+                None => Err(TypeInferError::UndeclaredIdentifier {
+                    ident: ident.clone(),
+                }.into()),
+            },
             ir::Value::Function(ident, box body) => {
                 let tv = self.tvg.new_variable();
                 let mut new_env = env.clone();
                 new_env.remove(ident);
-                new_env.insert(ident.clone(),
-                PolyType {
-                    vars: Vec::new(),
-                    ty: tv.clone(),
-                });
+                new_env.insert(
+                    ident.clone(),
+                    PolyType {
+                        vars: Vec::new(),
+                        ty: tv.clone(),
+                    },
+                );
                 let (s1, v) = self.transform_with_env(body, &mut new_env)?;
                 let t1 = v.type_().unwrap();
                 let new_type = Type::Function(box tv.apply(&s1), box t1.clone());
@@ -70,10 +70,15 @@ impl TypeInfer {
                 let t2 = v2.type_().unwrap();
 
                 let tv = self.tvg.new_variable();
-                let s3 = t1.apply(&s2).mgu(&Type::Function(box t2.clone(), box tv.clone()))?;
+                let s3 = t1
+                    .apply(&s2)
+                    .mgu(&Type::Function(box t2.clone(), box tv.clone()))?;
 
                 let new_node = ir::Value::Apply(box v1.clone(), box v2.clone());
-                Ok((s2.compose(&s2.compose(&s1)), new_node.with_type(tv.apply(&s3))?))
+                Ok((
+                    s2.compose(&s2.compose(&s1)),
+                    new_node.with_type(tv.apply(&s3))?,
+                ))
             }
             ir::Value::Bind(kind, ident, box value) => {
                 let (s1, v1) = self.transform_with_env(value, env)?;
@@ -118,12 +123,18 @@ impl TypeInfer {
                     | Operator::Ne => {
                         let sl = lhs_ty.mgu(&Type::Number)?;
                         let sr = rhs_ty.mgu(&Type::Number)?;
-                        (s1.compose(&s2.compose(&sl.compose(&sr))), new_node.with_type(Type::Boolean)?)
+                        (
+                            s1.compose(&s2.compose(&sl.compose(&sr))),
+                            new_node.with_type(Type::Boolean)?,
+                        )
                     }
                     _ => {
                         let sl = lhs_ty.mgu(&Type::Number)?;
                         let sr = rhs_ty.mgu(&Type::Number)?;
-                        (s1.compose(&s2.compose(&sl.compose(&sr))), new_node.with_type(Type::Number)?)
+                        (
+                            s1.compose(&s2.compose(&sl.compose(&sr))),
+                            new_node.with_type(Type::Number)?,
+                        )
                     }
                 })
             }
@@ -138,8 +149,12 @@ impl TypeInfer {
                 let cond_s = cond_ty.mgu(&Type::Boolean)?;
                 let body_s = then_ty.mgu(&else_ty)?;
 
-                let new_node = ir::Value::IfElse(box cond_v.clone(), box then_v.clone(), box else_v.clone());
-                Ok((s1.compose(&s2.compose(&s3.compose(&cond_s.compose(&body_s)))), new_node.with_type(then_ty.clone())?))
+                let new_node =
+                    ir::Value::IfElse(box cond_v.clone(), box then_v.clone(), box else_v.clone());
+                Ok((
+                    s1.compose(&s2.compose(&s3.compose(&cond_s.compose(&body_s)))),
+                    new_node.with_type(then_ty.clone())?,
+                ))
             }
             ir::Value::Assign(box lhs, box rhs) => {
                 let (s1, lhs) = self.transform_with_env(&lhs, env)?;
@@ -150,7 +165,10 @@ impl TypeInfer {
                 let subst = lhs_ty.mgu(&rhs_ty)?;
 
                 let new_node = ir::Value::Assign(box lhs.clone(), box rhs.clone());
-                Ok((s1.compose(&s2.compose(&subst)), new_node.with_type(lhs_ty.clone())?))
+                Ok((
+                    s1.compose(&s2.compose(&subst)),
+                    new_node.with_type(lhs_ty.clone())?,
+                ))
             }
         }
     }
