@@ -24,7 +24,7 @@ use failure::Error;
 
 pub struct TypeInfer {
     tvg: TypeVarGen,
-    instantiation_table: Vec<(Type, Type)>,
+    instantiation_table: Vec<(Type, Subst)>,
 }
 
 impl TypeInfer {
@@ -45,9 +45,8 @@ impl TypeInfer {
             ir::Value::Constant(_) => Err(TypeInferError::NotTyped.into()),
             ir::Value::Variable(ident) => match env.get(ident) {
                 Some(s) => {
-                    let instance = s.instantiate(&mut self.tvg);
-                    self.instantiation_table
-                        .push((s.ty.clone(), instance.clone()));
+                    let (subst, instance) = s.instantiate(&mut self.tvg);
+                    self.instantiation_table.push((s.ty.clone(), subst));
                     Ok((Subst::new(), eir.with_type(instance)?))
                 }
                 None => Err(TypeInferError::UndeclaredIdentifier {
@@ -190,7 +189,8 @@ impl TypeInfer {
                     .iter()
                     .filter_map(|(k, v)| {
                         if k == &new_ty {
-                            Some(v.apply(subst))
+                            let instance = k.apply(v).apply(subst);
+                            Some(instance)
                         } else {
                             None
                         }
