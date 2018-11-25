@@ -54,6 +54,6 @@ impl PolyType {
     pub fn instantiate(&self, tvg: &mut TypeVarGen) -> Type {
         let newvars = self.vars.iter().map(|_| tvg.new_variable());
         self.ty
-            .apply(&Subst(self.vars.iter().cloned().zip(newvars).collect()))
+            .apply(&Subst::with_map(self.vars.iter().cloned().zip(newvars).collect()))
     }
 }

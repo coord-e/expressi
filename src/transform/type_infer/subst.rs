@@ -16,7 +16,7 @@ use std::ops::{Deref, DerefMut};
 
 /// A substitution is a mapping from type variables to types.
 #[derive(Clone, Debug)]
-pub struct Subst(pub(crate) HashMap<TypeVarID, Type>);
+pub struct Subst(HashMap<TypeVarID, Type>);
 
 impl Deref for Subst {
     type Target = HashMap<TypeVarID, Type>;
@@ -34,6 +34,10 @@ impl Subst {
     /// Construct an empty substitution.
     pub fn new() -> Subst {
         Subst(HashMap::new())
+    }
+
+    pub fn with_map(map: HashMap<TypeVarID, Type>) -> Subst {
+        Subst(map)
     }
 
     /// To compose two substitutions, we apply self to each type in other and union the resulting
