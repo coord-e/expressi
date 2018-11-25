@@ -47,7 +47,7 @@ pub enum Value {
     Variable(Identifier),
     Constant(Constant),
     Function(Identifier, Box<Value>),
-    Typed(Type, Box<Value>),
+    Typed(Type, Vec<Type>, Box<Value>),
 }
 
 impl Value {
@@ -60,7 +60,7 @@ impl Value {
 
     pub fn type_(&self) -> Option<&Type> {
         match self {
-            Value::Typed(t, _) => Some(t),
+            Value::Typed(t, ..) => Some(t),
             _ => None,
         }
     }
@@ -68,7 +68,7 @@ impl Value {
     pub fn with_type(&self, ty: Type) -> Result<Value, Error> {
         match self {
             Value::Typed(..) => Err(InternalError::AlreadyTyped.into()),
-            _ => Ok(Value::Typed(ty, box self.clone())),
+            _ => Ok(Value::Typed(ty, Vec::new(), box self.clone())),
         }
     }
 }

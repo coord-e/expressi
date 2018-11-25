@@ -41,7 +41,7 @@ impl TypeInfer {
         env: &mut TypeEnv,
     ) -> Result<(Subst, ir::Value), Error> {
         match eir {
-            ir::Value::Typed(_, _) => Ok((Subst::new(), eir.clone())),
+            ir::Value::Typed(..) => Ok((Subst::new(), eir.clone())),
             ir::Value::Constant(_) => Err(TypeInferError::NotTyped.into()),
             ir::Value::Variable(ident) => match env.get(ident) {
                 Some(s) => {
@@ -183,12 +183,13 @@ impl TypeInfer {
 
 struct ApplySubst {
     subst: Subst,
+    instantiation_table: Vec<(Type, Type)>,
 }
 
 impl ApplySubst {
     fn apply_all(&self, eir: &ir::Value) -> Result<Box<ir::Value>, Error> {
         match eir {
-            ir::Value::Typed(ty, box value) => {
+            ir::Value::Typed(ty, _, box value) => {
                 let new_ty = ty.apply(&self.subst);
                 let new_v = match value {
                     ir::Value::Constant(..) | ir::Value::Variable(..) => value.clone(),
