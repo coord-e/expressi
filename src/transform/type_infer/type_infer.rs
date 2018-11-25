@@ -76,7 +76,7 @@ impl TypeInfer {
 
                 let new_node = ir::Value::Apply(box v1.clone(), box v2.clone());
                 Ok((
-                    s2.compose(&s2.compose(&s1)),
+                    s3.compose(&s2.compose(&s1)),
                     new_node.with_type(tv.apply(&s3))?,
                 ))
             }
