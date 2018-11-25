@@ -180,14 +180,8 @@ impl TypeInfer {
             }
         }
     }
-}
 
-struct ApplySubst {
-    instantiation_table: Vec<(Type, Type)>,
-}
-
-impl ApplySubst {
-    fn apply_all(&self, eir: &ir::Value, subst: &Subst) -> Result<Box<ir::Value>, Error> {
+    fn apply_subst_all(&self, eir: &ir::Value, subst: &Subst) -> Result<Box<ir::Value>, Error> {
         match eir {
             ir::Value::Typed(ty, _, box value) => {
                 let new_ty = ty.apply(subst);
@@ -204,30 +198,35 @@ impl ApplySubst {
                 let new_v = match value {
                     ir::Value::Constant(..) | ir::Value::Variable(..) => value.clone(),
                     ir::Value::Bind(kind, ident, box body) => {
-                        ir::Value::Bind(*kind, ident.clone(), self.apply_all(body, subst)?)
+                        ir::Value::Bind(*kind, ident.clone(), self.apply_subst_all(body, subst)?)
                     }
-                    ir::Value::Assign(box lhs, box rhs) => {
-                        ir::Value::Assign(self.apply_all(lhs, subst)?, self.apply_all(rhs, subst)?)
+                    ir::Value::Assign(box lhs, box rhs) => ir::Value::Assign(
+                        self.apply_subst_all(lhs, subst)?,
+                        self.apply_subst_all(rhs, subst)?,
+                    ),
+                    ir::Value::Scope(box body) => {
+                        ir::Value::Scope(self.apply_subst_all(body, subst)?)
                     }
-                    ir::Value::Scope(box body) => ir::Value::Scope(self.apply_all(body, subst)?),
-                    ir::Value::Follow(box lhs, box rhs) => {
-                        ir::Value::Follow(self.apply_all(lhs, subst)?, self.apply_all(rhs, subst)?)
-                    }
-                    ir::Value::Apply(box lhs, box rhs) => {
-                        ir::Value::Apply(self.apply_all(lhs, subst)?, self.apply_all(rhs, subst)?)
-                    }
+                    ir::Value::Follow(box lhs, box rhs) => ir::Value::Follow(
+                        self.apply_subst_all(lhs, subst)?,
+                        self.apply_subst_all(rhs, subst)?,
+                    ),
+                    ir::Value::Apply(box lhs, box rhs) => ir::Value::Apply(
+                        self.apply_subst_all(lhs, subst)?,
+                        self.apply_subst_all(rhs, subst)?,
+                    ),
                     ir::Value::BinOp(op, box lhs, box rhs) => ir::Value::BinOp(
                         *op,
-                        self.apply_all(lhs, subst)?,
-                        self.apply_all(rhs, subst)?,
+                        self.apply_subst_all(lhs, subst)?,
+                        self.apply_subst_all(rhs, subst)?,
                     ),
                     ir::Value::IfElse(box cond, box then_v, box else_v) => ir::Value::IfElse(
-                        self.apply_all(cond, subst)?,
-                        self.apply_all(then_v, subst)?,
-                        self.apply_all(else_v, subst)?,
+                        self.apply_subst_all(cond, subst)?,
+                        self.apply_subst_all(then_v, subst)?,
+                        self.apply_subst_all(else_v, subst)?,
                     ),
                     ir::Value::Function(ident, box body) => {
-                        ir::Value::Function(ident.clone(), self.apply_all(body, subst)?)
+                        ir::Value::Function(ident.clone(), self.apply_subst_all(body, subst)?)
                     }
                     ir::Value::Typed(..) => return Err(InternalError::DoubleTyped.into()),
                 };
@@ -241,10 +240,7 @@ impl ApplySubst {
 impl Transform for TypeInfer {
     fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
         let (subst, v) = self.transform_with_env(eir, &mut TypeEnv::new())?;
-        let a = ApplySubst {
-            instantiation_table: self.instantiation_table.clone(),
-        };
-        let box v = a.apply_all(&v, &subst)?;
+        let box v = self.apply_subst_all(&v, &subst)?;
         Ok(v)
     }
 }
