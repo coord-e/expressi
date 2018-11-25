@@ -76,10 +76,9 @@ impl JIT {
 
         self.builder.position_at_end(&basic_block);
 
-        let eir = {
-            let mut a_trans = ASTTranslator {};
-            a_trans.translate_expr(expr)?
-        };
+        let mut a_trans = ASTTranslator {};
+        let eir = a_trans.translate_expr(expr)?;
+
         if self.print_eir {
             eprintln!("EIR:");
             let printer = Printer::new();
@@ -87,10 +86,8 @@ impl JIT {
             eprintln!();
         }
 
-        let transformed = {
-            let mut ti = TypeInfer::new();
-            eir.apply(ti)?
-        };
+        let ti = TypeInfer::new();
+        let transformed = eir.apply(ti)?;
 
         if self.print_eir {
             eprintln!("Transformed EIR:");
