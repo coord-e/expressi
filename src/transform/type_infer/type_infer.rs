@@ -60,7 +60,8 @@ impl TypeInfer {
                 let (s1, v) = self.transform_with_env(body, &mut new_env)?;
                 let t1 = v.type_().unwrap();
                 let new_type = Type::Function(box tv.apply(&s1), box t1.clone());
-                Ok((s1.clone(), eir.with_type(new_type)?))
+                let new_node = ir::Value::Function(ident.to_string(), box v.clone());
+                Ok((s1.clone(), new_node.with_type(new_type)?))
             }
             ir::Value::Apply(box f, box arg) => {
                 let (s1, v1) = self.transform_with_env(f, env)?;
@@ -70,35 +71,43 @@ impl TypeInfer {
 
                 let tv = self.tvg.new_variable();
                 let s3 = t1.apply(&s2).mgu(&Type::Function(box t2.clone(), box tv.clone()))?;
-                Ok((s3.compose(&s2.compose(&s1)), eir.with_type(tv.apply(&s3))?))
+
+                let new_node = ir::Value::Apply(box v1.clone(), box v2.clone());
+                Ok((s2.compose(&s2.compose(&s1)), new_node.with_type(tv.apply(&s3))?))
             }
-            ir::Value::Bind(_, ident, box value) => {
+            ir::Value::Bind(kind, ident, box value) => {
                 let (s1, v1) = self.transform_with_env(value, env)?;
                 let t1 = v1.type_().unwrap();
 
                 let tp = env.apply(&s1).generalize(&t1);
                 env.insert(ident.clone(), tp);
-                Ok((s1, eir.with_type(t1.clone())?))
+
+                let new_node = ir::Value::Bind(kind.clone(), ident.clone(), box v1.clone());
+                Ok((s1, new_node.with_type(t1.clone())?))
             }
             ir::Value::Scope(box body) => {
                 let mut new_env = env.clone();
                 let (s1, v1) = self.transform_with_env(body, &mut new_env)?;
                 let t1 = v1.type_().unwrap();
 
-                Ok((s1, eir.with_type(t1.clone())?))
+                let new_node = ir::Value::Scope(box v1.clone());
+                Ok((s1, new_node.with_type(t1.clone())?))
             }
             ir::Value::Follow(box lhs, box rhs) => {
-                let (s1, _) = self.transform_with_env(lhs, env)?;
-                let (s2, v) = self.transform_with_env(rhs, env)?;
-                let t = v.type_().unwrap();
+                let (s1, v1) = self.transform_with_env(lhs, env)?;
+                let (s2, v2) = self.transform_with_env(rhs, env)?;
+                let t = v1.type_().unwrap();
 
-                Ok((s1.compose(&s2), eir.with_type(t.clone())?))
+                let new_node = ir::Value::Follow(box v1.clone(), box v2.clone());
+                Ok((s1.compose(&s2), new_node.with_type(t.clone())?))
             }
             ir::Value::BinOp(op, box rhs, box lhs) => {
                 let (s1, lhs) = self.transform_with_env(&lhs, env)?;
                 let lhs_ty = lhs.type_().unwrap();
                 let (s2, rhs) = self.transform_with_env(&rhs, env)?;
                 let rhs_ty = rhs.type_().unwrap();
+
+                let new_node = ir::Value::BinOp(*op, box rhs.clone(), box lhs.clone());
                 Ok(match op {
                     Operator::Index => unimplemented!(),
                     Operator::Lt
@@ -109,12 +118,12 @@ impl TypeInfer {
                     | Operator::Ne => {
                         let sl = lhs_ty.mgu(&Type::Number)?;
                         let sr = rhs_ty.mgu(&Type::Number)?;
-                        (s1.compose(&s2.compose(&sl.compose(&sr))), eir.with_type(Type::Boolean)?)
+                        (s1.compose(&s2.compose(&sl.compose(&sr))), new_node.with_type(Type::Boolean)?)
                     }
                     _ => {
                         let sl = lhs_ty.mgu(&Type::Number)?;
                         let sr = rhs_ty.mgu(&Type::Number)?;
-                        (s1.compose(&s2.compose(&sl.compose(&sr))), eir.with_type(Type::Number)?)
+                        (s1.compose(&s2.compose(&sl.compose(&sr))), new_node.with_type(Type::Number)?)
                     }
                 })
             }
