@@ -69,7 +69,11 @@ impl Printer {
                 self.print(val, f)?;
                 write!(f, " :: {}", ty)?;
                 if !candidates.is_empty() {
-                    write!(f, " {:?}", candidates)?;
+                    write!(f, "[")?;
+                    for t in candidates {
+                        write!(f, "{}, ", t)?;
+                    }
+                    write!(f, "]")?;
                 }
                 Ok(())
             }
