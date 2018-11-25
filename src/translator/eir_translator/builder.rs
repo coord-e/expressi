@@ -205,7 +205,7 @@ impl<'a> Builder<'a> {
     pub fn declare_mut_var(
         &mut self,
         name: &str,
-        t: types::BasicTypeEnum,
+        base_value: &Atom<values::BasicValueEnum>,
         unique: bool,
     ) -> Result<String, Error> {
         let real_name = if unique {
@@ -213,11 +213,24 @@ impl<'a> Builder<'a> {
         } else {
             name.to_string()
         };
-        let variable = self.inst_builder.build_alloca(t, &real_name);
-        self.env.insert(
-            &real_name,
-            BoundPointer::new(BindingKind::Mutable, variable.into()),
-        );
+        let ptr = match base_value {
+            Atom::LLVMValue(val) => {
+                let t = self.type_of(*val);
+                self.inst_builder.build_alloca(t, &real_name).into()
+            }
+            Atom::PolyValue(val_table) => val_table
+                .iter()
+                .map(|(k, v)| {
+                    let t = self.type_of(*v);
+                    (
+                        k.clone(),
+                        self.inst_builder.build_alloca(t, &real_name).into(),
+                    )
+                }).collect::<HashMap<_, _>>()
+                .into(),
+        };
+        self.env
+            .insert(&real_name, BoundPointer::new(BindingKind::Mutable, ptr));
         Ok(real_name)
     }
 
@@ -262,14 +275,15 @@ impl<'a> Builder<'a> {
 
         match var.ptr_value() {
             Atom::LLVMValue(var) => {
-                self.inst_builder.build_store(*var, val.expect_value()?);
+                self.inst_builder
+                    .build_store(*var, val.clone().expect_value()?);
             }
             Atom::PolyValue(var_table) => {
                 var_table
                     .iter()
                     .map(|(k, v)| {
                         self.inst_builder
-                            .build_store(*v, *val.expect_poly_value()?.get(k).unwrap());
+                            .build_store(*v, *val.clone().expect_poly_value()?.get(k).unwrap());
                         Ok(())
                     }).collect::<Result<(), Error>>()?;
             }
