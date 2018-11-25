@@ -5,6 +5,7 @@ use translator::eir_translator::{Atom, Builder};
 
 use failure::Error;
 use inkwell::values::BasicValueEnum;
+use std::collections::HashMap;
 
 pub struct EIRTranslator<'a> {
     pub builder: Builder<'a>,
@@ -38,7 +39,17 @@ impl<'a> EIRTranslator<'a> {
                     ir::Constant::Empty => self.builder.empty_constant()?.into(),
                 },
                 ir::Value::Function(param, box body) => {
-                    self.translate_monotype_function(param, &ty, body)?.into()
+                    if ty_candidates.is_empty() {
+                        self.translate_monotype_function(param, &ty, body)?.into()
+                    } else {
+                        ty_candidates
+                            .into_iter()
+                            .map(|(ty, body)| {
+                                self.translate_monotype_function(param.clone(), &ty, body)
+                                    .map(|v| (ty, v))
+                            }).collect::<Result<HashMap<_, _>, _>>()?
+                            .into()
+                    }
                 }
                 ir::Value::Typed(..) => bail!(InternalError::DoubleTyped),
                 _ => self.translate_expr(value)?.into(),
