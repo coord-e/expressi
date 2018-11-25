@@ -66,7 +66,7 @@ impl JIT {
         unsafe { execution_engine.get_function(name) }.map_err(|e| e.into())
     }
 
-    // Translate from toy-language AST nodes into Cranelift IR.
+    // Translate from toy-language AST nodes into LLVM IR.
     fn translate(&mut self, module: Rc<module::Module>, expr: Expression) -> Result<(), Error> {
         let i64_type = self.context.i64_type();
         let fn_type = i64_type.fn_type(&[], false);
