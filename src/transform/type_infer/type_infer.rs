@@ -127,9 +127,22 @@ impl TypeInfer {
                     }
                 })
             }
+            ir::Value::IfElse(box cond, box then_body, box else_body) => {
+                let (s1, cond_v) = self.transform_with_env(&cond, env)?;
+                let cond_ty = cond_v.type_().unwrap();
+                let (s2, then_v) = self.transform_with_env(&then_body, env)?;
+                let then_ty = then_v.type_().unwrap();
+                let (s3, else_v) = self.transform_with_env(&else_body, env)?;
+                let else_ty = else_v.type_().unwrap();
+
+                let cond_s = cond_ty.mgu(&Type::Boolean)?;
+                let body_s = then_ty.mgu(&else_ty)?;
+
+                let new_node = ir::Value::IfElse(box cond_v.clone(), box then_v.clone(), box else_v.clone());
+                Ok((s1.compose(&s2.compose(&s3.compose(&cond_s.compose(&body_s)))), new_node.with_type(then_ty.clone())?))
+            }
             _ => unimplemented!()
             // Assign(Box<Value>, Box<Value>),
-            // IfElse(Box<Value>, Box<Value>, Box<Value>),
         }
     }
 }
