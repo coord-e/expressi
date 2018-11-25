@@ -11,11 +11,11 @@ pub enum TranslationError {
     #[fail(display = "Use of undeclared type identifier")]
     UndeclaredType,
 
-    #[fail(display = "Value is expected but found Type")]
+    #[fail(display = "Value with fixed type is expected")]
     ValueExpected,
 
-    #[fail(display = "Type is expected but found Value")]
-    TypeExpected,
+    #[fail(display = "Value with polymorphic type is expected")]
+    PolyValueExpected,
 
     #[fail(display = "LLVM Value is not available for this value")]
     LLVMValueNotAvailable,
