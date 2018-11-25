@@ -65,6 +65,9 @@ pub enum InternalError {
 
     #[fail(display = "Typed Typed Value detected")]
     DoubleTyped,
+
+    #[fail(display = "Already typed")]
+    AlreadyTyped,
 }
 
 #[derive(Debug, Fail)]

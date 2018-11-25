@@ -1,14 +1,13 @@
-use error::{InternalError, TranslationError};
+use error::TranslationError;
 use expression::Operator;
 use ir::BindingKind;
 use scope::{Env, Scope, ScopedEnv};
+use transform::type_infer::Type;
 use translator::eir_translator::BoundPointer;
-use type_::type_::{EnumTypeData, OperatorKind, TypeData};
-use type_::{TypeID, TypeStore};
 
 use failure::Error;
 
-use inkwell::types::{AnyType, BasicType};
+use inkwell::types::BasicType;
 use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPredicate};
 
 use std::mem;
@@ -37,20 +36,14 @@ impl Block {
 pub struct Builder<'a> {
     inst_builder: &'a mut builder::Builder,
     module: Rc<module::Module>,
-    type_store: &'a mut TypeStore,
     env: ScopedEnv<BoundPointer>,
 }
 
 impl<'a> Builder<'a> {
-    pub fn new(
-        type_store: &'a mut TypeStore,
-        inst_builder: &'a mut builder::Builder,
-        module: Rc<module::Module>,
-    ) -> Self {
+    pub fn new(inst_builder: &'a mut builder::Builder, module: Rc<module::Module>) -> Self {
         Builder {
             inst_builder,
             module,
-            type_store,
             env: ScopedEnv::new(),
         }
     }
@@ -74,35 +67,21 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn type_data(&self, ty: TypeID) -> Result<&TypeData, Error> {
-        let data: &TypeData = self
-            .type_store
-            .get(ty)
-            .ok_or(InternalError::InvalidTypeID)?;
-        match data {
-            TypeData::Variable(opt_id) => match opt_id {
-                Some(id) => self.type_data(*id),
-                None => Err(TranslationError::UnresolvedType.into()),
-            },
-            _ => Ok(data),
-        }
-    }
-
-    pub fn llvm_type(&self, ty: TypeID) -> Result<types::BasicTypeEnum, Error> {
-        Ok(match self.type_data(ty)? {
-            TypeData::Operator(OperatorKind::Number, _) => types::IntType::i64_type().into(),
-            TypeData::Operator(OperatorKind::Boolean, _) => types::IntType::bool_type().into(),
-            TypeData::Operator(OperatorKind::Empty, _) => types::VoidType::void_type()
+    pub fn llvm_type(&self, ty: &Type) -> Result<types::BasicTypeEnum, Error> {
+        Ok(match ty {
+            Type::Number => types::IntType::i64_type().into(),
+            Type::Boolean => types::IntType::bool_type().into(),
+            Type::Empty => types::VoidType::void_type()
                 .ptr_type(AddressSpace::Generic)
                 .into(),
-            TypeData::Operator(OperatorKind::Function, types) => {
-                let param = self.llvm_type(types[0])?;
-                let ret = self.llvm_type(types[1])?;
+            Type::Variable(_) => return Err(TranslationError::UnresolvedType.into()),
+            Type::Function(box param, box body) => {
+                let param = self.llvm_type(param)?;
+                let ret = self.llvm_type(body)?;
                 ret.fn_type(&[param], false)
                     .ptr_type(AddressSpace::Generic)
                     .into()
             }
-            _ => unimplemented!(),
         })
     }
 
@@ -127,7 +106,7 @@ impl<'a> Builder<'a> {
 
     pub fn function_constant(
         &mut self,
-        ty: TypeID,
+        ty: &Type,
         param_name: String,
     ) -> Result<values::BasicValueEnum, Error> {
         let fn_type = self
@@ -165,10 +144,6 @@ impl<'a> Builder<'a> {
         let func_v: values::FunctionValue = unsafe { mem::transmute(func_ptr) };
         let call_inst = self.inst_builder.build_call(func_v, &[arg], "");
         Ok(call_inst.try_as_basic_value().left().unwrap().into())
-    }
-
-    pub fn register_type(&mut self, data: EnumTypeData) -> Result<TypeID, Error> {
-        Ok(self.type_store.new_enum(data))
     }
 
     pub fn apply_op(
@@ -355,7 +330,7 @@ impl<'a> Builder<'a> {
 
     pub fn load(
         &mut self,
-        _t: TypeID,
+        _t: &Type,
         _addr: values::PointerValue,
         _offset: u32,
     ) -> Result<values::BasicValueEnum, Error> {

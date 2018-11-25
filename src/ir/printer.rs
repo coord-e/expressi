@@ -1,55 +1,12 @@
 use ir::{Constant, Value};
-use type_::type_::OperatorKind;
-use type_::type_::TypeData;
-use type_::{TypeID, TypeStore};
 
 use std::io;
 
-pub struct Printer<'a> {
-    type_store: &'a TypeStore,
-}
+pub struct Printer {}
 
-impl<'a> Printer<'a> {
-    pub fn new(type_store: &'a TypeStore) -> Self {
-        Self { type_store }
-    }
-
-    fn print_type<T>(&self, ty: TypeID, f: &mut T) -> io::Result<()>
-    where
-        T: io::Write,
-    {
-        match self.type_store.get(ty).unwrap() {
-            TypeData::Variable(opt_id) => {
-                write!(f, "var(")?;
-                match opt_id {
-                    Some(id) => self.print_type(*id, f),
-                    None => write!(f, "?"),
-                }?;
-                write!(f, ")")
-            }
-            TypeData::Operator(kind, types) => match kind {
-                OperatorKind::Function => {
-                    self.print_type(types[0], f)?;
-                    write!(f, " -> ")?;
-                    self.print_type(types[1], f)
-                }
-                _ => {
-                    write!(f, "{:?}", kind)?;
-
-                    if types.len() == 0 {
-                        return Ok(());
-                    }
-
-                    write!(f, "[")?;
-                    for ty in types {
-                        self.print_type(*ty, f)?;
-                        write!(f, ", ")?;
-                    }
-                    write!(f, "]")
-                }
-            },
-            v @ _ => write!(f, "{}", v),
-        }
+impl Printer {
+    pub fn new() -> Self {
+        Self {}
     }
 
     pub fn print<T>(&self, v: &Value, f: &mut T) -> io::Result<()>
@@ -110,8 +67,7 @@ impl<'a> Printer<'a> {
             }
             Value::Typed(ty, val) => {
                 self.print(val, f)?;
-                write!(f, " :: ")?;
-                self.print_type(*ty, f)
+                write!(f, " :: {}", ty)
             }
         }
     }
