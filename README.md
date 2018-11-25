@@ -17,6 +17,25 @@ let x = c + b
 
 In this example, `x` is evaluated to `42`.
 
+## TODO
+
+- High-order function evaluation
+- Outer variable capturing in function
+- Refine EIR
+  - Delete `Typed` constructor and provide another way to express typed value
+  - Convert `Follow`, `Bind`, `Scope` to let-in expression
+  - Implement `Printer` as an implementation of `fmt::Display`
+- Refine errors
+  - Property organize error variants
+  - Get rid of `unwrap` completely
+  - Point where the cause is
+- Add `EvalConstant` transformer which calculates compile-time value
+- Implement operators as functions
+- User-defined types
+  - Tuple
+  - Enum
+  - Struct
+
 ## License
 
 Licensed under either of
