@@ -74,7 +74,7 @@ impl fmt::Display for TypeVarID {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Variable(TypeVarID),
     Number,

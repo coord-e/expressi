@@ -1,17 +1,36 @@
 use error::{InternalError, TranslationError};
 use ir;
+use transform::type_infer::Type;
 use translator::eir_translator::{Atom, Builder};
 
 use failure::Error;
+use inkwell::values::BasicValueEnum;
+use std::collections::HashMap;
 
 pub struct EIRTranslator<'a> {
     pub builder: Builder<'a>,
 }
 
 impl<'a> EIRTranslator<'a> {
-    pub fn translate_expr(&mut self, expr: ir::Value) -> Result<Atom, Error> {
+    fn translate_monotype_function(
+        &mut self,
+        param: String,
+        ty: &Type,
+        body: ir::Value,
+    ) -> Result<BasicValueEnum, Error> {
+        let previous_block = self.builder.inst_builder().get_insert_block().unwrap();
+        self.builder.enter_new_scope();
+        let function = self.builder.function_constant(&ty, param)?;
+        let ret = self.translate_expr(body)?.expect_value()?;
+        self.builder.exit_scope()?;
+        self.builder.inst_builder().build_return(Some(&ret));
+        self.builder.inst_builder().position_at_end(&previous_block);
+        Ok(function)
+    }
+
+    pub fn translate_expr(&mut self, expr: ir::Value) -> Result<Atom<BasicValueEnum>, Error> {
         Ok(match expr {
-            ir::Value::Typed(ty, box value) => match value {
+            ir::Value::Typed(ty, ty_candidates, box value) => match value {
                 ir::Value::Constant(c) => match c {
                     ir::Constant::Number(number) => {
                         self.builder.number_constant(i64::from(number))?.into()
@@ -20,22 +39,36 @@ impl<'a> EIRTranslator<'a> {
                     ir::Constant::Empty => self.builder.empty_constant()?.into(),
                 },
                 ir::Value::Function(param, box body) => {
-                    let previous_block = self.builder.inst_builder().get_insert_block().unwrap();
-                    self.builder.enter_new_scope();
-                    let function = self.builder.function_constant(&ty, param)?;
-                    let ret = self.translate_expr(body)?.expect_value()?;
-                    self.builder.exit_scope()?;
-                    self.builder.inst_builder().build_return(Some(&ret));
-                    self.builder.inst_builder().position_at_end(&previous_block);
-                    function.into()
+                    if ty_candidates.is_empty() {
+                        self.translate_monotype_function(param, &ty, body)?.into()
+                    } else {
+                        ty_candidates
+                            .into_iter()
+                            .map(|(ty, body)| {
+                                match body {
+                                    ir::Value::Function(_, box body) => {
+                                        self.translate_monotype_function(param.clone(), &ty, body)
+                                    }
+                                    _ => unreachable!(),
+                                }.map(|v| (ty, v))
+                            }).collect::<Result<HashMap<_, _>, _>>()?
+                            .into()
+                    }
                 }
                 ir::Value::Typed(..) => bail!(InternalError::DoubleTyped),
                 _ => self.translate_expr(value)?.into(),
             },
             ir::Value::Apply(box func, box arg) => {
-                let func = self.translate_expr(func)?.expect_value()?;
+                let func_ty = func.type_().ok_or(TranslationError::NotTyped)?;
+                let func = self.translate_expr(func.clone())?;
                 let arg = self.translate_expr(arg)?.expect_value()?;
-                self.builder.call(func, arg)?.into()
+                match func {
+                    Atom::LLVMValue(func) => self.builder.call(func, arg)?.into(),
+                    Atom::PolyValue(func_table) => self
+                        .builder
+                        .call(*func_table.get(func_ty).unwrap(), arg)?
+                        .into(),
+                }
             }
             ir::Value::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?.expect_value()?;
@@ -49,30 +82,29 @@ impl<'a> EIRTranslator<'a> {
             }
 
             ir::Value::Bind(kind, name, rhs) => {
-                let new_value = self.translate_expr(*rhs)?.expect_value()?;
-                self.builder.bind_var(&name, new_value, kind)?;
+                let new_value = self.translate_expr(*rhs)?;
+                self.builder.bind_var(&name, &new_value, kind)?;
                 new_value.into()
             }
 
             ir::Value::Assign(lhs, rhs) => {
-                let new_value = self.translate_expr(*rhs)?.expect_value()?;
+                let new_value = self.translate_expr(*rhs)?;
                 let name = match *lhs {
-                    ir::Value::Typed(_, box ir::Value::Variable(name)) => name,
+                    ir::Value::Typed(_, _, box ir::Value::Variable(name)) => name,
                     _ => panic!("Non-variable identifier"),
                 };
-                self.builder.assign_var(&name, new_value)?;
-                new_value.into()
+                self.builder.assign_var(&name, &new_value)?;
+                new_value
             }
 
             ir::Value::Variable(name) => self
                 .builder
                 .get_var(&name)
-                .and_then(|v| v.ok_or(TranslationError::UndeclaredVariable.into()))?
-                .into(),
+                .and_then(|v| v.ok_or(TranslationError::UndeclaredVariable.into()))?,
 
             ir::Value::Scope(expr) => {
                 self.builder.enter_new_scope();
-                let content = self.translate_expr(*expr)?.expect_value()?;
+                let content = self.translate_expr(*expr)?;
                 self.builder.exit_scope()?;
                 content.into()
             }
@@ -87,26 +119,21 @@ impl<'a> EIRTranslator<'a> {
                 let initial_block = self.builder.current_block()?;
 
                 self.builder.switch_to_block(&then_block);
-                let then_return = self.translate_expr(*then_expr)?.expect_value()?;
+                let then_return = self.translate_expr(*then_expr)?;
 
                 self.builder.switch_to_block(&initial_block);
-                let then_type = self.builder.type_of(then_return);
-                let var_name = self.builder.declare_mut_var("__cond", then_type, true)?;
+                let var_name = self.builder.declare_mut_var("__cond", &then_return, true)?;
                 self.builder
                     .brz(condition_value, &then_block, &else_block)?;
 
                 self.builder.switch_to_block(&then_block);
-                self.builder.assign_var(&var_name, then_return)?;
+                self.builder.assign_var(&var_name, &then_return)?;
                 self.builder.jump(&merge_block);
 
                 // Start writing 'else' block
                 self.builder.switch_to_block(&else_block);
-                let else_return = self.translate_expr(*else_expr)?.expect_value()?;
-                let else_type = self.builder.type_of(else_return);
-                if then_type != else_type {
-                    panic!("Using different type value in if-else")
-                }
-                self.builder.assign_var(&var_name, else_return)?;
+                let else_return = self.translate_expr(*else_expr)?;
+                self.builder.assign_var(&var_name, &else_return)?;
 
                 // Jump to merge block after translation of the 'then' block
                 self.builder.jump(&merge_block);

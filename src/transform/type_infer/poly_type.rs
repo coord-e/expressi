@@ -51,9 +51,9 @@ impl Types for PolyType {
 impl PolyType {
     /// Instantiates a polytype into a type. Replaces all bound type variables with fresh type
     /// variables and return the resulting type.
-    pub fn instantiate(&self, tvg: &mut TypeVarGen) -> Type {
+    pub fn instantiate(&self, tvg: &mut TypeVarGen) -> (Subst, Type) {
         let newvars = self.vars.iter().map(|_| tvg.new_variable());
-        self.ty
-            .apply(&Subst(self.vars.iter().cloned().zip(newvars).collect()))
+        let s = Subst::with_map(self.vars.iter().cloned().zip(newvars).collect());
+        (s.clone(), self.ty.apply(&s))
     }
 }

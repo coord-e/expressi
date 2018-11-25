@@ -3,6 +3,7 @@ use expression::Operator;
 use ir::BindingKind;
 use scope::{Env, Scope, ScopedEnv};
 use transform::type_infer::Type;
+use translator::eir_translator::atom::Atom;
 use translator::eir_translator::BoundPointer;
 
 use failure::Error;
@@ -10,6 +11,7 @@ use failure::Error;
 use inkwell::types::BasicType;
 use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPredicate};
 
+use std::collections::HashMap;
 use std::mem;
 use std::rc::Rc;
 
@@ -128,7 +130,7 @@ impl<'a> Builder<'a> {
             .build_store(arg_ptr, function.get_first_param().unwrap());
         self.env.insert(
             &param_name,
-            BoundPointer::new(BindingKind::Immutable, arg_ptr),
+            BoundPointer::new(BindingKind::Immutable, arg_ptr.into()),
         );
 
         let ptr: values::PointerValue = unsafe { mem::transmute(function) };
@@ -203,7 +205,7 @@ impl<'a> Builder<'a> {
     pub fn declare_mut_var(
         &mut self,
         name: &str,
-        t: types::BasicTypeEnum,
+        base_value: &Atom<values::BasicValueEnum>,
         unique: bool,
     ) -> Result<String, Error> {
         let real_name = if unique {
@@ -211,32 +213,57 @@ impl<'a> Builder<'a> {
         } else {
             name.to_string()
         };
-        let variable = self.inst_builder.build_alloca(t, &real_name);
-        self.env.insert(
-            &real_name,
-            BoundPointer::new(BindingKind::Mutable, variable),
-        );
+        let ptr = match base_value {
+            Atom::LLVMValue(val) => {
+                let t = self.type_of(*val);
+                self.inst_builder.build_alloca(t, &real_name).into()
+            }
+            Atom::PolyValue(val_table) => val_table
+                .iter()
+                .map(|(k, v)| {
+                    let t = self.type_of(*v);
+                    (
+                        k.clone(),
+                        self.inst_builder.build_alloca(t, &real_name).into(),
+                    )
+                }).collect::<HashMap<_, _>>()
+                .into(),
+        };
+        self.env
+            .insert(&real_name, BoundPointer::new(BindingKind::Mutable, ptr));
         Ok(real_name)
     }
 
     pub fn bind_var(
         &mut self,
         name: &str,
-        val: values::BasicValueEnum,
+        val: &Atom<values::BasicValueEnum>,
         kind: BindingKind,
-    ) -> Result<values::BasicValueEnum, Error> {
+    ) -> Result<(), Error> {
+        let ptr = match val {
+            Atom::LLVMValue(val) => self.store_mono_var(name, *val).into(),
+            Atom::PolyValue(val_table) => val_table
+                .iter()
+                .map(|(k, v)| (k.clone(), self.store_mono_var(name, *v)))
+                .collect::<HashMap<_, _>>()
+                .into(),
+        };
+        self.env.insert(name, BoundPointer::new(kind, ptr));
+        Ok(())
+    }
+
+    fn store_mono_var(&mut self, name: &str, val: values::BasicValueEnum) -> values::PointerValue {
         let llvm_type = self.type_of(val);
         let variable = self.inst_builder.build_alloca(llvm_type, name);
-        self.env.insert(name, BoundPointer::new(kind, variable));
         self.inst_builder.build_store(variable, val);
-        Ok(val)
+        variable
     }
 
     pub fn assign_var(
         &mut self,
         name: &str,
-        val: values::BasicValueEnum,
-    ) -> Result<values::BasicValueEnum, Error> {
+        val: &Atom<values::BasicValueEnum>,
+    ) -> Result<(), Error> {
         let var = self
             .env
             .get(name)
@@ -246,14 +273,40 @@ impl<'a> Builder<'a> {
             return Err(TranslationError::ImmutableAssign.into());
         }
 
-        self.inst_builder.build_store(var.ptr_value(), val);
-        Ok(val)
+        match var.ptr_value() {
+            Atom::LLVMValue(var) => {
+                self.inst_builder
+                    .build_store(*var, val.clone().expect_value()?);
+            }
+            Atom::PolyValue(var_table) => {
+                var_table
+                    .iter()
+                    .map(|(k, v)| {
+                        self.inst_builder
+                            .build_store(*v, *val.clone().expect_poly_value()?.get(k).unwrap());
+                        Ok(())
+                    }).collect::<Result<(), Error>>()?;
+            }
+        };
+        Ok(())
     }
 
-    pub fn get_var(&mut self, name: &str) -> Result<Option<values::BasicValueEnum>, Error> {
+    pub fn get_var(&mut self, name: &str) -> Result<Option<Atom<values::BasicValueEnum>>, Error> {
         self.env.get(name).map_or(Ok(None), |var| {
-            let loaded = self.inst_builder.build_load(var.ptr_value(), "load_var");
-            Ok(Some(loaded))
+            Ok(Some(match var.ptr_value() {
+                Atom::LLVMValue(var) => {
+                    self.inst_builder.build_load(var.clone(), "load_var").into()
+                }
+                Atom::PolyValue(var_table) => var_table
+                    .into_iter()
+                    .map(|(k, v)| {
+                        (
+                            k.clone(),
+                            self.inst_builder.build_load(v.clone(), "load_var"),
+                        )
+                    }).collect::<HashMap<_, _>>()
+                    .into(),
+            }))
         })
     }
 

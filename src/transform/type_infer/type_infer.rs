@@ -8,6 +8,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
+use error::InternalError;
 use expression::Operator;
 use ir;
 use transform::error::TypeInferError;
@@ -23,12 +24,14 @@ use failure::Error;
 
 pub struct TypeInfer {
     tvg: TypeVarGen,
+    instantiation_table: Vec<(Type, Subst)>,
 }
 
 impl TypeInfer {
     pub fn new() -> Self {
         Self {
             tvg: TypeVarGen::new(),
+            instantiation_table: Vec::new(),
         }
     }
 
@@ -38,10 +41,14 @@ impl TypeInfer {
         env: &mut TypeEnv,
     ) -> Result<(Subst, ir::Value), Error> {
         match eir {
-            ir::Value::Typed(_, _) => Ok((Subst::new(), eir.clone())),
+            ir::Value::Typed(..) => Ok((Subst::new(), eir.clone())),
             ir::Value::Constant(_) => Err(TypeInferError::NotTyped.into()),
             ir::Value::Variable(ident) => match env.get(ident) {
-                Some(s) => Ok((Subst::new(), eir.with_type(s.instantiate(&mut self.tvg))?)),
+                Some(s) => {
+                    let (subst, instance) = s.instantiate(&mut self.tvg);
+                    self.instantiation_table.push((s.ty.clone(), subst));
+                    Ok((Subst::new(), eir.with_type(instance)?))
+                }
                 None => Err(TypeInferError::UndeclaredIdentifier {
                     ident: ident.clone(),
                 }.into()),
@@ -76,7 +83,7 @@ impl TypeInfer {
 
                 let new_node = ir::Value::Apply(box v1.clone(), box v2.clone());
                 Ok((
-                    s2.compose(&s2.compose(&s1)),
+                    s3.compose(&s2.compose(&s1)),
                     new_node.with_type(tv.apply(&s3))?,
                 ))
             }
@@ -172,11 +179,73 @@ impl TypeInfer {
             }
         }
     }
+
+    fn inner_apply_subst_all(&self, value: &ir::Value, subst: &Subst) -> Result<ir::Value, Error> {
+        Ok(match value {
+            ir::Value::Constant(..) | ir::Value::Variable(..) => value.clone(),
+            ir::Value::Bind(kind, ident, box body) => {
+                ir::Value::Bind(*kind, ident.clone(), self.apply_subst_all(body, subst)?)
+            }
+            ir::Value::Assign(box lhs, box rhs) => ir::Value::Assign(
+                self.apply_subst_all(lhs, subst)?,
+                self.apply_subst_all(rhs, subst)?,
+            ),
+            ir::Value::Scope(box body) => ir::Value::Scope(self.apply_subst_all(body, subst)?),
+            ir::Value::Follow(box lhs, box rhs) => ir::Value::Follow(
+                self.apply_subst_all(lhs, subst)?,
+                self.apply_subst_all(rhs, subst)?,
+            ),
+            ir::Value::Apply(box lhs, box rhs) => ir::Value::Apply(
+                self.apply_subst_all(lhs, subst)?,
+                self.apply_subst_all(rhs, subst)?,
+            ),
+            ir::Value::BinOp(op, box lhs, box rhs) => ir::Value::BinOp(
+                *op,
+                self.apply_subst_all(lhs, subst)?,
+                self.apply_subst_all(rhs, subst)?,
+            ),
+            ir::Value::IfElse(box cond, box then_v, box else_v) => ir::Value::IfElse(
+                self.apply_subst_all(cond, subst)?,
+                self.apply_subst_all(then_v, subst)?,
+                self.apply_subst_all(else_v, subst)?,
+            ),
+            ir::Value::Function(ident, box body) => {
+                ir::Value::Function(ident.clone(), self.apply_subst_all(body, subst)?)
+            }
+            ir::Value::Typed(..) => return Err(InternalError::DoubleTyped.into()),
+        })
+    }
+
+    fn apply_subst_all(&self, eir: &ir::Value, subst: &Subst) -> Result<Box<ir::Value>, Error> {
+        match eir {
+            ir::Value::Typed(ty, _, box value) => {
+                let new_ty = ty.apply(subst);
+                let local_inst_table = self
+                    .instantiation_table
+                    .iter()
+                    .filter_map(|(k, v)| {
+                        if k == &new_ty {
+                            // TODO: compose v and subst, and call inner_apply_subst_all once
+                            let inner = self.inner_apply_subst_all(value, &v).unwrap();
+                            let instance_value =
+                                self.inner_apply_subst_all(&inner, &subst).unwrap();
+                            Some((ty.apply(&v).apply(&subst), instance_value))
+                        } else {
+                            None
+                        }
+                    }).collect();
+                let new_v = self.inner_apply_subst_all(value, subst)?;
+                Ok(box ir::Value::Typed(new_ty, local_inst_table, box new_v))
+            }
+            _ => Err(TypeInferError::NotTyped.into()),
+        }
+    }
 }
 
 impl Transform for TypeInfer {
     fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
-        let (_, v) = self.transform_with_env(eir, &mut TypeEnv::new())?;
+        let (subst, v) = self.transform_with_env(eir, &mut TypeEnv::new())?;
+        let box v = self.apply_subst_all(&v, &subst)?;
         Ok(v)
     }
 }

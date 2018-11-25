@@ -65,9 +65,17 @@ impl Printer {
                 write!(f, "{} -> ", param)?;
                 self.print(body, f)
             }
-            Value::Typed(ty, val) => {
+            Value::Typed(ty, candidates, val) => {
                 self.print(val, f)?;
-                write!(f, " :: {}", ty)
+                write!(f, " :: {}", ty)?;
+                if !candidates.is_empty() {
+                    write!(f, "[")?;
+                    for (t, _) in candidates {
+                        write!(f, "{}, ", t)?;
+                    }
+                    write!(f, "]")?;
+                }
+                Ok(())
             }
         }
     }
