@@ -107,7 +107,7 @@ impl TypeInfer {
                 let (s2, rhs) = self.transform_with_env(&rhs, env)?;
                 let rhs_ty = rhs.type_().unwrap();
 
-                let new_node = ir::Value::BinOp(*op, box rhs.clone(), box lhs.clone());
+                let new_node = ir::Value::BinOp(*op, box lhs.clone(), box rhs.clone());
                 Ok(match op {
                     Operator::Index => unimplemented!(),
                     Operator::Lt
@@ -149,7 +149,7 @@ impl TypeInfer {
 
                 let subst = lhs_ty.mgu(&rhs_ty)?;
 
-                let new_node = ir::Value::Assign(box rhs.clone(), box lhs.clone());
+                let new_node = ir::Value::Assign(box lhs.clone(), box rhs.clone());
                 Ok((s1.compose(&s2.compose(&subst)), new_node.with_type(lhs_ty.clone())?))
             }
         }
