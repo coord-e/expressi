@@ -190,9 +190,7 @@ impl TypeInfer {
                 self.apply_subst_all(lhs, subst)?,
                 self.apply_subst_all(rhs, subst)?,
             ),
-            ir::Value::Scope(box body) => {
-                ir::Value::Scope(self.apply_subst_all(body, subst)?)
-            }
+            ir::Value::Scope(box body) => ir::Value::Scope(self.apply_subst_all(body, subst)?),
             ir::Value::Follow(box lhs, box rhs) => ir::Value::Follow(
                 self.apply_subst_all(lhs, subst)?,
                 self.apply_subst_all(rhs, subst)?,
@@ -228,10 +226,10 @@ impl TypeInfer {
                     .filter_map(|(k, v)| {
                         if k == &new_ty {
                             // TODO: compose v and subst, and call inner_apply_subst_all once
-                            let s = v.compose(&subst);
                             let inner = self.inner_apply_subst_all(value, &v).unwrap();
-                            let instance_value = self.inner_apply_subst_all(&inner, &subst).unwrap();
-                            Some(ty.apply(&v).apply(&subst))
+                            let instance_value =
+                                self.inner_apply_subst_all(&inner, &subst).unwrap();
+                            Some((ty.apply(&v).apply(&subst), instance_value))
                         } else {
                             None
                         }

@@ -4,6 +4,8 @@ use transform::type_infer::Type;
 
 use failure::Error;
 
+use std::collections::HashMap;
+
 pub struct ASTTranslator {}
 
 impl ASTTranslator {
@@ -11,17 +13,17 @@ impl ASTTranslator {
         Ok(match expr {
             Expression::Number(number) => Value::Typed(
                 Type::Number,
-                Vec::new(),
+                HashMap::new(),
                 Box::new(Value::Constant(Constant::Number(number))),
             ),
             Expression::Boolean(value) => Value::Typed(
                 Type::Boolean,
-                Vec::new(),
+                HashMap::new(),
                 Box::new(Value::Constant(Constant::Boolean(value))),
             ),
             Expression::Empty => Value::Typed(
                 Type::Empty,
-                Vec::new(),
+                HashMap::new(),
                 Box::new(Value::Constant(Constant::Empty)),
             ),
             Expression::Function(ident, body) => {

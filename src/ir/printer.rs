@@ -70,7 +70,7 @@ impl Printer {
                 write!(f, " :: {}", ty)?;
                 if !candidates.is_empty() {
                     write!(f, "[")?;
-                    for t in candidates {
+                    for (t, v) in candidates {
                         write!(f, "{}, ", t)?;
                     }
                     write!(f, "]")?;

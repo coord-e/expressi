@@ -5,6 +5,7 @@ use transform::Transform;
 
 use failure::Error;
 
+use std::collections::HashMap;
 use std::fmt;
 
 #[derive(PartialEq, Debug, Clone, Eq, Copy)]
@@ -47,7 +48,7 @@ pub enum Value {
     Variable(Identifier),
     Constant(Constant),
     Function(Identifier, Box<Value>),
-    Typed(Type, Vec<Type>, Box<Value>),
+    Typed(Type, HashMap<Type, Value>, Box<Value>),
 }
 
 impl Value {
@@ -68,7 +69,7 @@ impl Value {
     pub fn with_type(&self, ty: Type) -> Result<Value, Error> {
         match self {
             Value::Typed(..) => Err(InternalError::AlreadyTyped.into()),
-            _ => Ok(Value::Typed(ty, Vec::new(), box self.clone())),
+            _ => Ok(Value::Typed(ty, HashMap::new(), box self.clone())),
         }
     }
 }
