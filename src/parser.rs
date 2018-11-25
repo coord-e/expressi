@@ -149,6 +149,17 @@ mod tests {
         }
 
         #[test]
+        fn apply_with_outer_bracket() {
+            assert_eq!(
+                parse("( a(0) )"),
+                Ok(Expression::Apply(
+                    Box::new(Expression::Identifier("a".to_owned())),
+                    Box::new(Expression::Number(0))
+                ))
+            )
+        }
+
+        #[test]
         fn apply_multi() {
             assert_eq!(
                 parse("a(0)(0)"),
