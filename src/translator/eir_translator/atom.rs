@@ -11,6 +11,7 @@ pub enum Atom<T> {
     PolyValue(HashMap<Type, T>),
 }
 
+/// TODO: Make reference version of `expect_*`
 impl<T> Atom<T> {
     pub fn expect_value(self) -> Result<T, Error> {
         match self {
