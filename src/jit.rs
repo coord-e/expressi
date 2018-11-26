@@ -46,7 +46,7 @@ impl JIT {
         &mut self,
         name: &str,
         input: &str,
-    ) -> Result<execution_engine::Symbol<CompiledFunc>, Error> {
+    ) -> Result<execution_engine::JitFunction<CompiledFunc>, Error> {
         let module = Rc::new(self.context.create_module(name));
         let execution_engine = module
             .create_jit_execution_engine(OptimizationLevel::None)

@@ -23,7 +23,7 @@ fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
         .map_err(|error| CLIError::IOError { error })?;
 
     let func = jit.compile("file_input", &contents.trim())?;
-    println!("{}", unsafe { func() });
+    println!("{}", unsafe { func.call() });
     Ok(())
 }
 
@@ -42,7 +42,7 @@ fn repl(jit: &mut jit::JIT, line_count: u32) -> Result<(), Error> {
     println!(
         "{}{}",
         Blue.paint("-> "),
-        Blue.paint(unsafe { func() }.to_string())
+        Blue.paint(unsafe { func.call() }.to_string())
     );
     Ok(())
 }
