@@ -38,7 +38,7 @@ impl<'a> EIRTranslator<'a> {
                     ir::Constant::Boolean(tf) => self.builder.boolean_constant(tf)?.into(),
                     ir::Constant::Empty => self.builder.empty_constant()?.into(),
                 },
-                ir::Value::Function(param, box body) => {
+                ir::Value::Function(param, box body, _) => {
                     if ty_candidates.is_empty() {
                         self.translate_monotype_function(param, &ty, body)?.into()
                     } else {
@@ -46,7 +46,7 @@ impl<'a> EIRTranslator<'a> {
                             .into_iter()
                             .map(|(ty, body)| {
                                 match body {
-                                    ir::Value::Function(_, box body) => {
+                                    ir::Value::Function(_, box body, _) => {
                                         self.translate_monotype_function(param.clone(), &ty, body)
                                     }
                                     _ => unreachable!(),

@@ -47,7 +47,7 @@ pub enum Value {
     IfElse(Box<Value>, Box<Value>, Box<Value>),
     Variable(Identifier),
     Constant(Constant),
-    Function(Identifier, Box<Value>),
+    Function(Identifier, Box<Value>, Vec<Identifier>),
     Typed(Type, HashMap<Type, Value>, Box<Value>),
 }
 

@@ -61,9 +61,10 @@ impl Printer {
                 self.print(arg, f)?;
                 write!(f, ")")
             }
-            Value::Function(param, body) => {
+            Value::Function(param, body, captures) => {
                 write!(f, "{} -> ", param)?;
-                self.print(body, f)
+                self.print(body, f)?;
+                write!(f, "({:?})", captures)
             }
             Value::Typed(ty, candidates, val) => {
                 self.print(val, f)?;
