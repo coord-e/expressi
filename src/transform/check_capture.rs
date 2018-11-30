@@ -32,14 +32,16 @@ impl CheckCapture {
 }
 
 impl Transform for CheckCapture {
-    fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
-        Ok(match eir {
-            ir::Value::Function(ident, box body, _) => ir::Value::Function(
-                ident.clone(),
-                box body.clone(),
-                collect_vars(body).collect(),
-            ),
-            _ => eir.clone(),
-        })
+    fn transform_function(
+        &mut self,
+        ident: &String,
+        body: &ir::Value,
+        _: &Vec<ir::Identifier>,
+    ) -> Result<ir::Value, Error> {
+        Ok(ir::Value::Function(
+            ident.clone(),
+            box body.clone(),
+            collect_vars(body).collect(),
+        ))
     }
 }
