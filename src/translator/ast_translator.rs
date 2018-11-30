@@ -4,7 +4,7 @@ use transform::type_infer::Type;
 
 use failure::Error;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub struct ASTTranslator {}
 
@@ -28,7 +28,7 @@ impl ASTTranslator {
             ),
             Expression::Function(ident, body) => {
                 let body = self.translate_expr(*body)?;
-                Value::Function(ident, Box::new(body), Vec::new())
+                Value::Function(ident, Box::new(body), HashSet::new())
             }
             Expression::Array(_) => unimplemented!(),
             Expression::Type(_) => unimplemented!(),

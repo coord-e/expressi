@@ -3,6 +3,8 @@ use transform::Transform;
 
 use failure::Error;
 
+use std::collections::HashSet;
+
 pub struct CheckCapture;
 
 fn collect_vars(eir: &ir::Value) -> Box<dyn Iterator<Item = ir::Identifier>> {
@@ -36,7 +38,7 @@ impl Transform for CheckCapture {
         &mut self,
         ident: &String,
         body: &ir::Value,
-        _: &Vec<ir::Identifier>,
+        _: &HashSet<ir::Identifier>,
     ) -> Result<ir::Value, Error> {
         Ok(ir::Value::Function(
             ident.clone(),

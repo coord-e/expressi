@@ -5,7 +5,7 @@ use transform::Transform;
 
 use failure::Error;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 
 #[derive(PartialEq, Debug, Clone, Eq, Copy)]
@@ -47,7 +47,7 @@ pub enum Value {
     IfElse(Box<Value>, Box<Value>, Box<Value>),
     Variable(Identifier),
     Constant(Constant),
-    Function(Identifier, Box<Value>, Vec<Identifier>),
+    Function(Identifier, Box<Value>, HashSet<Identifier>),
     Typed(Type, HashMap<Type, Value>, Box<Value>),
 }
 

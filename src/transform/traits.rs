@@ -4,7 +4,7 @@ use transform::type_infer::Type;
 
 use failure::Error;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub trait Transform {
     fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
@@ -115,7 +115,7 @@ pub trait Transform {
         &mut self,
         ident: &String,
         body: &ir::Value,
-        captures: &Vec<ir::Identifier>,
+        captures: &HashSet<ir::Identifier>,
     ) -> Result<ir::Value, Error> {
         Ok(ir::Value::Function(
             ident.clone(),
