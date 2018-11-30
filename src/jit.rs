@@ -2,7 +2,7 @@ use error::{LLVMError, ParseError};
 use expression::Expression;
 use ir::Printer;
 use parser;
-use transform::{TypeInfer, CheckCapture};
+use transform::{CheckCapture, TypeInfer};
 use translator::eir_translator::Builder;
 use translator::{ASTTranslator, EIRTranslator};
 
