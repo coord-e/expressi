@@ -21,8 +21,13 @@ fn collect_vars(eir: &ir::Value) -> Box<dyn Iterator<Item=ir::Identifier>> {
     }
 }
 
-impl Transform for CheckCapture {
+impl CheckCapture {
+    pub fn new() -> Self {
+        CheckCapture
+    }
+}
 
+impl Transform for CheckCapture {
     fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
         Ok(match eir {
             ir::Value::Function(ident, box body, _) => {

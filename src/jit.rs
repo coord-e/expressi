@@ -2,7 +2,7 @@ use error::{LLVMError, ParseError};
 use expression::Expression;
 use ir::Printer;
 use parser;
-use transform::TypeInfer;
+use transform::{TypeInfer, CheckCapture};
 use translator::eir_translator::Builder;
 use translator::{ASTTranslator, EIRTranslator};
 
@@ -87,7 +87,8 @@ impl JIT {
         }
 
         let ti = TypeInfer::new();
-        let transformed = eir.apply(ti)?;
+        let cc = CheckCapture::new();
+        let transformed = eir.apply(ti)?.apply(cc)?;
 
         if self.print_eir {
             eprintln!("Transformed EIR:");
