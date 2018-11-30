@@ -20,8 +20,11 @@ fn collect_vars(eir: &ir::Value) -> Box<dyn Iterator<Item = ir::Identifier>> {
         ir::Value::IfElse(box cond, box then_, box else_) => box collect_vars(cond)
             .chain(collect_vars(then_))
             .chain(collect_vars(else_)),
-        ir::Value::Function(_, box body, captures) => {
-            box collect_vars(body).chain(captures.clone().into_iter())
+        ir::Value::Function(ident, box body, captures) => {
+            let ident = ident.clone();
+            box collect_vars(body)
+                .chain(captures.clone().into_iter())
+                .filter(move |e| *e != ident)
         }
         ir::Value::Typed(_, _, box value) => box collect_vars(value),
     }
@@ -43,7 +46,7 @@ impl Transform for CheckCapture {
         Ok(ir::Value::Function(
             ident.clone(),
             box body.clone(),
-            collect_vars(body).collect(),
+            collect_vars(body).filter(|e| e != ident).collect(),
         ))
     }
 }
