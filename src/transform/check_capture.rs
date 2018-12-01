@@ -11,9 +11,9 @@ fn collect_vars(eir: &ir::Value) -> Box<dyn Iterator<Item = ir::Identifier>> {
     match eir {
         ir::Value::Variable(ident) => box vec![ident.clone()].into_iter(),
         ir::Value::Constant(_) => box vec![].into_iter(),
-        ir::Value::Bind(_, _, box v) => box collect_vars(v),
+        ir::Value::Bind(_, _, box v) => collect_vars(v),
         ir::Value::Assign(box lhs, box rhs) => box collect_vars(lhs).chain(collect_vars(rhs)),
-        ir::Value::Scope(box body) => box collect_vars(body),
+        ir::Value::Scope(box body) => collect_vars(body),
         ir::Value::Follow(box lhs, box rhs) => box collect_vars(lhs).chain(collect_vars(rhs)),
         ir::Value::Apply(box lhs, box rhs) => box collect_vars(lhs).chain(collect_vars(rhs)),
         ir::Value::BinOp(_, box lhs, box rhs) => box collect_vars(lhs).chain(collect_vars(rhs)),
@@ -26,7 +26,7 @@ fn collect_vars(eir: &ir::Value) -> Box<dyn Iterator<Item = ir::Identifier>> {
                 .chain(captures.clone().into_iter())
                 .filter(move |e| *e != ident)
         }
-        ir::Value::Typed(_, _, box value) => box collect_vars(value),
+        ir::Value::Typed(_, _, box value) => collect_vars(value),
     }
 }
 
