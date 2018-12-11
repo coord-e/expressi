@@ -46,8 +46,8 @@ impl<'a> EIRTranslator<'a> {
                             .into_iter()
                             .map(|(ty, body)| {
                                 match body {
-                                    ir::Value::Function(_, box body, _) => {
-                                        self.translate_monotype_function(param.clone(), &ty, body)
+                                    ir::Value::Function(param, box body, _) => {
+                                        self.translate_monotype_function(param, &ty, body)
                                     }
                                     _ => unreachable!(),
                                 }.map(|v| (ty, v))
