@@ -5,7 +5,7 @@ use translator::eir_translator::{Atom, Builder};
 
 use failure::Error;
 use inkwell::values::BasicValueEnum;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 pub struct EIRTranslator<'a> {
     pub builder: Builder<'a>,
@@ -14,10 +14,22 @@ pub struct EIRTranslator<'a> {
 impl<'a> EIRTranslator<'a> {
     fn translate_monotype_function(
         &mut self,
-        param: String,
+        param: ir::Identifier,
         ty: &Type,
         body: ir::Value,
+        capture_list: &HashSet<ir::Identifier>,
     ) -> Result<BasicValueEnum, Error> {
+        let capture_list = capture_list
+            .into_iter()
+            .map(|ident| {
+                Ok((
+                    ident.clone(),
+                    self.translate_expr(ir::Value::Variable(ident.clone()))?
+                        .expect_value()?,
+                ))
+            })
+            .collect::<Result<BTreeMap<ir::Identifier, BasicValueEnum>, Error>>()?;
+        let captures_ptr = self.builder.build_capture_struct(&capture_list);
         let previous_block = self.builder.inst_builder().get_insert_block().unwrap();
         self.builder.enter_new_scope();
         let function = self.builder.function_constant(&ty, param)?;
@@ -38,20 +50,27 @@ impl<'a> EIRTranslator<'a> {
                     ir::Constant::Boolean(tf) => self.builder.boolean_constant(tf)?.into(),
                     ir::Constant::Empty => self.builder.empty_constant()?.into(),
                 },
-                ir::Value::Function(param, box body, _) => {
+                ir::Value::Function(param, box body, capture_list) => {
                     if ty_candidates.is_empty() {
-                        self.translate_monotype_function(param, &ty, body)?.into()
+                        self.translate_monotype_function(param, &ty, body, &capture_list)?
+                            .into()
                     } else {
                         ty_candidates
                             .into_iter()
                             .map(|(ty, body)| {
                                 match body {
-                                    ir::Value::Function(param, box body, _) => {
-                                        self.translate_monotype_function(param, &ty, body)
-                                    }
+                                    ir::Value::Function(param, box body, _) => self
+                                        .translate_monotype_function(
+                                            param,
+                                            &ty,
+                                            body,
+                                            &capture_list,
+                                        ),
                                     _ => unreachable!(),
-                                }.map(|v| (ty, v))
-                            }).collect::<Result<HashMap<_, _>, _>>()?
+                                }
+                                .map(|v| (ty, v))
+                            })
+                            .collect::<Result<HashMap<_, _>, _>>()?
                             .into()
                     }
                 }
