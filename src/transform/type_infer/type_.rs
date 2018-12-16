@@ -40,7 +40,8 @@ impl TypeVarID {
             return Err(TypeInferError::RecursiveType {
                 t1: self.clone(),
                 t2: ty.clone(),
-            }.into());
+            }
+            .into());
         }
 
         let mut s = Subst::new();
@@ -120,7 +121,8 @@ impl Type {
             (t1, t2) => Err(TypeInferError::MismatchedTypes {
                 expected: t2.clone(),
                 found: t1.clone(),
-            }.into()),
+            }
+            .into()),
         }
     }
 }

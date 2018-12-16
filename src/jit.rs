@@ -112,13 +112,15 @@ impl JIT {
             eprintln!(""); // function.verify print results to stderr directory but it doesn't contain \n on the end
             return Err(LLVMError::FunctionVerificationError {
                 name: function.get_name().to_str()?.to_string(),
-            }.into());
+            }
+            .into());
         }
 
         if let Err(message) = module.verify() {
             return Err(LLVMError::ModuleVerificationError {
                 message: message.to_string(),
-            }.into());
+            }
+            .into());
         }
 
         Ok(())

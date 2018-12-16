@@ -1,7 +1,7 @@
 use ir;
+use transform::error::CheckCaptureError;
 use transform::type_infer::Type;
 use transform::Transform;
-use transform::error::CheckCaptureError;
 
 use failure::Error;
 
@@ -9,7 +9,9 @@ use std::collections::HashMap;
 
 pub struct CheckCapture;
 
-fn collect_vars(eir: &ir::Value) -> Result<Box<dyn Iterator<Item = (ir::Identifier, Type)>>, Error> {
+fn collect_vars(
+    eir: &ir::Value,
+) -> Result<Box<dyn Iterator<Item = (ir::Identifier, Type)>>, Error> {
     Ok(match eir {
         ir::Value::Typed(ty, _, box value) => match value {
             ir::Value::Variable(ident) => box vec![(ident.clone(), ty.clone())].into_iter(),
@@ -19,7 +21,9 @@ fn collect_vars(eir: &ir::Value) -> Result<Box<dyn Iterator<Item = (ir::Identifi
             ir::Value::Scope(box body) => collect_vars(body)?,
             ir::Value::Follow(box lhs, box rhs) => box collect_vars(lhs)?.chain(collect_vars(rhs)?),
             ir::Value::Apply(box lhs, box rhs) => box collect_vars(lhs)?.chain(collect_vars(rhs)?),
-            ir::Value::BinOp(_, box lhs, box rhs) => box collect_vars(lhs)?.chain(collect_vars(rhs)?),
+            ir::Value::BinOp(_, box lhs, box rhs) => {
+                box collect_vars(lhs)?.chain(collect_vars(rhs)?)
+            }
             ir::Value::IfElse(box cond, box then_, box else_) => box collect_vars(cond)?
                 .chain(collect_vars(then_)?)
                 .chain(collect_vars(else_)?),

@@ -173,7 +173,8 @@ impl<'a> Builder<'a> {
             Operator::Eq => self.cmp(CondCode::Equal, lhs_int, rhs_int),
             Operator::Ne => self.cmp(CondCode::NotEqual, lhs_int, rhs_int),
             Operator::Index => self.index(lhs, rhs),
-        }.into())
+        }
+        .into())
     }
 
     pub fn cmp(
@@ -226,7 +227,8 @@ impl<'a> Builder<'a> {
                         k.clone(),
                         self.inst_builder.build_alloca(t, &real_name).into(),
                     )
-                }).collect::<HashMap<_, _>>()
+                })
+                .collect::<HashMap<_, _>>()
                 .into(),
         };
         self.env
@@ -285,7 +287,8 @@ impl<'a> Builder<'a> {
                         self.inst_builder
                             .build_store(*v, *val.clone().expect_poly_value()?.get(k).unwrap());
                         Ok(())
-                    }).collect::<Result<(), Error>>()?;
+                    })
+                    .collect::<Result<(), Error>>()?;
             }
         };
         Ok(())
@@ -304,7 +307,8 @@ impl<'a> Builder<'a> {
                             k.clone(),
                             self.inst_builder.build_load(v.clone(), "load_var"),
                         )
-                    }).collect::<HashMap<_, _>>()
+                    })
+                    .collect::<HashMap<_, _>>()
                     .into(),
             }))
         })
@@ -320,7 +324,8 @@ impl<'a> Builder<'a> {
             return Err(TranslationError::InvalidCast {
                 from: format!("{:?}", from_type),
                 to: format!("{:?}", to_type),
-            }.into());
+            }
+            .into());
         }
 
         let number_type: types::BasicTypeEnum = types::IntType::i64_type().into();
@@ -335,7 +340,8 @@ impl<'a> Builder<'a> {
                         CondCode::NotEqual,
                         v.into_int_value(),
                         zero.into_int_value(),
-                    ).into());
+                    )
+                    .into());
             }
         } else if from_type == bool_type {
             if to_type == number_type {
@@ -348,7 +354,8 @@ impl<'a> Builder<'a> {
         Err(TranslationError::InvalidCast {
             from: format!("{:?}", from_type),
             to: format!("{:?}", to_type),
-        }.into())
+        }
+        .into())
     }
 
     pub fn enter_new_scope(&mut self) {

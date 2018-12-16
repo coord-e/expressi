@@ -51,7 +51,8 @@ impl TypeInfer {
                 }
                 None => Err(TypeInferError::UndeclaredIdentifier {
                     ident: ident.clone(),
-                }.into()),
+                }
+                .into()),
             },
             ir::Value::Function(ident, box body, captures) => {
                 let tv = self.tvg.new_variable();
@@ -67,7 +68,8 @@ impl TypeInfer {
                 let (s1, v) = self.transform_with_env(body, &mut new_env)?;
                 let t1 = v.type_().unwrap();
                 let new_type = Type::Function(box tv.apply(&s1), box t1.clone());
-                let new_node = ir::Value::Function(ident.to_string(), box v.clone(), captures.clone());
+                let new_node =
+                    ir::Value::Function(ident.to_string(), box v.clone(), captures.clone());
                 Ok((s1.clone(), new_node.with_type(new_type)?))
             }
             ir::Value::Apply(box f, box arg) => {
@@ -209,9 +211,11 @@ impl TypeInfer {
                 self.apply_subst_all(then_v, subst)?,
                 self.apply_subst_all(else_v, subst)?,
             ),
-            ir::Value::Function(ident, box body, captures) => {
-                ir::Value::Function(ident.clone(), self.apply_subst_all(body, subst)?, captures.clone())
-            }
+            ir::Value::Function(ident, box body, captures) => ir::Value::Function(
+                ident.clone(),
+                self.apply_subst_all(body, subst)?,
+                captures.clone(),
+            ),
             ir::Value::Typed(..) => return Err(InternalError::DoubleTyped.into()),
         })
     }
@@ -233,7 +237,8 @@ impl TypeInfer {
                         } else {
                             None
                         }
-                    }).collect();
+                    })
+                    .collect();
                 let new_v = self.inner_apply_subst_all(value, subst)?;
                 Ok(box ir::Value::Typed(new_ty, local_inst_table, box new_v))
             }
