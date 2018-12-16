@@ -42,7 +42,7 @@ impl<'a> EIRTranslator<'a> {
                 ir::Value::Function(param, box body, capture_list) => {
                     // Use BTreeMap here to preserve the order
                     let capture_list: BTreeMap<_, _> = capture_list.into_iter().collect();
-                    if ty_candidates.is_empty() {
+                    let f = if ty_candidates.is_empty() {
                         self.translate_monotype_function(param, &ty, body, &capture_list)?
                             .into()
                     } else {
@@ -63,6 +63,11 @@ impl<'a> EIRTranslator<'a> {
                             })
                             .collect::<Result<HashMap<_, _>, _>>()?
                             .into()
+                    };
+                    if capture_list.is_empty() {
+                        f
+                    } else {
+                        Atom::CapturingValue(box f, capture_list)
                     }
                 }
                 ir::Value::Typed(..) => bail!(InternalError::DoubleTyped),
