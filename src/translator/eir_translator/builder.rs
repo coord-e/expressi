@@ -192,12 +192,16 @@ impl<'a> Builder<'a> {
         arg: values::BasicValueEnum,
         capture_list: Option<(Vec<values::BasicValueEnum>, types::StructType)>,
     ) -> Result<values::BasicValueEnum, Error> {
+        let void_ptr_ty = types::VoidType::void_type().ptr_type(AddressSpace::Generic);
         let capture_ptr = if let Some((captures, struct_type)) = capture_list {
-            let struct_value = struct_type.const_named_struct(&captures);
-            self.store_mono_var("", struct_value.into())
+            let typed_ptr = self.inst_builder.build_alloca(struct_type, "capture_struct");
+            for (i, v) in captures.into_iter().enumerate() {
+                let elem_ptr = unsafe { self.inst_builder.build_struct_gep(typed_ptr, i as u32, "") };
+                self.inst_builder.build_store(elem_ptr, v);
+            }
+            self.inst_builder.build_pointer_cast(typed_ptr, void_ptr_ty, "")
         } else {
-            let t = types::VoidType::void_type().ptr_type(AddressSpace::Generic);
-            t.const_null() // nullptr for empty captures
+            void_ptr_ty.const_null() // nullptr for empty captures
         };
         let func_ptr = func.into_pointer_value();
         let func_v: values::FunctionValue = unsafe { mem::transmute(func_ptr) };
