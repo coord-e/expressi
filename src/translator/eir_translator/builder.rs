@@ -136,14 +136,10 @@ impl<'a> Builder<'a> {
             BoundPointer::new(BindingKind::Immutable, arg_ptr.into()),
         );
 
-        let captures_ptr = self
-            .inst_builder
-            .build_alloca(fn_type.get_param_types()[1], "");
-        self.inst_builder
-            .build_store(captures_ptr, function.get_nth_param(1).unwrap());
+        let captures_ptr = function.get_nth_param(1).unwrap();
         let captures_type = self.capture_list_type(capture_list)?;
         let captures_ptr_typed = self.inst_builder.build_pointer_cast(
-            captures_ptr,
+            captures_ptr.into_pointer_value(),
             captures_type.ptr_type(AddressSpace::Generic),
             "captures",
         );
