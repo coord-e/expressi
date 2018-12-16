@@ -115,7 +115,7 @@ pub trait Transform {
         &mut self,
         ident: &String,
         body: &ir::Value,
-        captures: &HashSet<ir::Identifier>,
+        captures: &HashMap<ir::Identifier, Type>,
     ) -> Result<ir::Value, Error> {
         Ok(ir::Value::Function(
             ident.clone(),

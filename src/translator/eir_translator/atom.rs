@@ -1,4 +1,5 @@
 use error::TranslationError;
+use ir;
 use transform::type_infer::Type;
 
 use failure::Error;

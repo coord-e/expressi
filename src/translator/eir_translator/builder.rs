@@ -137,18 +137,6 @@ impl<'a> Builder<'a> {
         Ok(ptr.into())
     }
 
-    pub fn build_capture_struct(
-        &mut self,
-        list: &BTreeMap<String, values::BasicValueEnum>,
-    ) -> values::PointerValue {
-        let types: Vec<_> = list.iter().map(|(_, v)| v.get_type()).collect();
-        let struct_type = types::StructType::struct_type(&types, false);
-        let struct_value =
-            struct_type.const_named_struct(&list.values().cloned().collect::<Vec<_>>());
-        let struct_ptr = self.store_mono_var("", struct_value.into());
-        struct_ptr
-    }
-
     pub fn call(
         &self,
         func: values::BasicValueEnum,
