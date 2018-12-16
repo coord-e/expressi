@@ -80,7 +80,9 @@ impl<'a> Builder<'a> {
             Type::Function(box param, box body) => {
                 let param = self.llvm_type(param)?;
                 let ret = self.llvm_type(body)?;
-                ret.fn_type(&[param], false)
+                // Capture list
+                let void_ptr_ty = types::VoidType::void_type().ptr_type(AddressSpace::Generic);
+                ret.fn_type(&[param, void_ptr_ty.into()], false)
                     .ptr_type(AddressSpace::Generic)
                     .into()
             }
@@ -110,6 +112,7 @@ impl<'a> Builder<'a> {
         &mut self,
         ty: &Type,
         param_name: String,
+        capture_list: &BTreeMap<String, Type>
     ) -> Result<values::BasicValueEnum, Error> {
         let fn_type = self
             .llvm_type(ty)?
@@ -133,8 +136,32 @@ impl<'a> Builder<'a> {
             BoundPointer::new(BindingKind::Immutable, arg_ptr.into()),
         );
 
+        let captures_ptr = self
+            .inst_builder
+            .build_alloca(fn_type.get_param_types()[1], "");
+        self.inst_builder
+            .build_store(captures_ptr, function.get_nth_param(1).unwrap());
+        let captures_type = self.capture_list_type(capture_list)?;
+        let captures_ptr_typed = self.inst_builder.build_pointer_cast(captures_ptr, captures_type.ptr_type(AddressSpace::Generic), "captures");
+        for (i, (name, _)) in capture_list.iter().enumerate() {
+            let elem_ptr = unsafe { self.inst_builder.build_struct_gep(captures_ptr_typed, i as u32, "") };
+            self.env.insert(
+                &name,
+                BoundPointer::new(BindingKind::Immutable, elem_ptr.into()),
+            );
+        };
+
         let ptr: values::PointerValue = unsafe { mem::transmute(function) };
         Ok(ptr.into())
+    }
+
+    pub fn capture_list_type(
+        &mut self,
+        list: &BTreeMap<String, Type>,
+    ) -> Result<types::StructType, Error> {
+        let types: Vec<_> = list.iter().map(|(_, v)| self.llvm_type(v)).collect::<Result<Vec<types::BasicTypeEnum>, Error>>()?;
+        let struct_type = types::StructType::struct_type(&types, false);
+        Ok(struct_type)
     }
 
     pub fn call(

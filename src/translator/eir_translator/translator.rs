@@ -17,10 +17,11 @@ impl<'a> EIRTranslator<'a> {
         param: ir::Identifier,
         ty: &Type,
         body: ir::Value,
+        capture_list: &BTreeMap<ir::Identifier, Type>,
     ) -> Result<BasicValueEnum, Error> {
         let previous_block = self.builder.inst_builder().get_insert_block().unwrap();
         self.builder.enter_new_scope();
-        let function = self.builder.function_constant(&ty, param)?;
+        let function = self.builder.function_constant(&ty, param, capture_list)?;
         let ret = self.translate_expr(body)?.expect_value()?;
         self.builder.exit_scope()?;
         self.builder.inst_builder().build_return(Some(&ret));
@@ -39,15 +40,17 @@ impl<'a> EIRTranslator<'a> {
                     ir::Constant::Empty => self.builder.empty_constant()?.into(),
                 },
                 ir::Value::Function(param, box body, capture_list) => {
+                    // Use BTreeMap here to preserve the order
+                    let capture_list: BTreeMap<_, _> = capture_list.into_iter().collect();
                     if ty_candidates.is_empty() {
-                        self.translate_monotype_function(param, &ty, body)?.into()
+                        self.translate_monotype_function(param, &ty, body, &capture_list)?.into()
                     } else {
                         ty_candidates
                             .into_iter()
                             .map(|(ty, body)| {
                                 match body {
                                     ir::Value::Function(param, box body, _) => {
-                                        self.translate_monotype_function(param, &ty, body)
+                                        self.translate_monotype_function(param, &ty, body, &capture_list)
                                     }
                                     _ => unreachable!(),
                                 }
