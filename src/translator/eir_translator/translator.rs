@@ -43,15 +43,20 @@ impl<'a> EIRTranslator<'a> {
                     // Use BTreeMap here to preserve the order
                     let capture_list: BTreeMap<_, _> = capture_list.into_iter().collect();
                     if ty_candidates.is_empty() {
-                        self.translate_monotype_function(param, &ty, body, &capture_list)?.into()
+                        self.translate_monotype_function(param, &ty, body, &capture_list)?
+                            .into()
                     } else {
                         ty_candidates
                             .into_iter()
                             .map(|(ty, body)| {
                                 match body {
-                                    ir::Value::Function(param, box body, _) => {
-                                        self.translate_monotype_function(param, &ty, body, &capture_list)
-                                    }
+                                    ir::Value::Function(param, box body, _) => self
+                                        .translate_monotype_function(
+                                            param,
+                                            &ty,
+                                            body,
+                                            &capture_list,
+                                        ),
                                     _ => unreachable!(),
                                 }
                                 .map(|v| (ty, v))
@@ -67,13 +72,22 @@ impl<'a> EIRTranslator<'a> {
                 let func_ty = func.type_().ok_or(TranslationError::NotTyped)?;
                 let func = self.translate_expr(func.clone())?;
                 let arg = self.translate_expr(arg)?.expect_value()?;
-                match func {
-                    Atom::LLVMValue(func) => self.builder.call(func, arg)?.into(),
-                    Atom::PolyValue(func_table) => self
-                        .builder
-                        .call(*func_table.get(func_ty).unwrap(), arg)?
-                        .into(),
-                }
+                let func_v = self.builder.extract_func(func.clone(), func_ty);
+                let capture_list = match func {
+                    Atom::LLVMValue(..) | Atom::PolyValue(..) => None,
+                    Atom::CapturingValue(_, capture_list) => {
+                        let capture_ty = self.builder.capture_list_type(&capture_list)?;
+                        let capture_value_list = capture_list
+                            .into_iter()
+                            .map(|(ident, _)| {
+                                self.translate_expr(ir::Value::Variable(ident.clone()))?
+                                    .expect_value()
+                            })
+                            .collect::<Result<Vec<_>, Error>>()?;
+                        Some((capture_value_list, capture_ty))
+                    }
+                };
+                self.builder.call(func_v, arg, capture_list)?.into()
             }
             ir::Value::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?.expect_value()?;

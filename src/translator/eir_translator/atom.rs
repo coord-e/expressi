@@ -4,12 +4,13 @@ use transform::type_infer::Type;
 
 use failure::Error;
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 #[derive(Debug, Clone)]
 pub enum Atom<T> {
     LLVMValue(T),
     PolyValue(HashMap<Type, T>),
+    CapturingValue(Box<Atom<T>>, BTreeMap<ir::Identifier, Type>),
 }
 
 /// TODO: Make reference version of `expect_*`
