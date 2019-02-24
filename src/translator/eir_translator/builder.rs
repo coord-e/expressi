@@ -79,12 +79,13 @@ impl<'a> Builder<'a> {
                 .into(),
             Type::Variable(_) => return Err(TranslationError::UnresolvedType.into()),
             Type::Function(box param, box body) => {
-                let capture_arg = types::VoidType::void_type().ptr_type(AddressSpace::Generic);
+                let void_ptr = types::VoidType::void_type().ptr_type(AddressSpace::Generic);
                 let param = self.llvm_type(param)?;
                 let ret = self.llvm_type(body)?;
-                ret.fn_type(&[capture_arg.into(), param], false)
-                    .ptr_type(AddressSpace::Generic)
-                    .into()
+
+                let fn_type = ret.fn_type(&[void_ptr.into(), param], false)
+                    .ptr_type(AddressSpace::Generic);
+                types::StructType::struct_type(&[void_ptr.into(), fn_type.into()], false).into()
             }
         })
     }
@@ -127,8 +128,13 @@ impl<'a> Builder<'a> {
         let capture_types: Vec<types::BasicTypeEnum> = capture_list.iter().map(|(_, ty)| self.llvm_type(ty)).collect::<Result<_, _>>()?;
         let capture_type = types::StructType::struct_type(&capture_types, false);
 
-        let fn_type = self
+        let fn_concrete_type = self
             .llvm_type(ty)?
+            .into_struct_type();
+
+        let fn_type = fn_concrete_type
+            .get_field_type_at_index(1)
+            .unwrap()
             .into_pointer_type()
             .get_element_type()
             .into_function_type();
