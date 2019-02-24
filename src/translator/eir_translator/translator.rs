@@ -17,10 +17,11 @@ impl<'a> EIRTranslator<'a> {
         param: String,
         ty: &Type,
         body: ir::Value,
+        capture_list: &HashMap<ir::Identifier, Type>
     ) -> Result<BasicValueEnum, Error> {
         let previous_block = self.builder.inst_builder().get_insert_block().unwrap();
         self.builder.enter_new_scope();
-        let function = self.builder.function_constant(&ty, param)?;
+        let function = self.builder.function_constant(&ty, param, capture_list)?;
         let ret = self.translate_expr(body)?.expect_value()?;
         self.builder.exit_scope()?;
         self.builder.inst_builder().build_return(Some(&ret));
@@ -38,16 +39,16 @@ impl<'a> EIRTranslator<'a> {
                     ir::Constant::Boolean(tf) => self.builder.boolean_constant(tf)?.into(),
                     ir::Constant::Empty => self.builder.empty_constant()?.into(),
                 },
-                ir::Value::Function(param, box body) => {
+                ir::Value::Function(param, box body, capture_list) => {
                     if ty_candidates.is_empty() {
-                        self.translate_monotype_function(param, &ty, body)?.into()
+                        self.translate_monotype_function(param, &ty, body, &capture_list)?.into()
                     } else {
                         ty_candidates
                             .into_iter()
                             .map(|(ty, body)| {
                                 match body {
-                                    ir::Value::Function(_, box body) => {
-                                        self.translate_monotype_function(param.clone(), &ty, body)
+                                    ir::Value::Function(_, box body, capture_list) => {
+                                        self.translate_monotype_function(param.clone(), &ty, body, &capture_list)
                                     }
                                     _ => unreachable!(),
                                 }.map(|v| (ty, v))

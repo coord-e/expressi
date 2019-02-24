@@ -110,6 +110,7 @@ impl<'a> Builder<'a> {
         &mut self,
         ty: &Type,
         param_name: String,
+        capture_list: &HashMap<String, Type>
     ) -> Result<values::BasicValueEnum, Error> {
         let fn_type = self
             .llvm_type(ty)?
