@@ -169,7 +169,8 @@ impl<'a> Builder<'a> {
         self.inst_builder().build_return(Some(&ret));
         self.inst_builder().position_at_end(&previous_block);
 
-        let capture_ptr = self.inst_builder.build_alloca(capture_type, "eval_capture_ptr");
+        // TODO: Fix memory leak
+        let capture_ptr = self.inst_builder.build_malloc(capture_type, "eval_capture_ptr");
         for (i, (name, _)) in capture_list.iter().enumerate() {
             let ptr = unsafe { self.inst_builder.build_struct_gep(capture_ptr, i as u32, "") };
             let var_ptr = self.env.get(&name).unwrap().ptr_value().clone().expect_value()?;
