@@ -205,9 +205,13 @@ impl<'a> Builder<'a> {
         func: values::BasicValueEnum,
         arg: values::BasicValueEnum,
     ) -> Result<values::BasicValueEnum, Error> {
-        let func_ptr = func.into_pointer_value();
+        let func = func.into_struct_value();
+        let capture_ptr = self.inst_builder.build_extract_value(func, 0, "capture_ptr").unwrap()
+            .into_pointer_value();
+        let func_ptr = self.inst_builder.build_extract_value(func, 1, "func").unwrap()
+            .into_pointer_value();
         let func_v: values::FunctionValue = unsafe { mem::transmute(func_ptr) };
-        let call_inst = self.inst_builder.build_call(func_v, &[arg], "");
+        let call_inst = self.inst_builder.build_call(func_v, &[capture_ptr.into(), arg], "");
         Ok(call_inst.try_as_basic_value().left().unwrap().into())
     }
 
