@@ -5,7 +5,7 @@ use translator::eir_translator::{Atom, Builder};
 
 use failure::Error;
 use inkwell::values::BasicValueEnum;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::HashMap;
 
 pub struct EIRTranslator<'a> {
     pub builder: Builder<'a>,
@@ -14,14 +14,13 @@ pub struct EIRTranslator<'a> {
 impl<'a> EIRTranslator<'a> {
     fn translate_monotype_function(
         &mut self,
-        param: ir::Identifier,
+        param: String,
         ty: &Type,
         body: ir::Value,
-        capture_list: &BTreeMap<ir::Identifier, Type>,
     ) -> Result<BasicValueEnum, Error> {
         let previous_block = self.builder.inst_builder().get_insert_block().unwrap();
         self.builder.enter_new_scope();
-        let function = self.builder.function_constant(&ty, param, capture_list)?;
+        let function = self.builder.function_constant(&ty, param)?;
         let ret = self.translate_expr(body)?.expect_value()?;
         self.builder.exit_scope()?;
         self.builder.inst_builder().build_return(Some(&ret));
@@ -39,35 +38,21 @@ impl<'a> EIRTranslator<'a> {
                     ir::Constant::Boolean(tf) => self.builder.boolean_constant(tf)?.into(),
                     ir::Constant::Empty => self.builder.empty_constant()?.into(),
                 },
-                ir::Value::Function(param, box body, capture_list) => {
-                    // Use BTreeMap here to preserve the order
-                    let capture_list: BTreeMap<_, _> = capture_list.into_iter().collect();
-                    let f = if ty_candidates.is_empty() {
-                        self.translate_monotype_function(param, &ty, body, &capture_list)?
-                            .into()
+                ir::Value::Function(param, box body) => {
+                    if ty_candidates.is_empty() {
+                        self.translate_monotype_function(param, &ty, body)?.into()
                     } else {
                         ty_candidates
                             .into_iter()
                             .map(|(ty, body)| {
                                 match body {
-                                    ir::Value::Function(param, box body, _) => self
-                                        .translate_monotype_function(
-                                            param,
-                                            &ty,
-                                            body,
-                                            &capture_list,
-                                        ),
+                                    ir::Value::Function(_, box body) => {
+                                        self.translate_monotype_function(param.clone(), &ty, body)
+                                    }
                                     _ => unreachable!(),
-                                }
-                                .map(|v| (ty, v))
-                            })
-                            .collect::<Result<HashMap<_, _>, _>>()?
+                                }.map(|v| (ty, v))
+                            }).collect::<Result<HashMap<_, _>, _>>()?
                             .into()
-                    };
-                    if capture_list.is_empty() {
-                        f
-                    } else {
-                        Atom::CapturingValue(box f, capture_list)
                     }
                 }
                 ir::Value::Typed(..) => bail!(InternalError::DoubleTyped),
@@ -77,22 +62,13 @@ impl<'a> EIRTranslator<'a> {
                 let func_ty = func.type_().ok_or(TranslationError::NotTyped)?;
                 let func = self.translate_expr(func.clone())?;
                 let arg = self.translate_expr(arg)?.expect_value()?;
-                let func_v = self.builder.extract_func(func.clone(), func_ty);
-                let capture_list = match func {
-                    Atom::LLVMValue(..) | Atom::PolyValue(..) => None,
-                    Atom::CapturingValue(_, capture_list) => {
-                        let capture_ty = self.builder.capture_list_type(&capture_list)?;
-                        let capture_value_list = capture_list
-                            .into_iter()
-                            .map(|(ident, _)| {
-                                self.translate_expr(ir::Value::Variable(ident.clone()))?
-                                    .expect_value()
-                            })
-                            .collect::<Result<Vec<_>, Error>>()?;
-                        Some((capture_value_list, capture_ty))
-                    }
-                };
-                self.builder.call(func_v, arg, capture_list)?.into()
+                match func {
+                    Atom::LLVMValue(func) => self.builder.call(func, arg)?.into(),
+                    Atom::PolyValue(func_table) => self
+                        .builder
+                        .call(*func_table.get(func_ty).unwrap(), arg)?
+                        .into(),
+                }
             }
             ir::Value::BinOp(op, lhs, rhs) => {
                 let lhs = self.translate_expr(*lhs)?.expect_value()?;
