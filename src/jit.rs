@@ -4,7 +4,7 @@ use ir::Printer;
 use parser;
 use transform::{CheckCapture, TypeInfer};
 use translator::eir_translator::Builder;
-use translator::{ASTTranslator, EIRTranslator};
+use translator::{ASTTranslator, translate_eir};
 
 use failure::Error;
 use std::io;
@@ -97,11 +97,10 @@ impl JIT {
             eprintln!();
         }
 
-        let builder = Builder::new(&mut self.builder, module.clone());
-        let mut trans = EIRTranslator { builder };
+        let mut builder = Builder::new(&mut self.builder, module.clone());
 
-        let evaluated_value = trans.translate_expr(transformed)?.expect_value()?;
-        trans.builder.ret_int(evaluated_value)?;
+        let evaluated_value = translate_eir(&mut builder, transformed)?.expect_value()?;
+        builder.ret_int(evaluated_value)?;
 
         if self.print_ir {
             eprintln!("LLVM IR:");
