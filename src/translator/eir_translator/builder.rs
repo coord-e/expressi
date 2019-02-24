@@ -11,7 +11,7 @@ use failure::Error;
 use inkwell::types::BasicType;
 use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPredicate};
 
-use std::collections::HashMap;
+use std::collections::{HashMap, BTreeMap};
 use std::mem;
 use std::rc::Rc;
 
@@ -78,9 +78,10 @@ impl<'a> Builder<'a> {
                 .into(),
             Type::Variable(_) => return Err(TranslationError::UnresolvedType.into()),
             Type::Function(box param, box body) => {
+                let capture_arg = types::VoidType::void_type().ptr_type(AddressSpace::Generic);
                 let param = self.llvm_type(param)?;
                 let ret = self.llvm_type(body)?;
-                ret.fn_type(&[param], false)
+                ret.fn_type(&[capture_arg.into(), param], false)
                     .ptr_type(AddressSpace::Generic)
                     .into()
             }
@@ -112,6 +113,12 @@ impl<'a> Builder<'a> {
         param_name: String,
         capture_list: &HashMap<String, Type>
     ) -> Result<values::BasicValueEnum, Error> {
+        // TODO: Remove this insufficient copy
+        let capture_list: BTreeMap<_, _> = capture_list.into_iter().collect();
+
+        let capture_types: Vec<types::BasicTypeEnum> = capture_list.iter().map(|(_, ty)| self.llvm_type(ty)).collect::<Result<_, _>>()?;
+        let capture_type = types::StructType::struct_type(&capture_types, false);
+
         let fn_type = self
             .llvm_type(ty)?
             .into_pointer_type()
@@ -126,13 +133,27 @@ impl<'a> Builder<'a> {
         self.inst_builder.position_at_end(&basic_block);
         let arg_ptr = self
             .inst_builder
-            .build_alloca(fn_type.get_param_types()[0], "");
+            .build_alloca(fn_type.get_param_types()[1], "");
         self.inst_builder
-            .build_store(arg_ptr, function.get_first_param().unwrap());
+            .build_store(arg_ptr, function.get_nth_param(1).unwrap());
         self.env.insert(
             &param_name,
             BoundPointer::new(BindingKind::Immutable, arg_ptr.into()),
         );
+
+        let capture_arg_ptr = self
+            .inst_builder
+            .build_alloca(fn_type.get_param_types()[0], "");
+        self.inst_builder
+            .build_store(capture_arg_ptr, function.get_nth_param(0).unwrap());
+        let capture_arg = self.inst_builder.build_pointer_cast(capture_arg_ptr, capture_type.ptr_type(AddressSpace::Generic), "");
+        for (i, (name, _)) in capture_list.iter().enumerate() {
+            let ptr = unsafe { self.inst_builder.build_struct_gep(capture_arg, i as u32, "") };
+            self.env.insert(
+                &name,
+                BoundPointer::new(BindingKind::Immutable, ptr.into()),
+            );
+        }
 
         let ptr: values::PointerValue = unsafe { mem::transmute(function) };
         Ok(ptr.into())
