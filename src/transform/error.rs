@@ -19,3 +19,12 @@ pub enum TypeInferError {
     #[fail(display = "Unexpected not-typed value")]
     NotTyped,
 }
+
+#[derive(Debug, Fail)]
+pub enum CheckCaptureError {
+    #[fail(display = "Unexpected not-typed value")]
+    NotTyped,
+
+    #[fail(display = "Double typed")]
+    DoubleTyped,
+}

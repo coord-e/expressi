@@ -2,9 +2,9 @@ use error::{LLVMError, ParseError};
 use expression::Expression;
 use ir::Printer;
 use parser;
-use transform::TypeInfer;
+use transform::{CheckCapture, TypeInfer};
 use translator::eir_translator::Builder;
-use translator::{ASTTranslator, EIRTranslator};
+use translator::{ASTTranslator, translate_eir};
 
 use failure::Error;
 use std::io;
@@ -87,7 +87,8 @@ impl JIT {
         }
 
         let ti = TypeInfer::new();
-        let transformed = eir.apply(ti)?;
+        let cc = CheckCapture::new();
+        let transformed = eir.apply(ti)?.apply(cc)?;
 
         if self.print_eir {
             eprintln!("Transformed EIR:");
@@ -96,11 +97,10 @@ impl JIT {
             eprintln!();
         }
 
-        let builder = Builder::new(&mut self.builder, module.clone());
-        let mut trans = EIRTranslator { builder };
+        let mut builder = Builder::new(&mut self.builder, module.clone());
 
-        let evaluated_value = trans.translate_expr(transformed)?.expect_value()?;
-        trans.builder.ret_int(evaluated_value)?;
+        let evaluated_value = translate_eir(&mut builder, transformed)?.expect_value()?;
+        builder.ret_int(evaluated_value)?;
 
         if self.print_ir {
             eprintln!("LLVM IR:");
@@ -111,13 +111,15 @@ impl JIT {
             eprintln!(""); // function.verify print results to stderr directory but it doesn't contain \n on the end
             return Err(LLVMError::FunctionVerificationError {
                 name: function.get_name().to_str()?.to_string(),
-            }.into());
+            }
+            .into());
         }
 
         if let Err(message) = module.verify() {
             return Err(LLVMError::ModuleVerificationError {
                 message: message.to_string(),
-            }.into());
+            }
+            .into());
         }
 
         Ok(())

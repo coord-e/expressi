@@ -6,4 +6,4 @@ pub mod translator;
 pub use translator::eir_translator::atom::Atom;
 pub use translator::eir_translator::bound_pointer::BoundPointer;
 pub use translator::eir_translator::builder::Builder;
-pub use translator::eir_translator::translator::EIRTranslator;
+pub use translator::eir_translator::translator::translate_eir;

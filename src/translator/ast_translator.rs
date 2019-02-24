@@ -28,7 +28,7 @@ impl ASTTranslator {
             ),
             Expression::Function(ident, body) => {
                 let body = self.translate_expr(*body)?;
-                Value::Function(ident, Box::new(body))
+                Value::Function(ident, Box::new(body), HashMap::new())
             }
             Expression::Array(_) => unimplemented!(),
             Expression::Type(_) => unimplemented!(),

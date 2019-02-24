@@ -11,7 +11,7 @@ use failure::Error;
 use inkwell::types::BasicType;
 use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPredicate};
 
-use std::collections::HashMap;
+use std::collections::{HashMap, BTreeMap};
 use std::mem;
 use std::rc::Rc;
 
@@ -78,11 +78,13 @@ impl<'a> Builder<'a> {
                 .into(),
             Type::Variable(_) => return Err(TranslationError::UnresolvedType.into()),
             Type::Function(box param, box body) => {
+                let void_ptr = types::VoidType::void_type().ptr_type(AddressSpace::Generic);
                 let param = self.llvm_type(param)?;
                 let ret = self.llvm_type(body)?;
-                ret.fn_type(&[param], false)
-                    .ptr_type(AddressSpace::Generic)
-                    .into()
+
+                let fn_type = ret.fn_type(&[void_ptr.into(), param], false)
+                    .ptr_type(AddressSpace::Generic);
+                types::StructType::struct_type(&[void_ptr.into(), fn_type.into()], false).into()
             }
         })
     }
@@ -106,13 +108,32 @@ impl<'a> Builder<'a> {
         Ok(values::BasicValueEnum::PointerValue(t.const_null()))
     }
 
-    pub fn function_constant(
+    pub fn function_constant<F>(
         &mut self,
         ty: &Type,
         param_name: String,
-    ) -> Result<values::BasicValueEnum, Error> {
-        let fn_type = self
+        capture_list: &HashMap<String, Type>,
+        eval: F,
+    ) -> Result<values::BasicValueEnum, Error>
+    where
+        F: FnOnce(&mut Self) -> Result<values::BasicValueEnum, Error>,
+    {
+        let previous_block = self.inst_builder().get_insert_block().unwrap();
+        self.enter_new_scope();
+
+        // TODO: Remove this insufficient copy
+        let capture_list: BTreeMap<_, _> = capture_list.into_iter().collect();
+
+        let capture_types: Vec<types::BasicTypeEnum> = capture_list.iter().map(|(_, ty)| self.llvm_type(ty)).collect::<Result<_, _>>()?;
+        let capture_type = types::StructType::struct_type(&capture_types, false);
+
+        let fn_concrete_type = self
             .llvm_type(ty)?
+            .into_struct_type();
+
+        let fn_type = fn_concrete_type
+            .get_field_type_at_index(1)
+            .unwrap()
             .into_pointer_type()
             .get_element_type()
             .into_function_type();
@@ -125,16 +146,52 @@ impl<'a> Builder<'a> {
         self.inst_builder.position_at_end(&basic_block);
         let arg_ptr = self
             .inst_builder
-            .build_alloca(fn_type.get_param_types()[0], "");
+            .build_alloca(fn_type.get_param_types()[1], "");
         self.inst_builder
-            .build_store(arg_ptr, function.get_first_param().unwrap());
+            .build_store(arg_ptr, function.get_nth_param(1).unwrap());
         self.env.insert(
             &param_name,
             BoundPointer::new(BindingKind::Immutable, arg_ptr.into()),
         );
 
+        let capture_arg = self.inst_builder.build_pointer_cast(function.get_nth_param(0).unwrap().into_pointer_value(), capture_type.ptr_type(AddressSpace::Generic), "");
+        for (i, (name, _)) in capture_list.iter().enumerate() {
+            let ptr = unsafe { self.inst_builder.build_struct_gep(capture_arg, i as u32, "") };
+            self.env.insert(
+                &name,
+                BoundPointer::new(BindingKind::Immutable, ptr.into()),
+            );
+        }
+
+        let ret = eval(self)?;
+
+        self.exit_scope()?;
+        self.inst_builder().build_return(Some(&ret));
+        self.inst_builder().position_at_end(&previous_block);
+
+        let capture_ptr = self.inst_builder.build_alloca(capture_type, "eval_capture_ptr");
+        for (i, (name, _)) in capture_list.iter().enumerate() {
+            let ptr = unsafe { self.inst_builder.build_struct_gep(capture_ptr, i as u32, "") };
+            let var_ptr = self.env.get(&name).unwrap().ptr_value().clone().expect_value()?;
+            self.inst_builder.build_store(ptr, self.inst_builder.build_load(var_ptr, ""));
+        }
+
+        let void_ptr_ty = types::VoidType::void_type().ptr_type(AddressSpace::Generic);
+        let ret_type = types::StructType::struct_type(&[
+            void_ptr_ty.into(),
+            fn_type.ptr_type(AddressSpace::Generic).into(),
+        ], false);
+
+        let capture_ptr_erased = self.inst_builder.build_pointer_cast(capture_ptr, void_ptr_ty, "capture_ptr_erase");
         let ptr: values::PointerValue = unsafe { mem::transmute(function) };
-        Ok(ptr.into())
+
+        // TODO: Fix this dangerous implementation
+        let real_ret = self.inst_builder.build_insert_value(ret_type.get_undef(), capture_ptr_erased, 0, "").unwrap();
+        let real_ret: values::StructValue = unsafe { mem::transmute(real_ret) };
+        let real_ret = self.inst_builder.build_insert_value(real_ret, ptr, 1, "").unwrap();
+        let real_ret: values::StructValue = unsafe { mem::transmute(real_ret) };
+
+        Ok(real_ret.into())
     }
 
     pub fn call(
@@ -142,9 +199,13 @@ impl<'a> Builder<'a> {
         func: values::BasicValueEnum,
         arg: values::BasicValueEnum,
     ) -> Result<values::BasicValueEnum, Error> {
-        let func_ptr = func.into_pointer_value();
+        let func = func.into_struct_value();
+        let capture_ptr = self.inst_builder.build_extract_value(func, 0, "capture_ptr").unwrap()
+            .into_pointer_value();
+        let func_ptr = self.inst_builder.build_extract_value(func, 1, "func").unwrap()
+            .into_pointer_value();
         let func_v: values::FunctionValue = unsafe { mem::transmute(func_ptr) };
-        let call_inst = self.inst_builder.build_call(func_v, &[arg], "");
+        let call_inst = self.inst_builder.build_call(func_v, &[capture_ptr.into(), arg], "");
         Ok(call_inst.try_as_basic_value().left().unwrap().into())
     }
 
