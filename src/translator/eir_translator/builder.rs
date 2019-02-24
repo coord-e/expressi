@@ -184,12 +184,14 @@ impl<'a> Builder<'a> {
 
         let capture_ptr_erased = self.inst_builder.build_pointer_cast(capture_ptr, void_ptr_ty, "capture_ptr_erase");
         let ptr: values::PointerValue = unsafe { mem::transmute(function) };
-        let real_ret = ret_type.get_undef()
-            .const_insert_value(capture_ptr_erased, &mut [0])
-            .as_struct_value()
-            .const_insert_value(ptr, &mut [1]);
 
-        Ok(real_ret)
+        // TODO: Fix this dangerous implementation
+        let real_ret = self.inst_builder.build_insert_value(ret_type.get_undef(), capture_ptr_erased, 0, "").unwrap();
+        let real_ret: values::StructValue = unsafe { mem::transmute(real_ret) };
+        let real_ret = self.inst_builder.build_insert_value(real_ret, ptr, 1, "").unwrap();
+        let real_ret: values::StructValue = unsafe { mem::transmute(real_ret) };
+
+        Ok(real_ret.into())
     }
 
     pub fn call(
