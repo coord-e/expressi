@@ -9,7 +9,6 @@ use translator::eir_translator::BoundPointer;
 use failure::Error;
 
 use inkwell::types::BasicType;
-use inkwell::values::AggregateValue;
 use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPredicate};
 
 use std::collections::{HashMap, BTreeMap};

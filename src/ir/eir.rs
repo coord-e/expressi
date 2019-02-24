@@ -5,7 +5,7 @@ use transform::Transform;
 
 use failure::Error;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fmt;
 
 #[derive(PartialEq, Debug, Clone, Eq, Copy)]

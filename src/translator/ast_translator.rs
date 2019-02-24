@@ -4,7 +4,7 @@ use transform::type_infer::Type;
 
 use failure::Error;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 pub struct ASTTranslator {}
 

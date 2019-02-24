@@ -4,7 +4,7 @@ use transform::type_infer::Type;
 
 use failure::Error;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 pub trait Transform {
     fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
