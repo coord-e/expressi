@@ -9,6 +9,7 @@ use translator::eir_translator::BoundPointer;
 use failure::Error;
 
 use inkwell::types::BasicType;
+use inkwell::values::AggregateValue;
 use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPredicate};
 
 use std::collections::{HashMap, BTreeMap};
@@ -107,12 +108,19 @@ impl<'a> Builder<'a> {
         Ok(values::BasicValueEnum::PointerValue(t.const_null()))
     }
 
-    pub fn function_constant(
+    pub fn function_constant<F>(
         &mut self,
         ty: &Type,
         param_name: String,
-        capture_list: &HashMap<String, Type>
-    ) -> Result<values::BasicValueEnum, Error> {
+        capture_list: &HashMap<String, Type>,
+        eval: F,
+    ) -> Result<values::BasicValueEnum, Error>
+    where
+        F: FnOnce(&mut Self) -> Result<values::BasicValueEnum, Error>,
+    {
+        let previous_block = self.inst_builder().get_insert_block().unwrap();
+        self.enter_new_scope();
+
         // TODO: Remove this insufficient copy
         let capture_list: BTreeMap<_, _> = capture_list.into_iter().collect();
 
@@ -155,8 +163,32 @@ impl<'a> Builder<'a> {
             );
         }
 
+        let ret = eval(self)?;
+
+        self.exit_scope()?;
+        self.inst_builder().build_return(Some(&ret));
+        self.inst_builder().position_at_end(&previous_block);
+
+        let capture_ptr = self.inst_builder.build_alloca(capture_type, "eval_capture_ptr");
+        for (i, (name, _)) in capture_list.iter().enumerate() {
+            let ptr = unsafe { self.inst_builder.build_struct_gep(capture_ptr, i as u32, "") };
+            self.inst_builder.build_store(ptr, self.env.get(&name).unwrap().ptr_value().clone().expect_value()?);
+        }
+
+        let void_ptr_ty = types::VoidType::void_type().ptr_type(AddressSpace::Generic);
+        let ret_type = types::StructType::struct_type(&[
+            void_ptr_ty.into(),
+            fn_type.ptr_type(AddressSpace::Generic).into(),
+        ], false);
+
+        let capture_ptr_erased = self.inst_builder.build_pointer_cast(capture_ptr, void_ptr_ty, "capture_ptr_erase");
         let ptr: values::PointerValue = unsafe { mem::transmute(function) };
-        Ok(ptr.into())
+        let real_ret = ret_type.get_undef()
+            .const_insert_value(capture_ptr_erased, &mut [0])
+            .as_struct_value()
+            .const_insert_value(ptr, &mut [1]);
+
+        Ok(real_ret)
     }
 
     pub fn call(

@@ -14,13 +14,9 @@ fn translate_monotype_function<'a>(
     body: ir::Value,
     capture_list: &HashMap<ir::Identifier, Type>
 ) -> Result<BasicValueEnum, Error> {
-    let previous_block = builder.inst_builder().get_insert_block().unwrap();
-    builder.enter_new_scope();
-    let function = builder.function_constant(&ty, param, capture_list)?;
-    let ret = translate_eir(builder, body)?.expect_value()?;
-    builder.exit_scope()?;
-    builder.inst_builder().build_return(Some(&ret));
-    builder.inst_builder().position_at_end(&previous_block);
+    let function = builder.function_constant(&ty, param, capture_list, |builder| {
+        translate_eir(builder, body)?.expect_value()
+    })?;
     Ok(function)
 }
 
