@@ -3,24 +3,22 @@
 Expression-oriented toy programming language written in Rust
 
 ```
-let mut a = 2;
-let mut b = a + 10;
-let c = if a == b {
-  a = a + 10;
-  20
+let add = a -> b -> a + b;
+let succ = add(1);
+let v = succ(succ(succ(1)));
+
+let f = if v == 4 {
+  a -> succ(a)
 } else {
-  b = b + 20;
-  10
+  a -> a
 };
-let x = c + b
+let x = f(10)
 ```
 
-In this example, `x` is evaluated to `42`.
+In this example, `x` is evaluated to `11`.
 
 ## TODO
 
-- High-order function evaluation
-  - Outer variable capturing in function
 - Refine EIR
   - Delete `Typed` constructor and provide another way to express typed value
   - Convert `Follow`, `Bind`, `Scope` to let-in expression
