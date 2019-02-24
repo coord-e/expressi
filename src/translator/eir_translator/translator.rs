@@ -38,7 +38,7 @@ pub fn translate_eir<'a>(builder: &mut Builder<'a>, expr: ir::Value) -> Result<A
                         .into_iter()
                         .map(|(ty, body)| {
                             match body {
-                                ir::Value::Function(_, box body, capture_list) => {
+                                ir::Value::Function(_, box body, _) => {
                                     translate_monotype_function(builder, param.clone(), &ty, body, &capture_list)
                                 }
                                 _ => unreachable!(),
