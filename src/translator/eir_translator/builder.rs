@@ -155,12 +155,7 @@ impl<'a> Builder<'a> {
             BoundPointer::new(BindingKind::Immutable, arg_ptr.into()),
         );
 
-        let capture_arg_ptr = self
-            .inst_builder
-            .build_alloca(fn_type.get_param_types()[0], "");
-        self.inst_builder
-            .build_store(capture_arg_ptr, function.get_nth_param(0).unwrap());
-        let capture_arg = self.inst_builder.build_pointer_cast(capture_arg_ptr, capture_type.ptr_type(AddressSpace::Generic), "");
+        let capture_arg = self.inst_builder.build_pointer_cast(function.get_nth_param(0).unwrap().into_pointer_value(), capture_type.ptr_type(AddressSpace::Generic), "");
         for (i, (name, _)) in capture_list.iter().enumerate() {
             let ptr = unsafe { self.inst_builder.build_struct_gep(capture_arg, i as u32, "") };
             self.env.insert(
