@@ -31,7 +31,8 @@ pub fn translate_eir<'a>(builder: &mut Builder<'a>, expr: ir::Value) -> Result<A
                 ir::Constant::Empty => builder.empty_constant()?.into(),
             },
             ir::Value::Function(param, box body, capture_list) => {
-                if ty_candidates.is_empty() {
+                // TODO: Add more sufficient implementation to check whether PolyValue is needed or not
+                if ty_candidates.len() <= 1 {
                     translate_monotype_function(builder, param, &ty, body, &capture_list)?.into()
                 } else {
                     ty_candidates
