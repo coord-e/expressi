@@ -132,7 +132,7 @@ pub trait Transform {
     ) -> Result<ir::Value, Error> {
         Ok(ir::Value::Typed(
             type_.clone(),
-            candidates.clone(),
+            candidates.into_iter().map(|(t, v)| Ok((t.clone(), self.transform(v)?))).collect::<Result<HashMap<_, _>, Error>>()?,
             box value.clone(),
         ))
     }
