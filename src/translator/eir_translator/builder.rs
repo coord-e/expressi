@@ -172,7 +172,8 @@ impl<'a> Builder<'a> {
         let capture_ptr = self.inst_builder.build_alloca(capture_type, "eval_capture_ptr");
         for (i, (name, _)) in capture_list.iter().enumerate() {
             let ptr = unsafe { self.inst_builder.build_struct_gep(capture_ptr, i as u32, "") };
-            self.inst_builder.build_store(ptr, self.env.get(&name).unwrap().ptr_value().clone().expect_value()?);
+            let var_ptr = self.env.get(&name).unwrap().ptr_value().clone().expect_value()?;
+            self.inst_builder.build_store(ptr, self.inst_builder.build_load(var_ptr, ""));
         }
 
         let void_ptr_ty = types::VoidType::void_type().ptr_type(AddressSpace::Generic);
