@@ -44,10 +44,10 @@ index_right -> Expression
   = _ "[" r:expression "]" { r }
 
 apply -> Expression
-  = l:spaced_atom r:apply_right * _ { r.iter().fold(l, |e, r| Expression::Apply(box e, box r.clone())) }
+  = l:spaced_atom r:apply_multi_right * _ { r.iter().flatten().fold(l, |e, r| Expression::Apply(box e, box r.clone())) }
 
-apply_right -> Expression
-  = _ "(" r:expression ")" { r }
+apply_multi_right -> Vec<Expression>
+  = _ "(" _ r:(expression ++ (_ "," _)) ")" { r }
 
 if_else -> Expression
   = "if" cond:expression then_expr:expression else_expr:("else" v:spaced_atom {v})? { Expression::IfElse(Box::new(cond), Box::new(then_expr), Box::new(else_expr.unwrap_or(Expression::Empty))) }
