@@ -357,14 +357,14 @@ impl<'a> Builder<'a> {
         self.env.get(name).map_or(Ok(None), |var| {
             Ok(Some(match var.ptr_value() {
                 Atom::LLVMValue(var) => {
-                    self.inst_builder.build_load(var.clone(), "load_var").into()
+                    self.inst_builder.build_load(var.clone(), name).into()
                 }
                 Atom::PolyValue(var_table) => var_table
                     .into_iter()
                     .map(|(k, v)| {
                         (
                             k.clone(),
-                            self.inst_builder.build_load(v.clone(), "load_var"),
+                            self.inst_builder.build_load(v.clone(), name),
                         )
                     }).collect::<HashMap<_, _>>()
                     .into(),
