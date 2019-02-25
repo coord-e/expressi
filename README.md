@@ -33,7 +33,6 @@ In this example, `x` is evaluated to `11`.
   - Tuple
   - Enum
   - Struct
-- Comment syntax
 - Multi-line input in REPL
 
 ## License
