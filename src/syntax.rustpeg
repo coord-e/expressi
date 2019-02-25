@@ -95,4 +95,6 @@ type_identifier -> Expression
 type_elem -> (Expression, Vec<Expression>)
   = _ id:type_identifier _ "(" params:(type_identifier ** ",") _ ")" _ { (id, params) }
 
-_ = [ \t\n]*
+_ = ([ \t\n] / comment)*
+
+comment = "/*" (!"*/" .)* "*/"
