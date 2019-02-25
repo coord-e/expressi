@@ -115,7 +115,7 @@ impl TypeInfer {
                 let new_node = ir::Value::Follow(box v1.clone(), box v2.clone());
                 Ok((s1.compose(&s2), new_node.with_type(t.clone())?))
             }
-            ir::Value::BinOp(op, box rhs, box lhs) => {
+            ir::Value::BinOp(op, box lhs, box rhs) => {
                 let (s1, lhs) = self.transform_with_env(&lhs, env)?;
                 let lhs_ty = lhs.type_().unwrap();
                 let (s2, rhs) = self.transform_with_env(&rhs, env)?;
