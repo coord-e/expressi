@@ -85,7 +85,7 @@ array -> Expression
 
 function -> Expression
   = param:identifier _ "->" e:assign { Expression::Function(param.to_string(), Box::new(e)) }
-  / "(" params:(identifier ++ ",") _ ")" _ "->" e:assign { params.iter().rev().fold(e, |e, p| Expression::Function(p.to_string(), Box::new(e))) }
+  / "(" _ params:(identifier ++ (_ "," _)) ")" _ "->" e:assign { params.iter().rev().fold(e, |e, p| Expression::Function(p.to_string(), Box::new(e))) }
 
 type_ -> Expression
   = "<" e:(type_elem  ++ "|") ">" { Expression::Type(e) }
