@@ -43,20 +43,13 @@ impl Subst {
     /// To compose two substitutions, we apply self to each type in other and union the resulting
     /// substitution with self.
     pub fn compose(&self, other: &Subst) -> Subst {
-        Subst(
-            self.union(
-                &other
-                    .iter()
-                    .map(|(k, v)| (k.clone(), v.apply(self)))
-                    .collect(),
-            ),
-        )
+        Subst(self.union(&other.iter().map(|(k, v)| (*k, v.apply(self))).collect()))
     }
 
     fn union(&self, other: &HashMap<TypeVarID, Type>) -> HashMap<TypeVarID, Type> {
         let mut res = self.0.clone();
         for (key, value) in other {
-            res.entry(key.clone()).or_insert(value.clone());
+            res.entry(key.clone()).or_insert_with(|| value.clone());
         }
         res
     }

@@ -26,7 +26,7 @@ where
     // of the types in the vector.
     fn ftv(&self) -> HashSet<TypeVarID> {
         self.iter()
-            .map(|x| x.ftv())
+            .map(Types::ftv)
             .fold(HashSet::new(), |set, x| set.union(&x).cloned().collect())
     }
 

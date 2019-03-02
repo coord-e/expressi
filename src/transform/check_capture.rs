@@ -48,12 +48,12 @@ impl CheckCapture {
 impl Transform for CheckCapture {
     fn transform_function(
         &mut self,
-        ident: &String,
+        ident: &str,
         body: &ir::Value,
         _: &HashMap<ir::Identifier, Type>,
     ) -> Result<ir::Value, Error> {
         Ok(ir::Value::Function(
-            ident.clone(),
+            ident.to_string(),
             box body.clone(),
             collect_vars(body)?.filter(|(e, _)| e != ident).collect(),
         ))

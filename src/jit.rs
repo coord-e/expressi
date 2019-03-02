@@ -63,7 +63,7 @@ impl JIT {
         // Translate the AST nodes into Cranelift IR.
         self.translate(module.clone(), ast)?;
 
-        unsafe { execution_engine.get_function(name) }.map_err(|e| e.into())
+        unsafe { execution_engine.get_function(name) }.map_err(Into::into)
     }
 
     // Translate from toy-language AST nodes into LLVM IR.

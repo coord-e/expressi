@@ -29,7 +29,7 @@ impl TypeVarID {
     /// Attempt to bind a type variable to a type, returning an appropriate substitution.
     pub fn bind(&self, ty: &Type) -> Result<Subst, Error> {
         // Check for binding a variable to itself
-        if let &Type::Variable(ref u) = ty {
+        if let Type::Variable(ref u) = *ty {
             if u == self {
                 return Ok(Subst::new());
             }
@@ -38,7 +38,7 @@ impl TypeVarID {
         // The occurs check prevents illegal recursive types.
         if ty.ftv().contains(self) {
             return Err(TypeInferError::RecursiveType {
-                t1: self.clone(),
+                t1: *self,
                 t2: ty.clone(),
             }
             .into());
@@ -131,7 +131,7 @@ impl Types for Type {
     fn ftv(&self) -> HashSet<TypeVarID> {
         match self {
             // For a type variable, there is one free variable: the variable itself.
-            &Type::Variable(ref s) => [s.clone()].iter().cloned().collect(),
+            &Type::Variable(ref s) => [*s].iter().cloned().collect(),
 
             // Primitive types have no free variables
             &Type::Number | &Type::Boolean | &Type::Empty => HashSet::new(),
@@ -145,7 +145,7 @@ impl Types for Type {
         match self {
             // If this type references a variable that is in the substitution, return it's
             // replacement type. Otherwise, return the existing type.
-            &Type::Variable(ref n) => s.get(n).cloned().unwrap_or(self.clone()),
+            &Type::Variable(ref n) => s.get(n).cloned().unwrap_or_else(|| self.clone()),
 
             // To apply to a function, we simply apply to each of the input and output.
             Type::Function(box t1, box t2) => Type::Function(box t1.apply(s), box t2.apply(s)),

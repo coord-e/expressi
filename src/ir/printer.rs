@@ -27,7 +27,7 @@ impl Printer {
 
             Value::Follow(lhs, rhs) => {
                 self.print(lhs, f)?;
-                write!(f, ";\n")?;
+                writeln!(f, ";")?;
                 self.print(rhs, f)
             }
 
@@ -44,7 +44,7 @@ impl Printer {
 
             Value::Variable(name) => write!(f, "{}", name),
             Value::Scope(expr) => {
-                write!(f, "{{\n")?;
+                writeln!(f, "{{")?;
                 self.print(expr, f)?;
                 write!(f, "\n}}")
             }

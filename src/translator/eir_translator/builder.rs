@@ -123,7 +123,7 @@ impl<'a> Builder<'a> {
         self.enter_new_scope();
 
         // TODO: Remove this insufficient copy
-        let capture_list: BTreeMap<_, _> = capture_list.into_iter().collect();
+        let capture_list: BTreeMap<_, _> = capture_list.iter().collect();
 
         let capture_types: Vec<types::BasicTypeEnum> = capture_list
             .iter()
@@ -245,7 +245,7 @@ impl<'a> Builder<'a> {
         let call_inst = self
             .inst_builder
             .build_call(func_v, &[capture_ptr.into(), arg], "");
-        Ok(call_inst.try_as_basic_value().left().unwrap().into())
+        Ok(call_inst.try_as_basic_value().left().unwrap())
     }
 
     pub fn apply_op(
@@ -323,10 +323,7 @@ impl<'a> Builder<'a> {
                 .iter()
                 .map(|(k, v)| {
                     let t = self.type_of(*v);
-                    (
-                        k.clone(),
-                        self.inst_builder.build_alloca(t, &real_name).into(),
-                    )
+                    (k.clone(), self.inst_builder.build_alloca(t, &real_name))
                 })
                 .collect::<HashMap<_, _>>()
                 .into(),
@@ -385,7 +382,7 @@ impl<'a> Builder<'a> {
                     .iter()
                     .map(|(k, v)| {
                         self.inst_builder
-                            .build_store(*v, *val.clone().expect_poly_value()?.get(k).unwrap());
+                            .build_store(*v, val.clone().expect_poly_value()?[k]);
                         Ok(())
                     })
                     .collect::<Result<(), Error>>()?;
@@ -399,7 +396,7 @@ impl<'a> Builder<'a> {
             Ok(Some(match var.ptr_value() {
                 Atom::LLVMValue(var) => self.inst_builder.build_load(var.clone(), name).into(),
                 Atom::PolyValue(var_table) => var_table
-                    .into_iter()
+                    .iter()
                     .map(|(k, v)| (k.clone(), self.inst_builder.build_load(v.clone(), name)))
                     .collect::<HashMap<_, _>>()
                     .into(),
@@ -529,7 +526,7 @@ impl<'a> Builder<'a> {
     pub fn current_block(&self) -> Result<Block, Error> {
         self.inst_builder
             .get_insert_block()
-            .ok_or(TranslationError::InvalidContextBranch.into())
+            .ok_or_else(|| TranslationError::InvalidContextBranch.into())
             .map(|ebb| Block { ebb })
     }
 

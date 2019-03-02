@@ -60,7 +60,7 @@ impl<T> ScopedEnv<T> {
         }
         self.0
             .pop()
-            .ok_or(TranslationError::UnexpectedScopePop.into())
+            .ok_or_else(|| TranslationError::UnexpectedScopePop.into())
     }
 
     pub fn unique_name(&self, s: &str) -> String {

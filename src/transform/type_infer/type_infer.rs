@@ -96,7 +96,7 @@ impl TypeInfer {
                 let tp = env.apply(&s1).generalize(&t1);
                 env.insert(ident.clone(), tp);
 
-                let new_node = ir::Value::Bind(kind.clone(), ident.clone(), box v1.clone());
+                let new_node = ir::Value::Bind(*kind, ident.clone(), box v1.clone());
                 Ok((s1, new_node.with_type(t1.clone())?))
             }
             ir::Value::Scope(box body) => {

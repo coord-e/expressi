@@ -27,7 +27,7 @@ pub fn translate_eir<'a>(
     Ok(match expr {
         ir::Value::Typed(ty, ty_candidates, box value) => match value {
             ir::Value::Constant(c) => match c {
-                ir::Constant::Number(number) => builder.number_constant(i64::from(number))?.into(),
+                ir::Constant::Number(number) => builder.number_constant(number)?.into(),
                 ir::Constant::Boolean(tf) => builder.boolean_constant(tf)?.into(),
                 ir::Constant::Empty => builder.empty_constant()?.into(),
             },
@@ -56,7 +56,7 @@ pub fn translate_eir<'a>(
                 }
             }
             ir::Value::Typed(..) => bail!(InternalError::DoubleTyped),
-            _ => translate_eir(builder, value)?.into(),
+            _ => translate_eir(builder, value)?,
         },
         ir::Value::Apply(box func, box arg) => {
             let func_ty = func.type_().ok_or(TranslationError::NotTyped)?;
@@ -64,9 +64,7 @@ pub fn translate_eir<'a>(
             let arg = translate_eir(builder, arg)?.expect_value()?;
             match func {
                 Atom::LLVMValue(func) => builder.call(func, arg)?.into(),
-                Atom::PolyValue(func_table) => {
-                    builder.call(*func_table.get(func_ty).unwrap(), arg)?.into()
-                }
+                Atom::PolyValue(func_table) => builder.call(func_table[func_ty], arg)?.into(),
             }
         }
         ir::Value::BinOp(op, lhs, rhs) => {
@@ -83,7 +81,7 @@ pub fn translate_eir<'a>(
         ir::Value::Bind(kind, name, rhs) => {
             let new_value = translate_eir(builder, *rhs)?;
             builder.bind_var(&name, &new_value, kind)?;
-            new_value.into()
+            new_value
         }
 
         ir::Value::Assign(lhs, rhs) => {
@@ -98,13 +96,13 @@ pub fn translate_eir<'a>(
 
         ir::Value::Variable(name) => builder
             .get_var(&name)
-            .and_then(|v| v.ok_or(TranslationError::UndeclaredVariable.into()))?,
+            .and_then(|v| v.ok_or_else(|| TranslationError::UndeclaredVariable.into()))?,
 
         ir::Value::Scope(expr) => {
             builder.enter_new_scope();
             let content = translate_eir(builder, *expr)?;
             builder.exit_scope()?;
-            content.into()
+            content
         }
 
         ir::Value::IfElse(cond, then_expr, else_expr) => {
@@ -136,7 +134,7 @@ pub fn translate_eir<'a>(
             builder.jump(&merge_block);
 
             builder.switch_to_block(&merge_block);
-            builder.get_var(&var_name)?.unwrap().into()
+            builder.get_var(&var_name)?.unwrap()
         }
         _ => bail!(TranslationError::NotTyped),
     })
