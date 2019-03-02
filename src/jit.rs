@@ -4,7 +4,7 @@ use crate::ir::Printer;
 use crate::parser;
 use crate::transform::{CheckCapture, TypeInfer};
 use crate::translator::eir_translator::Builder;
-use crate::translator::{ASTTranslator, translate_eir};
+use crate::translator::{translate_eir, ASTTranslator};
 
 use failure::Error;
 use std::io;

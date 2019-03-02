@@ -3,11 +3,7 @@ use crate::transform::type_infer::Type;
 
 #[derive(Debug, Fail)]
 pub enum TypeInferError {
-    #[fail(
-        display = "Mismatched types. expected: {}, found: {}",
-        expected,
-        found
-    )]
+    #[fail(display = "Mismatched types. expected: {}, found: {}", expected, found)]
     MismatchedTypes { expected: Type, found: Type },
 
     #[fail(display = "Recursive type detected: {} vs {}", t1, t2)]
