@@ -1,7 +1,7 @@
-use error::InternalError;
-use expression::Operator;
-use transform::type_infer::Type;
-use transform::Transform;
+use crate::error::InternalError;
+use crate::expression::Operator;
+use crate::transform::type_infer::Type;
+use crate::transform::Transform;
 
 use failure::Error;
 

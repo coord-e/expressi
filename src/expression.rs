@@ -1,4 +1,4 @@
-use ir::BindingKind;
+use crate::ir::BindingKind;
 use std::str::FromStr;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]

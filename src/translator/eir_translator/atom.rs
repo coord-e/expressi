@@ -1,5 +1,5 @@
-use error::TranslationError;
-use transform::type_infer::Type;
+use crate::error::TranslationError;
+use crate::transform::type_infer::Type;
 
 use failure::Error;
 
@@ -16,14 +16,14 @@ impl<T> Atom<T> {
     pub fn expect_value(self) -> Result<T, Error> {
         match self {
             Atom::LLVMValue(v) => Ok(v),
-            _ => return Err(TranslationError::ValueExpected.into()),
+            _ => Err(TranslationError::ValueExpected.into()),
         }
     }
 
     pub fn expect_poly_value(self) -> Result<HashMap<Type, T>, Error> {
         match self {
             Atom::PolyValue(v) => Ok(v),
-            _ => return Err(TranslationError::PolyValueExpected.into()),
+            _ => Err(TranslationError::PolyValueExpected.into()),
         }
     }
 }

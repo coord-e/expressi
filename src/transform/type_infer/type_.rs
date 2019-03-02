@@ -8,10 +8,10 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
-use transform::type_infer::subst::Subst;
-use transform::type_infer::traits::Types;
+use crate::transform::type_infer::subst::Subst;
+use crate::transform::type_infer::traits::Types;
 
-use transform::error::TypeInferError;
+use crate::transform::error::TypeInferError;
 
 use failure::Error;
 
@@ -27,25 +27,25 @@ impl TypeVarID {
     }
 
     /// Attempt to bind a type variable to a type, returning an appropriate substitution.
-    pub fn bind(&self, ty: &Type) -> Result<Subst, Error> {
+    pub fn bind(self, ty: &Type) -> Result<Subst, Error> {
         // Check for binding a variable to itself
-        if let &Type::Variable(ref u) = ty {
-            if u == self {
+        if let Type::Variable(ref u) = *ty {
+            if u == &self {
                 return Ok(Subst::new());
             }
         }
 
         // The occurs check prevents illegal recursive types.
-        if ty.ftv().contains(self) {
+        if ty.ftv().contains(&self) {
             return Err(TypeInferError::RecursiveType {
-                t1: self.clone(),
+                t1: self,
                 t2: ty.clone(),
             }
             .into());
         }
 
         let mut s = Subst::new();
-        s.insert(self.clone(), ty.clone());
+        s.insert(self, ty.clone());
         Ok(s)
     }
 }
@@ -131,7 +131,7 @@ impl Types for Type {
     fn ftv(&self) -> HashSet<TypeVarID> {
         match self {
             // For a type variable, there is one free variable: the variable itself.
-            &Type::Variable(ref s) => [s.clone()].iter().cloned().collect(),
+            &Type::Variable(ref s) => [*s].iter().cloned().collect(),
 
             // Primitive types have no free variables
             &Type::Number | &Type::Boolean | &Type::Empty => HashSet::new(),
@@ -145,7 +145,7 @@ impl Types for Type {
         match self {
             // If this type references a variable that is in the substitution, return it's
             // replacement type. Otherwise, return the existing type.
-            &Type::Variable(ref n) => s.get(n).cloned().unwrap_or(self.clone()),
+            &Type::Variable(ref n) => s.get(n).cloned().unwrap_or_else(|| self.clone()),
 
             // To apply to a function, we simply apply to each of the input and output.
             Type::Function(box t1, box t2) => Type::Function(box t1.apply(s), box t2.apply(s)),

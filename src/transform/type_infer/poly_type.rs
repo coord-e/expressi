@@ -8,9 +8,9 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
-use transform::type_infer::subst::Subst;
-use transform::type_infer::traits::Types;
-use transform::type_infer::type_::{Type, TypeVarGen, TypeVarID};
+use crate::transform::type_infer::subst::Subst;
+use crate::transform::type_infer::traits::Types;
+use crate::transform::type_infer::type_::{Type, TypeVarGen, TypeVarID};
 
 use std::collections::HashSet;
 

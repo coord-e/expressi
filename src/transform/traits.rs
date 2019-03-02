@@ -1,6 +1,6 @@
-use expression::Operator;
-use ir;
-use transform::type_infer::Type;
+use crate::expression::Operator;
+use crate::ir;
+use crate::transform::type_infer::Type;
 
 use failure::Error;
 
@@ -56,8 +56,8 @@ pub trait Transform {
         })
     }
 
-    fn transform_variable(&mut self, ident: &String) -> Result<ir::Value, Error> {
-        Ok(ir::Value::Variable(ident.clone()))
+    fn transform_variable(&mut self, ident: &str) -> Result<ir::Value, Error> {
+        Ok(ir::Value::Variable(ident.to_string()))
     }
 
     fn transform_constant(&mut self, c: &ir::Constant) -> Result<ir::Value, Error> {
@@ -67,10 +67,10 @@ pub trait Transform {
     fn transform_bind(
         &mut self,
         kind: ir::BindingKind,
-        ident: &String,
+        ident: &str,
         v: &ir::Value,
     ) -> Result<ir::Value, Error> {
-        Ok(ir::Value::Bind(kind, ident.clone(), box v.clone()))
+        Ok(ir::Value::Bind(kind, ident.to_string(), box v.clone()))
     }
 
     fn transform_assign(&mut self, lhs: &ir::Value, rhs: &ir::Value) -> Result<ir::Value, Error> {
@@ -113,12 +113,12 @@ pub trait Transform {
 
     fn transform_function(
         &mut self,
-        ident: &String,
+        ident: &str,
         body: &ir::Value,
         captures: &HashMap<ir::Identifier, Type>,
     ) -> Result<ir::Value, Error> {
         Ok(ir::Value::Function(
-            ident.clone(),
+            ident.to_string(),
             box body.clone(),
             captures.clone(),
         ))
@@ -132,7 +132,10 @@ pub trait Transform {
     ) -> Result<ir::Value, Error> {
         Ok(ir::Value::Typed(
             type_.clone(),
-            candidates.into_iter().map(|(t, v)| Ok((t.clone(), self.transform(v)?))).collect::<Result<HashMap<_, _>, Error>>()?,
+            candidates
+                .iter()
+                .map(|(t, v)| Ok((t.clone(), self.transform(v)?)))
+                .collect::<Result<HashMap<_, _>, Error>>()?,
             box value.clone(),
         ))
     }

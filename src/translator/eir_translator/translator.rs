@@ -1,9 +1,9 @@
-use error::{InternalError, TranslationError};
-use ir;
-use transform::type_infer::Type;
-use translator::eir_translator::{Atom, Builder};
+use crate::error::{InternalError, TranslationError};
+use crate::ir;
+use crate::transform::type_infer::Type;
+use crate::translator::eir_translator::{Atom, Builder};
 
-use failure::Error;
+use failure::{bail, Error};
 use inkwell::values::BasicValueEnum;
 use std::collections::HashMap;
 
@@ -12,7 +12,7 @@ fn translate_monotype_function<'a>(
     param: String,
     ty: &Type,
     body: ir::Value,
-    capture_list: &HashMap<ir::Identifier, Type>
+    capture_list: &HashMap<ir::Identifier, Type>,
 ) -> Result<BasicValueEnum, Error> {
     let function = builder.function_constant(&ty, param, capture_list, |builder| {
         translate_eir(builder, body)?.expect_value()
@@ -20,13 +20,14 @@ fn translate_monotype_function<'a>(
     Ok(function)
 }
 
-pub fn translate_eir<'a>(builder: &mut Builder<'a>, expr: ir::Value) -> Result<Atom<BasicValueEnum>, Error> {
+pub fn translate_eir<'a>(
+    builder: &mut Builder<'a>,
+    expr: ir::Value,
+) -> Result<Atom<BasicValueEnum>, Error> {
     Ok(match expr {
         ir::Value::Typed(ty, ty_candidates, box value) => match value {
             ir::Value::Constant(c) => match c {
-                ir::Constant::Number(number) => {
-                    builder.number_constant(i64::from(number))?.into()
-                }
+                ir::Constant::Number(number) => builder.number_constant(number)?.into(),
                 ir::Constant::Boolean(tf) => builder.boolean_constant(tf)?.into(),
                 ir::Constant::Empty => builder.empty_constant()?.into(),
             },
@@ -39,17 +40,23 @@ pub fn translate_eir<'a>(builder: &mut Builder<'a>, expr: ir::Value) -> Result<A
                         .into_iter()
                         .map(|(ty, body)| {
                             match body {
-                                ir::Value::Function(_, box body, _) => {
-                                    translate_monotype_function(builder, param.clone(), &ty, body, &capture_list)
-                                }
+                                ir::Value::Function(_, box body, _) => translate_monotype_function(
+                                    builder,
+                                    param.clone(),
+                                    &ty,
+                                    body,
+                                    &capture_list,
+                                ),
                                 _ => unreachable!(),
-                            }.map(|v| (ty, v))
-                        }).collect::<Result<HashMap<_, _>, _>>()?
+                            }
+                            .map(|v| (ty, v))
+                        })
+                        .collect::<Result<HashMap<_, _>, _>>()?
                         .into()
                 }
             }
             ir::Value::Typed(..) => bail!(InternalError::DoubleTyped),
-            _ => translate_eir(builder, value)?.into(),
+            _ => translate_eir(builder, value)?,
         },
         ir::Value::Apply(box func, box arg) => {
             let func_ty = func.type_().ok_or(TranslationError::NotTyped)?;
@@ -57,9 +64,7 @@ pub fn translate_eir<'a>(builder: &mut Builder<'a>, expr: ir::Value) -> Result<A
             let arg = translate_eir(builder, arg)?.expect_value()?;
             match func {
                 Atom::LLVMValue(func) => builder.call(func, arg)?.into(),
-                Atom::PolyValue(func_table) => builder
-                    .call(*func_table.get(func_ty).unwrap(), arg)?
-                    .into(),
+                Atom::PolyValue(func_table) => builder.call(func_table[func_ty], arg)?.into(),
             }
         }
         ir::Value::BinOp(op, lhs, rhs) => {
@@ -76,7 +81,7 @@ pub fn translate_eir<'a>(builder: &mut Builder<'a>, expr: ir::Value) -> Result<A
         ir::Value::Bind(kind, name, rhs) => {
             let new_value = translate_eir(builder, *rhs)?;
             builder.bind_var(&name, &new_value, kind)?;
-            new_value.into()
+            new_value
         }
 
         ir::Value::Assign(lhs, rhs) => {
@@ -91,13 +96,13 @@ pub fn translate_eir<'a>(builder: &mut Builder<'a>, expr: ir::Value) -> Result<A
 
         ir::Value::Variable(name) => builder
             .get_var(&name)
-            .and_then(|v| v.ok_or(TranslationError::UndeclaredVariable.into()))?,
+            .and_then(|v| v.ok_or_else(|| TranslationError::UndeclaredVariable.into()))?,
 
         ir::Value::Scope(expr) => {
             builder.enter_new_scope();
             let content = translate_eir(builder, *expr)?;
             builder.exit_scope()?;
-            content.into()
+            content
         }
 
         ir::Value::IfElse(cond, then_expr, else_expr) => {
@@ -114,8 +119,7 @@ pub fn translate_eir<'a>(builder: &mut Builder<'a>, expr: ir::Value) -> Result<A
 
             builder.switch_to_block(&initial_block);
             let var_name = builder.declare_mut_var("__cond", &then_return, true)?;
-            builder
-                .brz(condition_value, &then_block, &else_block)?;
+            builder.brz(condition_value, &then_block, &else_block)?;
 
             builder.switch_to_block(&then_block);
             builder.assign_var(&var_name, &then_return)?;
@@ -130,7 +134,7 @@ pub fn translate_eir<'a>(builder: &mut Builder<'a>, expr: ir::Value) -> Result<A
             builder.jump(&merge_block);
 
             builder.switch_to_block(&merge_block);
-            builder.get_var(&var_name)?.unwrap().into()
+            builder.get_var(&var_name)?.unwrap()
         }
         _ => bail!(TranslationError::NotTyped),
     })

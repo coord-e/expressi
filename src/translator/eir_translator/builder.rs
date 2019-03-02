@@ -1,17 +1,17 @@
-use error::TranslationError;
-use expression::Operator;
-use ir::BindingKind;
-use scope::{Env, Scope, ScopedEnv};
-use transform::type_infer::Type;
-use translator::eir_translator::atom::Atom;
-use translator::eir_translator::BoundPointer;
+use crate::error::TranslationError;
+use crate::expression::Operator;
+use crate::ir::BindingKind;
+use crate::scope::{Env, Scope, ScopedEnv};
+use crate::transform::type_infer::Type;
+use crate::translator::eir_translator::atom::Atom;
+use crate::translator::eir_translator::BoundPointer;
 
 use failure::Error;
 
 use inkwell::types::BasicType;
 use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPredicate};
 
-use std::collections::{HashMap, BTreeMap};
+use std::collections::{BTreeMap, HashMap};
 use std::mem;
 use std::rc::Rc;
 
@@ -50,11 +50,11 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn inst_builder<'short>(&'short mut self) -> &'short mut builder::Builder {
+    pub fn inst_builder(&mut self) -> &mut builder::Builder {
         self.inst_builder
     }
 
-    pub fn env<'short>(&'short mut self) -> &'short mut ScopedEnv<BoundPointer> {
+    pub fn env(&mut self) -> &mut ScopedEnv<BoundPointer> {
         &mut self.env
     }
 
@@ -82,7 +82,8 @@ impl<'a> Builder<'a> {
                 let param = self.llvm_type(param)?;
                 let ret = self.llvm_type(body)?;
 
-                let fn_type = ret.fn_type(&[void_ptr.into(), param], false)
+                let fn_type = ret
+                    .fn_type(&[void_ptr.into(), param], false)
                     .ptr_type(AddressSpace::Generic);
                 types::StructType::struct_type(&[void_ptr.into(), fn_type.into()], false).into()
             }
@@ -122,14 +123,15 @@ impl<'a> Builder<'a> {
         self.enter_new_scope();
 
         // TODO: Remove this insufficient copy
-        let capture_list: BTreeMap<_, _> = capture_list.into_iter().collect();
+        let capture_list: BTreeMap<_, _> = capture_list.iter().collect();
 
-        let capture_types: Vec<types::BasicTypeEnum> = capture_list.iter().map(|(_, ty)| self.llvm_type(ty)).collect::<Result<_, _>>()?;
+        let capture_types: Vec<types::BasicTypeEnum> = capture_list
+            .iter()
+            .map(|(_, ty)| self.llvm_type(ty))
+            .collect::<Result<_, _>>()?;
         let capture_type = types::StructType::struct_type(&capture_types, false);
 
-        let fn_concrete_type = self
-            .llvm_type(ty)?
-            .into_struct_type();
+        let fn_concrete_type = self.llvm_type(ty)?.into_struct_type();
 
         let fn_type = fn_concrete_type
             .get_field_type_at_index(1)
@@ -154,13 +156,18 @@ impl<'a> Builder<'a> {
             BoundPointer::new(BindingKind::Immutable, arg_ptr.into()),
         );
 
-        let capture_arg = self.inst_builder.build_pointer_cast(function.get_nth_param(0).unwrap().into_pointer_value(), capture_type.ptr_type(AddressSpace::Generic), "");
+        let capture_arg = self.inst_builder.build_pointer_cast(
+            function.get_nth_param(0).unwrap().into_pointer_value(),
+            capture_type.ptr_type(AddressSpace::Generic),
+            "",
+        );
         for (i, (name, _)) in capture_list.iter().enumerate() {
-            let ptr = unsafe { self.inst_builder.build_struct_gep(capture_arg, i as u32, "") };
-            self.env.insert(
-                &name,
-                BoundPointer::new(BindingKind::Immutable, ptr.into()),
-            );
+            let ptr = unsafe {
+                self.inst_builder
+                    .build_struct_gep(capture_arg, i as u32, "")
+            };
+            self.env
+                .insert(&name, BoundPointer::new(BindingKind::Immutable, ptr.into()));
         }
 
         let ret = eval(self)?;
@@ -170,26 +177,49 @@ impl<'a> Builder<'a> {
         self.inst_builder().position_at_end(&previous_block);
 
         // TODO: Fix memory leak
-        let capture_ptr = self.inst_builder.build_malloc(capture_type, "eval_capture_ptr");
+        let capture_ptr = self
+            .inst_builder
+            .build_malloc(capture_type, "eval_capture_ptr");
         for (i, (name, _)) in capture_list.iter().enumerate() {
-            let ptr = unsafe { self.inst_builder.build_struct_gep(capture_ptr, i as u32, "") };
-            let var_ptr = self.env.get(&name).unwrap().ptr_value().clone().expect_value()?;
-            self.inst_builder.build_store(ptr, self.inst_builder.build_load(var_ptr, ""));
+            let ptr = unsafe {
+                self.inst_builder
+                    .build_struct_gep(capture_ptr, i as u32, "")
+            };
+            let var_ptr = self
+                .env
+                .get(&name)
+                .unwrap()
+                .ptr_value()
+                .clone()
+                .expect_value()?;
+            self.inst_builder
+                .build_store(ptr, self.inst_builder.build_load(var_ptr, ""));
         }
 
         let void_ptr_ty = types::VoidType::void_type().ptr_type(AddressSpace::Generic);
-        let ret_type = types::StructType::struct_type(&[
-            void_ptr_ty.into(),
-            fn_type.ptr_type(AddressSpace::Generic).into(),
-        ], false);
+        let ret_type = types::StructType::struct_type(
+            &[
+                void_ptr_ty.into(),
+                fn_type.ptr_type(AddressSpace::Generic).into(),
+            ],
+            false,
+        );
 
-        let capture_ptr_erased = self.inst_builder.build_pointer_cast(capture_ptr, void_ptr_ty, "capture_ptr_erase");
+        let capture_ptr_erased =
+            self.inst_builder
+                .build_pointer_cast(capture_ptr, void_ptr_ty, "capture_ptr_erase");
         let ptr: values::PointerValue = unsafe { mem::transmute(function) };
 
         // TODO: Fix this dangerous implementation
-        let real_ret = self.inst_builder.build_insert_value(ret_type.get_undef(), capture_ptr_erased, 0, "").unwrap();
+        let real_ret = self
+            .inst_builder
+            .build_insert_value(ret_type.get_undef(), capture_ptr_erased, 0, "")
+            .unwrap();
         let real_ret: values::StructValue = unsafe { mem::transmute(real_ret) };
-        let real_ret = self.inst_builder.build_insert_value(real_ret, ptr, 1, "").unwrap();
+        let real_ret = self
+            .inst_builder
+            .build_insert_value(real_ret, ptr, 1, "")
+            .unwrap();
         let real_ret: values::StructValue = unsafe { mem::transmute(real_ret) };
 
         Ok(real_ret.into())
@@ -201,13 +231,21 @@ impl<'a> Builder<'a> {
         arg: values::BasicValueEnum,
     ) -> Result<values::BasicValueEnum, Error> {
         let func = func.into_struct_value();
-        let capture_ptr = self.inst_builder.build_extract_value(func, 0, "capture_ptr").unwrap()
+        let capture_ptr = self
+            .inst_builder
+            .build_extract_value(func, 0, "capture_ptr")
+            .unwrap()
             .into_pointer_value();
-        let func_ptr = self.inst_builder.build_extract_value(func, 1, "func").unwrap()
+        let func_ptr = self
+            .inst_builder
+            .build_extract_value(func, 1, "func")
+            .unwrap()
             .into_pointer_value();
         let func_v: values::FunctionValue = unsafe { mem::transmute(func_ptr) };
-        let call_inst = self.inst_builder.build_call(func_v, &[capture_ptr.into(), arg], "");
-        Ok(call_inst.try_as_basic_value().left().unwrap().into())
+        let call_inst = self
+            .inst_builder
+            .build_call(func_v, &[capture_ptr.into(), arg], "");
+        Ok(call_inst.try_as_basic_value().left().unwrap())
     }
 
     pub fn apply_op(
@@ -235,7 +273,8 @@ impl<'a> Builder<'a> {
             Operator::Eq => self.cmp(CondCode::Equal, lhs_int, rhs_int),
             Operator::Ne => self.cmp(CondCode::NotEqual, lhs_int, rhs_int),
             Operator::Index => self.index(lhs, rhs),
-        }.into())
+        }
+        .into())
     }
 
     pub fn cmp(
@@ -284,11 +323,9 @@ impl<'a> Builder<'a> {
                 .iter()
                 .map(|(k, v)| {
                     let t = self.type_of(*v);
-                    (
-                        k.clone(),
-                        self.inst_builder.build_alloca(t, &real_name).into(),
-                    )
-                }).collect::<HashMap<_, _>>()
+                    (k.clone(), self.inst_builder.build_alloca(t, &real_name))
+                })
+                .collect::<HashMap<_, _>>()
                 .into(),
         };
         self.env
@@ -345,9 +382,10 @@ impl<'a> Builder<'a> {
                     .iter()
                     .map(|(k, v)| {
                         self.inst_builder
-                            .build_store(*v, *val.clone().expect_poly_value()?.get(k).unwrap());
+                            .build_store(*v, val.clone().expect_poly_value()?[k]);
                         Ok(())
-                    }).collect::<Result<(), Error>>()?;
+                    })
+                    .collect::<Result<(), Error>>()?;
             }
         };
         Ok(())
@@ -356,17 +394,11 @@ impl<'a> Builder<'a> {
     pub fn get_var(&mut self, name: &str) -> Result<Option<Atom<values::BasicValueEnum>>, Error> {
         self.env.get(name).map_or(Ok(None), |var| {
             Ok(Some(match var.ptr_value() {
-                Atom::LLVMValue(var) => {
-                    self.inst_builder.build_load(var.clone(), name).into()
-                }
+                Atom::LLVMValue(var) => self.inst_builder.build_load(var.clone(), name).into(),
                 Atom::PolyValue(var_table) => var_table
-                    .into_iter()
-                    .map(|(k, v)| {
-                        (
-                            k.clone(),
-                            self.inst_builder.build_load(v.clone(), name),
-                        )
-                    }).collect::<HashMap<_, _>>()
+                    .iter()
+                    .map(|(k, v)| (k.clone(), self.inst_builder.build_load(v.clone(), name)))
+                    .collect::<HashMap<_, _>>()
                     .into(),
             }))
         })
@@ -382,7 +414,8 @@ impl<'a> Builder<'a> {
             return Err(TranslationError::InvalidCast {
                 from: format!("{:?}", from_type),
                 to: format!("{:?}", to_type),
-            }.into());
+            }
+            .into());
         }
 
         let number_type: types::BasicTypeEnum = types::IntType::i64_type().into();
@@ -397,7 +430,8 @@ impl<'a> Builder<'a> {
                         CondCode::NotEqual,
                         v.into_int_value(),
                         zero.into_int_value(),
-                    ).into());
+                    )
+                    .into());
             }
         } else if from_type == bool_type {
             if to_type == number_type {
@@ -410,7 +444,8 @@ impl<'a> Builder<'a> {
         Err(TranslationError::InvalidCast {
             from: format!("{:?}", from_type),
             to: format!("{:?}", to_type),
-        }.into())
+        }
+        .into())
     }
 
     pub fn enter_new_scope(&mut self) {
@@ -491,7 +526,7 @@ impl<'a> Builder<'a> {
     pub fn current_block(&self) -> Result<Block, Error> {
         self.inst_builder
             .get_insert_block()
-            .ok_or(TranslationError::InvalidContextBranch.into())
+            .ok_or_else(|| TranslationError::InvalidContextBranch.into())
             .map(|ebb| Block { ebb })
     }
 

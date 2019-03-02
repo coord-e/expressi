@@ -1,5 +1,5 @@
-use ir::BindingKind;
-use translator::eir_translator::atom::Atom;
+use crate::ir::BindingKind;
+use crate::translator::eir_translator::atom::Atom;
 
 use inkwell::values;
 

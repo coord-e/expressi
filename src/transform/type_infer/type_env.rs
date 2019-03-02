@@ -8,10 +8,10 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
-use transform::type_infer::poly_type::PolyType;
-use transform::type_infer::subst::Subst;
-use transform::type_infer::traits::Types;
-use transform::type_infer::type_::{Type, TypeVarID};
+use crate::transform::type_infer::poly_type::PolyType;
+use crate::transform::type_infer::subst::Subst;
+use crate::transform::type_infer::traits::Types;
+use crate::transform::type_infer::type_::{Type, TypeVarID};
 
 use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
@@ -36,10 +36,7 @@ impl Types for TypeEnv {
     /// The free type variables of a type environment is the union of the free type variables of
     /// each polytype in the environment.
     fn ftv(&self) -> HashSet<TypeVarID> {
-        self.values()
-            .map(|x| x.clone())
-            .collect::<Vec<PolyType>>()
-            .ftv()
+        self.values().cloned().collect::<Vec<PolyType>>().ftv()
     }
 
     /// To apply a substitution, we just apply it to each polytype in the type environment.

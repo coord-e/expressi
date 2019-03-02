@@ -1,13 +1,11 @@
-use transform::type_infer::type_::TypeVarID;
-use transform::type_infer::Type;
+use crate::transform::type_infer::type_::TypeVarID;
+use crate::transform::type_infer::Type;
+
+use failure::Fail;
 
 #[derive(Debug, Fail)]
 pub enum TypeInferError {
-    #[fail(
-        display = "Mismatched types. expected: {}, found: {}",
-        expected,
-        found
-    )]
+    #[fail(display = "Mismatched types. expected: {}, found: {}", expected, found)]
     MismatchedTypes { expected: Type, found: Type },
 
     #[fail(display = "Recursive type detected: {} vs {}", t1, t2)]
