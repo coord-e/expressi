@@ -1,5 +1,7 @@
 use std::io;
 
+use failure::Fail;
+
 #[derive(Debug, Fail)]
 pub enum TranslationError {
     #[fail(display = "Use of undeclared variable")]

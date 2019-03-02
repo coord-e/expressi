@@ -1,6 +1,8 @@
 use crate::transform::type_infer::type_::TypeVarID;
 use crate::transform::type_infer::Type;
 
+use failure::Fail;
+
 #[derive(Debug, Fail)]
 pub enum TypeInferError {
     #[fail(display = "Mismatched types. expected: {}, found: {}", expected, found)]

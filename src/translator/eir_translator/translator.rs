@@ -3,7 +3,7 @@ use crate::ir;
 use crate::transform::type_infer::Type;
 use crate::translator::eir_translator::{Atom, Builder};
 
-use failure::Error;
+use failure::{bail, Error};
 use inkwell::values::BasicValueEnum;
 use std::collections::HashMap;
 

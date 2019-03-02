@@ -1,6 +1,6 @@
-use expression::Expression;
-use expression::Operator;
-use ir::BindingKind;
+use crate::expression::Expression;
+use crate::expression::Operator;
+use crate::ir::BindingKind;
 
 #[pub]
 expression -> Expression
