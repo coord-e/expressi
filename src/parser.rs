@@ -1,5 +1,6 @@
 use crate::expression::Expression;
 
+#[allow(clippy::all)]
 pub mod syntax {
     include!(concat!(env!("OUT_DIR"), "/syntax.rs"));
 }
