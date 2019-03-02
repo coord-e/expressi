@@ -1,4 +1,4 @@
-use error::TranslationError;
+use crate::error::TranslationError;
 
 use std::collections::HashMap;
 

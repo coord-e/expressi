@@ -1,10 +1,10 @@
-use error::{LLVMError, ParseError};
-use expression::Expression;
-use ir::Printer;
-use parser;
-use transform::{CheckCapture, TypeInfer};
-use translator::eir_translator::Builder;
-use translator::{ASTTranslator, translate_eir};
+use crate::error::{LLVMError, ParseError};
+use crate::expression::Expression;
+use crate::ir::Printer;
+use crate::parser;
+use crate::transform::{CheckCapture, TypeInfer};
+use crate::translator::eir_translator::Builder;
+use crate::translator::{ASTTranslator, translate_eir};
 
 use failure::Error;
 use std::io;

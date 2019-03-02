@@ -8,14 +8,14 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
-use transform::type_infer::subst::Subst;
-use transform::type_infer::type_::TypeVarID;
+use crate::transform::type_infer::subst::Subst;
+use crate::transform::type_infer::type_::TypeVarID;
 
 use std::collections::HashSet;
 
 pub trait Types {
     fn ftv(&self) -> HashSet<TypeVarID>;
-    fn apply(&self, &Subst) -> Self;
+    fn apply(&self, _: &Subst) -> Self;
 }
 
 impl<'a, T> Types for Vec<T>

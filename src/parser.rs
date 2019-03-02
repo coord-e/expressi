@@ -1,4 +1,4 @@
-use expression::Expression;
+use crate::expression::Expression;
 
 pub mod syntax {
     include!(concat!(env!("OUT_DIR"), "/syntax.rs"));
@@ -10,7 +10,7 @@ pub fn parse(x: &str) -> Result<Expression, syntax::ParseError> {
 
 #[cfg(test)]
 mod tests {
-    use parser::parse;
+    use crate::parser::parse;
 
     #[test]
     fn skip_space() {
@@ -18,8 +18,8 @@ mod tests {
     }
 
     mod literal {
-        use expression::Expression;
-        use parser::parse;
+        use crate::expression::Expression;
+        use crate::parser::parse;
 
         #[test]
         fn number() {
@@ -55,8 +55,8 @@ mod tests {
     }
 
     mod operator {
-        use expression::{Expression, Operator};
-        use parser::parse;
+        use crate::expression::{Expression, Operator};
+        use crate::parser::parse;
 
         macro_rules! test_binop {
             ($x:expr, $op:expr) => {

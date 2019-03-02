@@ -1,6 +1,6 @@
-use expression::Expression;
-use ir::{Constant, Value};
-use transform::type_infer::Type;
+use crate::expression::Expression;
+use crate::ir::{Constant, Value};
+use crate::transform::type_infer::Type;
 
 use failure::Error;
 

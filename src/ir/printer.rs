@@ -1,4 +1,4 @@
-use ir::{Constant, Value};
+use crate::ir::{Constant, Value};
 
 use std::io;
 

@@ -5,5 +5,5 @@ pub mod type_;
 pub mod type_env;
 pub mod type_infer;
 
-pub use transform::type_infer::type_::Type;
-pub use transform::type_infer::type_infer::TypeInfer;
+pub use crate::transform::type_infer::type_::Type;
+pub use crate::transform::type_infer::type_infer::TypeInfer;

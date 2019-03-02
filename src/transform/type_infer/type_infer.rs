@@ -8,17 +8,17 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
-use error::InternalError;
-use expression::Operator;
-use ir;
-use transform::error::TypeInferError;
-use transform::Transform;
+use crate::error::InternalError;
+use crate::expression::Operator;
+use crate::ir;
+use crate::transform::error::TypeInferError;
+use crate::transform::Transform;
 
-use transform::type_infer::poly_type::PolyType;
-use transform::type_infer::subst::Subst;
-use transform::type_infer::traits::Types;
-use transform::type_infer::type_::{Type, TypeVarGen};
-use transform::type_infer::type_env::TypeEnv;
+use crate::transform::type_infer::poly_type::PolyType;
+use crate::transform::type_infer::subst::Subst;
+use crate::transform::type_infer::traits::Types;
+use crate::transform::type_infer::type_::{Type, TypeVarGen};
+use crate::transform::type_infer::type_env::TypeEnv;
 
 use failure::Error;
 

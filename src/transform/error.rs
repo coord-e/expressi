@@ -1,5 +1,5 @@
-use transform::type_infer::type_::TypeVarID;
-use transform::type_infer::Type;
+use crate::transform::type_infer::type_::TypeVarID;
+use crate::transform::type_infer::Type;
 
 #[derive(Debug, Fail)]
 pub enum TypeInferError {
