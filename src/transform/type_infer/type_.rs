@@ -27,25 +27,25 @@ impl TypeVarID {
     }
 
     /// Attempt to bind a type variable to a type, returning an appropriate substitution.
-    pub fn bind(&self, ty: &Type) -> Result<Subst, Error> {
+    pub fn bind(self, ty: &Type) -> Result<Subst, Error> {
         // Check for binding a variable to itself
         if let Type::Variable(ref u) = *ty {
-            if u == self {
+            if u == &self {
                 return Ok(Subst::new());
             }
         }
 
         // The occurs check prevents illegal recursive types.
-        if ty.ftv().contains(self) {
+        if ty.ftv().contains(&self) {
             return Err(TypeInferError::RecursiveType {
-                t1: *self,
+                t1: self,
                 t2: ty.clone(),
             }
             .into());
         }
 
         let mut s = Subst::new();
-        s.insert(self.clone(), ty.clone());
+        s.insert(self, ty.clone());
         Ok(s)
     }
 }

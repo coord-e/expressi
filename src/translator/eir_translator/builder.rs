@@ -50,11 +50,11 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn inst_builder<'short>(&'short mut self) -> &'short mut builder::Builder {
+    pub fn inst_builder(&mut self) -> &mut builder::Builder {
         self.inst_builder
     }
 
-    pub fn env<'short>(&'short mut self) -> &'short mut ScopedEnv<BoundPointer> {
+    pub fn env(&mut self) -> &mut ScopedEnv<BoundPointer> {
         &mut self.env
     }
 
