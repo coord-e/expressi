@@ -9,10 +9,3 @@ pub mod transform;
 pub mod translator;
 
 pub mod error;
-
-extern crate inkwell;
-
-#[macro_use]
-extern crate failure;
-
-extern crate scopeguard;
