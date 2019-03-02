@@ -11,7 +11,7 @@ pub fn parse(x: &str) -> Result<Expression, syntax::ParseError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::parse;
+    use super::parse;
 
     #[test]
     fn skip_space() {
@@ -20,7 +20,7 @@ mod tests {
 
     mod literal {
         use crate::expression::Expression;
-        use crate::parser::parse;
+        use super::parse;
 
         #[test]
         fn number() {
@@ -57,7 +57,7 @@ mod tests {
 
     mod operator {
         use crate::expression::{Expression, Operator};
-        use crate::parser::parse;
+        use super::parse;
 
         macro_rules! test_binop {
             ($x:expr, $op:expr) => {
