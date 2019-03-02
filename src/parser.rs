@@ -283,4 +283,18 @@ mod tests {
             )
         }
     }
+
+    mod sugar {
+        use super::parse;
+
+        #[test]
+        fn function_params() {
+            assert_eq!(parse("(a,b,c)->0"), parse("a->b->c->0"))
+        }
+
+        #[test]
+        fn application() {
+            assert_eq!(parse("f(a,b,c)"), parse("f(a)(b)(c)"))
+        }
+    }
 }
