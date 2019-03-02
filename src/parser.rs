@@ -18,6 +18,26 @@ mod tests {
         assert_eq!(parse("1 +\n1 "), parse("1+1"))
     }
 
+    #[test]
+    fn skip_comment() {
+        assert_eq!(parse("1+/* This is a comment */1"), parse("1+1"))
+    }
+
+    #[test]
+    fn skip_comment_multiline() {
+        assert_eq!(parse("1+/* This is \na comment */1"), parse("1+1"))
+    }
+
+    #[test]
+    fn skip_line_comment() {
+        assert_eq!(parse("1+1// This is a comment"), parse("1+1"))
+    }
+
+    #[test]
+    fn skip_line_comment_follow() {
+        assert_eq!(parse("1+1;// This is a comment\n1+1"), parse("1+1;1+1"))
+    }
+
     mod literal {
         use crate::expression::Expression;
         use super::parse;
