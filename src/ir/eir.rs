@@ -1,6 +1,7 @@
+use super::Type;
+
 use crate::error::InternalError;
 use crate::expression::Operator;
-use crate::transform::type_infer::Type;
 use crate::transform::Transform;
 
 use failure::Error;

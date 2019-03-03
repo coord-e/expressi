@@ -1,5 +1,5 @@
 use crate::error::TranslationError;
-use crate::transform::type_infer::Type;
+use crate::ir::Type;
 
 use failure::Error;
 

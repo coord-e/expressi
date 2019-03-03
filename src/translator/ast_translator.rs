@@ -1,6 +1,5 @@
 use crate::expression::Expression;
-use crate::ir::{Constant, Value};
-use crate::transform::type_infer::Type;
+use crate::ir::{Constant, Type, Value};
 
 use failure::Error;
 

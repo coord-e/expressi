@@ -8,8 +8,9 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
+use crate::ir::type_::TypeVarID;
+
 use super::subst::Subst;
-use super::type_::TypeVarID;
 
 use std::collections::HashSet;
 

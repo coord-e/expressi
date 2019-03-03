@@ -1,5 +1,4 @@
-use super::type_infer::type_::TypeVarID;
-use super::type_infer::Type;
+use crate::ir::type_::{Type, TypeVarID};
 
 use failure::Fail;
 

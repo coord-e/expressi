@@ -8,8 +8,9 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
+use crate::ir::type_::{Type, TypeVarID};
+
 use super::traits::Types;
-use super::type_::{Type, TypeVarID};
 
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};

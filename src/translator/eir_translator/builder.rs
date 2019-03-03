@@ -2,9 +2,8 @@ use super::atom::Atom;
 use super::BoundPointer;
 use crate::error::TranslationError;
 use crate::expression::Operator;
-use crate::ir::BindingKind;
+use crate::ir::{BindingKind, Type};
 use crate::scope::{Env, Scope, ScopedEnv};
-use crate::transform::type_infer::Type;
 
 use failure::Error;
 
