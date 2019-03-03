@@ -11,14 +11,15 @@
 use crate::error::InternalError;
 use crate::expression::Operator;
 use crate::ir;
+use crate::ir::type_::Type;
 use crate::transform::error::TypeInferError;
 use crate::transform::Transform;
 
-use crate::transform::type_infer::poly_type::PolyType;
-use crate::transform::type_infer::subst::Subst;
-use crate::transform::type_infer::traits::Types;
-use crate::transform::type_infer::type_::{Type, TypeVarGen};
-use crate::transform::type_infer::type_env::TypeEnv;
+use super::poly_type::PolyType;
+use super::subst::Subst;
+use super::traits::{Types, Unify};
+use super::type_env::TypeEnv;
+use super::type_var_gen::TypeVarGen;
 
 use failure::Error;
 

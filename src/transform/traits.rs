@@ -1,6 +1,5 @@
 use crate::expression::Operator;
 use crate::ir;
-use crate::transform::type_infer::Type;
 
 use failure::Error;
 
@@ -115,7 +114,7 @@ pub trait Transform {
         &mut self,
         ident: &str,
         body: &ir::Value,
-        captures: &HashMap<ir::Identifier, Type>,
+        captures: &HashMap<ir::Identifier, ir::Type>,
     ) -> Result<ir::Value, Error> {
         Ok(ir::Value::Function(
             ident.to_string(),
@@ -126,8 +125,8 @@ pub trait Transform {
 
     fn transform_typed(
         &mut self,
-        type_: &Type,
-        candidates: &HashMap<Type, ir::Value>,
+        type_: &ir::Type,
+        candidates: &HashMap<ir::Type, ir::Value>,
         value: &ir::Value,
     ) -> Result<ir::Value, Error> {
         Ok(ir::Value::Typed(

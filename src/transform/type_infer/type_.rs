@@ -8,95 +8,19 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
-use crate::transform::type_infer::subst::Subst;
-use crate::transform::type_infer::traits::Types;
-
+use crate::ir::type_::{Type, TypeVarID};
 use crate::transform::error::TypeInferError;
+
+use super::subst::Subst;
+use super::traits::{Bind, Types, Unify};
 
 use failure::Error;
 
 use std::collections::HashSet;
-use std::fmt;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct TypeVarID(usize);
-
-impl TypeVarID {
-    pub(crate) fn with_usize(id: usize) -> Self {
-        TypeVarID(id)
-    }
-
-    /// Attempt to bind a type variable to a type, returning an appropriate substitution.
-    pub fn bind(self, ty: &Type) -> Result<Subst, Error> {
-        // Check for binding a variable to itself
-        if let Type::Variable(ref u) = *ty {
-            if u == &self {
-                return Ok(Subst::new());
-            }
-        }
-
-        // The occurs check prevents illegal recursive types.
-        if ty.ftv().contains(&self) {
-            return Err(TypeInferError::RecursiveType {
-                t1: self,
-                t2: ty.clone(),
-            }
-            .into());
-        }
-
-        let mut s = Subst::new();
-        s.insert(self, ty.clone());
-        Ok(s)
-    }
-}
-
-pub struct TypeVarGen {
-    supply: usize,
-}
-
-impl TypeVarGen {
-    pub fn new() -> TypeVarGen {
-        TypeVarGen { supply: 0 }
-    }
-    pub fn next(&mut self) -> TypeVarID {
-        let v = TypeVarID::with_usize(self.supply);
-        self.supply += 1;
-        v
-    }
-
-    pub fn new_variable(&mut self) -> Type {
-        Type::Variable(self.next())
-    }
-}
-
-impl fmt::Display for TypeVarID {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "a{}", self.0)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Type {
-    Variable(TypeVarID),
-    Number,
-    Boolean,
-    Empty,
-    Function(Box<Type>, Box<Type>),
-}
-
-impl fmt::Display for Type {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Type::Variable(id) => write!(f, "{}", id),
-            Type::Function(box t1, box t2) => write!(f, "({} -> {})", t1, t2),
-            _ => write!(f, "{:?}", self),
-        }
-    }
-}
-
-impl Type {
+impl Unify for Type {
     /// Most general unifier, a substitution S such that S(self) is congruent to S(other).
-    pub fn mgu(&self, other: &Type) -> Result<Subst, Error> {
+    fn mgu(&self, other: &Type) -> Result<Subst, Error> {
         match (self, other) {
             // For functions, we find the most general unifier for the inputs, apply the resulting
             // substitution to the outputs, find the outputs' most general unifier, and finally
@@ -124,6 +48,31 @@ impl Type {
             }
             .into()),
         }
+    }
+}
+
+impl Bind for TypeVarID {
+    /// Attempt to bind a type variable to a type, returning an appropriate substitution.
+    fn bind(self, ty: &Type) -> Result<Subst, Error> {
+        // Check for binding a variable to itself
+        if let Type::Variable(ref u) = *ty {
+            if u == &self {
+                return Ok(Subst::new());
+            }
+        }
+
+        // The occurs check prevents illegal recursive types.
+        if ty.ftv().contains(&self) {
+            return Err(TypeInferError::RecursiveType {
+                t1: self,
+                t2: ty.clone(),
+            }
+            .into());
+        }
+
+        let mut s = Subst::new();
+        s.insert(self, ty.clone());
+        Ok(s)
     }
 }
 
