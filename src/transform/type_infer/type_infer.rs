@@ -18,8 +18,8 @@ use crate::transform::Transform;
 use super::poly_type::PolyType;
 use super::subst::Subst;
 use super::traits::{Types, Unify};
-use super::type_::TypeVarGen;
 use super::type_env::TypeEnv;
+use super::type_var_gen::TypeVarGen;
 
 use failure::Error;
 

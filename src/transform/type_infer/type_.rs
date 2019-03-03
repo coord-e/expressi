@@ -18,25 +18,6 @@ use failure::Error;
 
 use std::collections::HashSet;
 
-pub struct TypeVarGen {
-    supply: usize,
-}
-
-impl TypeVarGen {
-    pub fn new() -> TypeVarGen {
-        TypeVarGen { supply: 0 }
-    }
-    pub fn next(&mut self) -> TypeVarID {
-        let v = TypeVarID::with_usize(self.supply);
-        self.supply += 1;
-        v
-    }
-
-    pub fn new_variable(&mut self) -> Type {
-        Type::Variable(self.next())
-    }
-}
-
 impl Unify for Type {
     /// Most general unifier, a substitution S such that S(self) is congruent to S(other).
     fn mgu(&self, other: &Type) -> Result<Subst, Error> {

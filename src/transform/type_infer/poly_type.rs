@@ -12,7 +12,7 @@ use crate::ir::type_::{Type, TypeVarID};
 
 use super::subst::Subst;
 use super::traits::Types;
-use super::type_::TypeVarGen;
+use super::type_var_gen::TypeVarGen;
 
 use std::collections::HashSet;
 
