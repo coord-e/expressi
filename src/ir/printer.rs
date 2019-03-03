@@ -1,64 +1,55 @@
 use super::{Constant, Value};
 
-use std::io;
+use std::fmt;
 
-pub struct Printer {}
-
-impl Printer {
-    pub fn new() -> Self {
-        Self {}
-    }
-
-    pub fn print<T>(&self, v: &Value, f: &mut T) -> io::Result<()>
-    where
-        T: io::Write,
-    {
-        match v {
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
             Value::Constant(c) => match c {
                 Constant::Number(number) => write!(f, "{}", number),
                 Constant::Boolean(tf) => write!(f, "{}", tf),
                 Constant::Empty => write!(f, "<empty>"),
             },
             Value::BinOp(op, lhs, rhs) => {
-                self.print(lhs, f)?;
+                lhs.fmt(f)?;
                 write!(f, " {:?} ", op)?;
-                self.print(rhs, f)
+                rhs.fmt(f)
             }
 
             Value::Follow(lhs, rhs) => {
-                self.print(lhs, f)?;
+                lhs.fmt(f)?;
                 writeln!(f, ";")?;
-                self.print(rhs, f)
+                rhs.fmt(f)
             }
 
             Value::Bind(kind, name, rhs) => {
                 write!(f, "let {} {} = ", kind, name)?;
-                self.print(rhs, f)
+                rhs.fmt(f)
             }
 
             Value::Assign(lhs, rhs) => {
-                self.print(lhs, f)?;
+                lhs.fmt(f)?;
                 write!(f, " = ")?;
-                self.print(rhs, f)
+                rhs.fmt(f)
             }
 
             Value::Variable(name) => write!(f, "{}", name),
             Value::Scope(expr) => {
                 writeln!(f, "{{")?;
-                self.print(expr, f)?;
+                expr.fmt(f)?;
                 write!(f, "\n}}")
             }
             Value::IfElse(cond, then_expr, else_expr) => {
-                self.print(cond, f)?;
+                cond.fmt(f)?;
                 write!(f, " ? ")?;
-                self.print(then_expr, f)?;
+                then_expr.fmt(f)?;
                 write!(f, " : ")?;
-                self.print(else_expr, f)
+                else_expr.fmt(f)
             }
             Value::Apply(func, arg) => {
-                self.print(func, f)?;
+                func.fmt(f)?;
                 write!(f, "(")?;
-                self.print(arg, f)?;
+                arg.fmt(f)?;
                 write!(f, ")")
             }
             Value::Function(param, body, captures) => {
@@ -67,10 +58,10 @@ impl Printer {
                     write!(f, "({:?})", captures)?;
                 }
                 write!(f, " -> ")?;
-                self.print(body, f)
+                body.fmt(f)
             }
             Value::Typed(ty, candidates, val) => {
-                self.print(val, f)?;
+                val.fmt(f)?;
                 write!(f, " :: {}", ty)?;
                 if !candidates.is_empty() {
                     write!(f, "[")?;
