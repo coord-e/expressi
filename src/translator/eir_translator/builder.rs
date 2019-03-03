@@ -1,10 +1,10 @@
+use super::atom::Atom;
+use super::BoundPointer;
 use crate::error::TranslationError;
 use crate::expression::Operator;
 use crate::ir::BindingKind;
 use crate::scope::{Env, Scope, ScopedEnv};
 use crate::transform::type_infer::Type;
-use crate::translator::eir_translator::atom::Atom;
-use crate::translator::eir_translator::BoundPointer;
 
 use failure::Error;
 

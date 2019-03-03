@@ -8,10 +8,10 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
-use crate::transform::type_infer::poly_type::PolyType;
-use crate::transform::type_infer::subst::Subst;
-use crate::transform::type_infer::traits::Types;
-use crate::transform::type_infer::type_::{Type, TypeVarID};
+use super::poly_type::PolyType;
+use super::subst::Subst;
+use super::traits::Types;
+use super::type_::{Type, TypeVarID};
 
 use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};

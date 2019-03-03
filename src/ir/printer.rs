@@ -1,4 +1,4 @@
-use crate::ir::{Constant, Value};
+use super::{Constant, Value};
 
 use std::io;
 

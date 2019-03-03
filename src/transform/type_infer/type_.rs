@@ -8,8 +8,8 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
-use crate::transform::type_infer::subst::Subst;
-use crate::transform::type_infer::traits::Types;
+use super::subst::Subst;
+use super::traits::Types;
 
 use crate::transform::error::TypeInferError;
 

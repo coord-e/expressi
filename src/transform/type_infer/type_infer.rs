@@ -14,11 +14,11 @@ use crate::ir;
 use crate::transform::error::TypeInferError;
 use crate::transform::Transform;
 
-use crate::transform::type_infer::poly_type::PolyType;
-use crate::transform::type_infer::subst::Subst;
-use crate::transform::type_infer::traits::Types;
-use crate::transform::type_infer::type_::{Type, TypeVarGen};
-use crate::transform::type_infer::type_env::TypeEnv;
+use super::poly_type::PolyType;
+use super::subst::Subst;
+use super::traits::Types;
+use super::type_::{Type, TypeVarGen};
+use super::type_env::TypeEnv;
 
 use failure::Error;
 

@@ -1,6 +1,6 @@
+use super::type_infer::Type;
 use crate::expression::Operator;
 use crate::ir;
-use crate::transform::type_infer::Type;
 
 use failure::Error;
 

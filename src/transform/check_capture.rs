@@ -1,7 +1,7 @@
+use super::error::CheckCaptureError;
+use super::type_infer::Type;
+use super::Transform;
 use crate::ir;
-use crate::transform::error::CheckCaptureError;
-use crate::transform::type_infer::Type;
-use crate::transform::Transform;
 
 use failure::Error;
 

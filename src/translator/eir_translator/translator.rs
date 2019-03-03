@@ -1,7 +1,7 @@
+use super::{Atom, Builder};
 use crate::error::{InternalError, TranslationError};
 use crate::ir;
 use crate::transform::type_infer::Type;
-use crate::translator::eir_translator::{Atom, Builder};
 
 use failure::{bail, Error};
 use inkwell::values::BasicValueEnum;

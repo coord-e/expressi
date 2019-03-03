@@ -1,5 +1,5 @@
-use crate::transform::type_infer::type_::TypeVarID;
-use crate::transform::type_infer::Type;
+use super::type_infer::type_::TypeVarID;
+use super::type_infer::Type;
 
 use failure::Fail;
 
