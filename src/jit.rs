@@ -4,7 +4,7 @@ use crate::ir::Printer;
 use crate::parser;
 use crate::transform::{CheckCapture, TypeInfer};
 use crate::translator::eir_translator::Builder;
-use crate::translator::{translate_eir, ASTTranslator};
+use crate::translator::{translate_ast, translate_eir};
 
 use failure::Error;
 use std::io;
@@ -76,8 +76,7 @@ impl JIT {
 
         self.builder.position_at_end(&basic_block);
 
-        let mut a_trans = ASTTranslator {};
-        let eir = a_trans.translate_expr(expr)?;
+        let eir = translate_ast(expr)?;
 
         if self.print_eir {
             eprintln!("EIR:");
