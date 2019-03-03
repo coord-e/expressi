@@ -8,9 +8,11 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
-use crate::ir::type_::TypeVarID;
+use crate::ir::type_::{Type, TypeVarID};
 
 use super::subst::Subst;
+
+use failure::Error;
 
 use std::collections::HashSet;
 
@@ -35,4 +37,12 @@ where
     fn apply(&self, s: &Subst) -> Vec<T> {
         self.iter().map(|x| x.apply(s)).collect()
     }
+}
+
+pub trait Bind {
+    fn bind(self, ty: &Type) -> Result<Subst, Error>;
+}
+
+pub trait Unify {
+    fn mgu(&self, other: &Type) -> Result<Subst, Error>;
 }
