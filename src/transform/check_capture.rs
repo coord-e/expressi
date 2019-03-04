@@ -4,8 +4,6 @@ use crate::ir;
 
 use failure::Error;
 
-use std::collections::HashMap;
-
 pub struct CheckCapture;
 
 fn collect_vars(
@@ -14,7 +12,15 @@ fn collect_vars(
     Ok(match eir {
         ir::Value::Typed(ty, _, box value) => match value {
             ir::Value::Variable(ident) => box vec![(ident.clone(), ty.clone())].into_iter(),
-            ir::Value::Literal(_) => box vec![].into_iter(),
+            ir::Value::Literal(c) => match c {
+                ir::Literal::Function(ident, box body, captures) => {
+                    let ident = ident.clone();
+                    box collect_vars(body)?
+                        .chain(captures.clone().into_iter())
+                        .filter(move |(e, _)| *e != ident)
+                }
+                _ => box vec![].into_iter(),
+            },
             ir::Value::Let(_, ident, box v, box body) => {
                 let ident = ident.clone();
                 box collect_vars(v)?
@@ -30,12 +36,6 @@ fn collect_vars(
             ir::Value::IfElse(box cond, box then_, box else_) => box collect_vars(cond)?
                 .chain(collect_vars(then_)?)
                 .chain(collect_vars(else_)?),
-            ir::Value::Function(ident, box body, captures) => {
-                let ident = ident.clone();
-                box collect_vars(body)?
-                    .chain(captures.clone().into_iter())
-                    .filter(move |(e, _)| *e != ident)
-            }
             ir::Value::Typed(..) => return Err(CheckCaptureError::DoubleTyped.into()),
         },
         _ => return Err(CheckCaptureError::NotTyped.into()),
@@ -49,16 +49,14 @@ impl CheckCapture {
 }
 
 impl Transform for CheckCapture {
-    fn transform_function(
-        &mut self,
-        ident: &str,
-        body: &ir::Value,
-        _: &HashMap<ir::Identifier, ir::Type>,
-    ) -> Result<ir::Value, Error> {
-        Ok(ir::Value::Function(
-            ident.to_string(),
-            box body.clone(),
-            collect_vars(body)?.filter(|(e, _)| e != ident).collect(),
-        ))
+    fn transform_literal(&mut self, lit: &ir::Literal) -> Result<ir::Value, Error> {
+        Ok(ir::Value::Literal(match lit {
+            ir::Literal::Function(ident, box body, _) => ir::Literal::Function(
+                ident.to_string(),
+                box body.clone(),
+                collect_vars(body)?.filter(|(e, _)| e != ident).collect(),
+            ),
+            _ => lit.clone(),
+        }))
     }
 }

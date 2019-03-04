@@ -41,10 +41,6 @@ pub trait Transform {
                 let else_ = self.transform(else_)?;
                 self.transform_ifelse(&cond, &then_, &else_)?
             }
-            ir::Value::Function(ident, box body, captures) => {
-                let body = self.transform(body)?;
-                self.transform_function(ident, &body, captures)?
-            }
             ir::Value::Typed(ty, candidate, box value) => {
                 let value = self.transform(value)?;
                 self.transform_typed(ty, candidate, &value)?
@@ -106,19 +102,6 @@ pub trait Transform {
             box cond.clone(),
             box then_.clone(),
             box else_.clone(),
-        ))
-    }
-
-    fn transform_function(
-        &mut self,
-        ident: &str,
-        body: &ir::Value,
-        captures: &HashMap<ir::Identifier, ir::Type>,
-    ) -> Result<ir::Value, Error> {
-        Ok(ir::Value::Function(
-            ident.to_string(),
-            box body.clone(),
-            captures.clone(),
         ))
     }
 

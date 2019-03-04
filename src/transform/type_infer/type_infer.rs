@@ -45,20 +45,39 @@ impl TypeInfer {
     ) -> Result<(Subst, ir::Value), Error> {
         match eir {
             ir::Value::Typed(..) => Ok((Subst::new(), eir.clone())),
-            ir::Value::Literal(c) => Ok((
-                Subst::new(),
-                match c {
-                    ir::Literal::Number(_) => {
-                        ir::Value::Typed(Type::Number, HashMap::new(), box eir.clone())
-                    }
-                    ir::Literal::Boolean(_) => {
-                        ir::Value::Typed(Type::Boolean, HashMap::new(), box eir.clone())
-                    }
-                    ir::Literal::Empty => {
-                        ir::Value::Typed(Type::Empty, HashMap::new(), box eir.clone())
-                    }
-                },
-            )),
+            ir::Value::Literal(c) => match c {
+                ir::Literal::Function(ident, box body, captures) => {
+                    let tv = self.tvg.new_variable();
+                    let mut new_env = env.clone();
+                    new_env.remove(ident);
+                    new_env.insert(
+                        ident.clone(),
+                        PolyType {
+                            vars: Vec::new(),
+                            ty: tv.clone(),
+                        },
+                    );
+                    let (s1, v) = self.transform_with_env(body, &mut new_env)?;
+                    let t1 = v.type_().unwrap();
+                    let new_type = Type::Function(box tv.apply(&s1), box t1.clone());
+                    let lit =
+                        ir::Literal::Function(ident.to_string(), box v.clone(), captures.clone());
+                    let new_node = ir::Value::Literal(lit);
+                    Ok((s1.clone(), new_node.with_type(new_type)?))
+                }
+                ir::Literal::Number(_) => Ok((
+                    Subst::new(),
+                    ir::Value::Typed(Type::Number, HashMap::new(), box eir.clone()),
+                )),
+                ir::Literal::Boolean(_) => Ok((
+                    Subst::new(),
+                    ir::Value::Typed(Type::Boolean, HashMap::new(), box eir.clone()),
+                )),
+                ir::Literal::Empty => Ok((
+                    Subst::new(),
+                    ir::Value::Typed(Type::Empty, HashMap::new(), box eir.clone()),
+                )),
+            },
             ir::Value::Variable(ident) => match env.get(ident) {
                 Some(s) => {
                     let (subst, instance) = s.instantiate(&mut self.tvg);
@@ -70,24 +89,6 @@ impl TypeInfer {
                 }
                 .into()),
             },
-            ir::Value::Function(ident, box body, captures) => {
-                let tv = self.tvg.new_variable();
-                let mut new_env = env.clone();
-                new_env.remove(ident);
-                new_env.insert(
-                    ident.clone(),
-                    PolyType {
-                        vars: Vec::new(),
-                        ty: tv.clone(),
-                    },
-                );
-                let (s1, v) = self.transform_with_env(body, &mut new_env)?;
-                let t1 = v.type_().unwrap();
-                let new_type = Type::Function(box tv.apply(&s1), box t1.clone());
-                let new_node =
-                    ir::Value::Function(ident.to_string(), box v.clone(), captures.clone());
-                Ok((s1.clone(), new_node.with_type(new_type)?))
-            }
             ir::Value::Apply(box f, box arg) => {
                 let (s1, v1) = self.transform_with_env(f, env)?;
                 let t1 = v1.type_().unwrap();
@@ -195,7 +196,17 @@ impl TypeInfer {
 
     fn inner_apply_subst_all(&self, value: &ir::Value, subst: &Subst) -> Result<ir::Value, Error> {
         Ok(match value {
-            ir::Value::Literal(..) | ir::Value::Variable(..) => value.clone(),
+            ir::Value::Literal(lit) => match lit {
+                ir::Literal::Function(ident, box body, captures) => {
+                    ir::Value::Literal(ir::Literal::Function(
+                        ident.clone(),
+                        self.apply_subst_all(body, subst)?,
+                        captures.clone(),
+                    ))
+                }
+                _ => value.clone(),
+            },
+            ir::Value::Variable(..) => value.clone(),
             ir::Value::Let(kind, ident, box value, box body) => ir::Value::Let(
                 *kind,
                 ident.clone(),
@@ -223,11 +234,6 @@ impl TypeInfer {
                 self.apply_subst_all(cond, subst)?,
                 self.apply_subst_all(then_v, subst)?,
                 self.apply_subst_all(else_v, subst)?,
-            ),
-            ir::Value::Function(ident, box body, captures) => ir::Value::Function(
-                ident.clone(),
-                self.apply_subst_all(body, subst)?,
-                captures.clone(),
             ),
             ir::Value::Typed(..) => return Err(InternalError::DoubleTyped.into()),
         })

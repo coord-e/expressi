@@ -32,6 +32,7 @@ impl fmt::Display for BindingKind {
 pub enum Literal {
     Number(i64),
     Boolean(bool),
+    Function(Identifier, Box<Value>, HashMap<Identifier, Type>),
     Empty,
 }
 
@@ -47,7 +48,6 @@ pub enum Value {
     IfElse(Box<Value>, Box<Value>, Box<Value>),
     Variable(Identifier),
     Literal(Literal),
-    Function(Identifier, Box<Value>, HashMap<Identifier, Type>),
     Typed(Type, HashMap<Type, Value>, Box<Value>),
 }
 

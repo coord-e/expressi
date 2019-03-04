@@ -12,7 +12,7 @@ pub fn translate_ast(expr: Expression) -> Result<Value, Error> {
         Expression::Empty => Value::Literal(Literal::Empty),
         Expression::Function(ident, body) => {
             let body = translate_ast(*body)?;
-            Value::Function(ident, Box::new(body), HashMap::new())
+            Value::Literal(Literal::Function(ident, Box::new(body), HashMap::new()))
         }
         Expression::Array(_) => unimplemented!(),
         Expression::Type(_) => unimplemented!(),

@@ -29,31 +29,34 @@ pub fn translate_eir<'a>(
                 ir::Literal::Number(number) => builder.number_constant(number)?.into(),
                 ir::Literal::Boolean(tf) => builder.boolean_constant(tf)?.into(),
                 ir::Literal::Empty => builder.empty_constant()?.into(),
-            },
-            ir::Value::Function(param, box body, capture_list) => {
-                // TODO: Add more sufficient implementation to check whether PolyValue is needed or not
-                if ty_candidates.len() <= 1 {
-                    translate_monotype_function(builder, param, &ty, body, &capture_list)?.into()
-                } else {
-                    ty_candidates
-                        .into_iter()
-                        .map(|(ty, body)| {
-                            match body {
-                                ir::Value::Function(_, box body, _) => translate_monotype_function(
-                                    builder,
-                                    param.clone(),
-                                    &ty,
-                                    body,
-                                    &capture_list,
-                                ),
-                                _ => unreachable!(),
-                            }
-                            .map(|v| (ty, v))
-                        })
-                        .collect::<Result<HashMap<_, _>, _>>()?
-                        .into()
+                ir::Literal::Function(param, box body, capture_list) => {
+                    // TODO: Add more sufficient implementation to check whether PolyValue is needed or not
+                    if ty_candidates.len() <= 1 {
+                        translate_monotype_function(builder, param, &ty, body, &capture_list)?
+                            .into()
+                    } else {
+                        ty_candidates
+                            .into_iter()
+                            .map(|(ty, body)| {
+                                match body {
+                                    ir::Value::Literal(ir::Literal::Function(_, box body, _)) => {
+                                        translate_monotype_function(
+                                            builder,
+                                            param.clone(),
+                                            &ty,
+                                            body,
+                                            &capture_list,
+                                        )
+                                    }
+                                    _ => unreachable!(),
+                                }
+                                .map(|v| (ty, v))
+                            })
+                            .collect::<Result<HashMap<_, _>, _>>()?
+                            .into()
+                    }
                 }
-            }
+            },
             ir::Value::Typed(..) => bail!(InternalError::DoubleTyped),
             _ => translate_eir(builder, value)?,
         },

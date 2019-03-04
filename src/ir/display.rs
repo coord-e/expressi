@@ -8,6 +8,14 @@ impl fmt::Display for Value {
             Value::Literal(c) => match c {
                 Literal::Number(number) => write!(f, "{}", number),
                 Literal::Boolean(tf) => write!(f, "{}", tf),
+                Literal::Function(param, body, captures) => {
+                    write!(f, "{}", param)?;
+                    if !captures.is_empty() {
+                        write!(f, "({:?})", captures)?;
+                    }
+                    write!(f, " -> ")?;
+                    body.fmt(f)
+                }
                 Literal::Empty => write!(f, "<empty>"),
             },
             Value::BinOp(op, lhs, rhs) => {
@@ -47,14 +55,6 @@ impl fmt::Display for Value {
                 write!(f, "(")?;
                 arg.fmt(f)?;
                 write!(f, ")")
-            }
-            Value::Function(param, body, captures) => {
-                write!(f, "{}", param)?;
-                if !captures.is_empty() {
-                    write!(f, "({:?})", captures)?;
-                }
-                write!(f, " -> ")?;
-                body.fmt(f)
             }
             Value::Typed(ty, candidates, val) => {
                 val.fmt(f)?;
