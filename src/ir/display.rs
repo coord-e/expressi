@@ -22,9 +22,10 @@ impl fmt::Display for Value {
                 rhs.fmt(f)
             }
 
-            Value::Bind(kind, name, rhs) => {
+            Value::Let(kind, name, value, body) => {
                 write!(f, "let {} {} = ", kind, name)?;
-                rhs.fmt(f)
+                value.fmt(f)?;
+                write!(f, " in {}", body)
             }
 
             Value::Assign(lhs, rhs) => {
@@ -34,11 +35,6 @@ impl fmt::Display for Value {
             }
 
             Value::Variable(name) => write!(f, "{}", name),
-            Value::Scope(expr) => {
-                writeln!(f, "{{")?;
-                expr.fmt(f)?;
-                write!(f, "\n}}")
-            }
             Value::IfElse(cond, then_expr, else_expr) => {
                 cond.fmt(f)?;
                 write!(f, " ? ")?;

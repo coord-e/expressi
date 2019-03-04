@@ -77,10 +77,15 @@ pub fn translate_eir<'a>(
             translate_eir(builder, *rhs)?
         }
 
-        ir::Value::Bind(kind, name, rhs) => {
-            let new_value = translate_eir(builder, *rhs)?;
+        ir::Value::Let(kind, name, box value, box body) => {
+            let new_value = translate_eir(builder, value)?;
+
+            builder.enter_new_scope();
             builder.bind_var(&name, &new_value, kind)?;
-            new_value
+            let content = translate_eir(builder, body)?;
+            builder.exit_scope()?;
+
+            content
         }
 
         ir::Value::Assign(lhs, rhs) => {
@@ -96,13 +101,6 @@ pub fn translate_eir<'a>(
         ir::Value::Variable(name) => builder
             .get_var(&name)
             .and_then(|v| v.ok_or_else(|| TranslationError::UndeclaredVariable.into()))?,
-
-        ir::Value::Scope(expr) => {
-            builder.enter_new_scope();
-            let content = translate_eir(builder, *expr)?;
-            builder.exit_scope()?;
-            content
-        }
 
         ir::Value::IfElse(cond, then_expr, else_expr) => {
             let condition_value = translate_eir(builder, *cond)?.expect_value()?;

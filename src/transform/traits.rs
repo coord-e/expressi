@@ -10,18 +10,15 @@ pub trait Transform {
         Ok(match eir {
             ir::Value::Variable(ident) => self.transform_variable(ident)?,
             ir::Value::Constant(c) => self.transform_constant(c)?,
-            ir::Value::Bind(kind, ident, box v) => {
-                let v = self.transform(v)?;
-                self.transform_bind(*kind, ident, &v)?
+            ir::Value::Let(kind, ident, box value, box body) => {
+                let value = self.transform(value)?;
+                let body = self.transform(body)?;
+                self.transform_let(*kind, ident, &value, &body)?
             }
             ir::Value::Assign(box lhs, box rhs) => {
                 let lhs = self.transform(lhs)?;
                 let rhs = self.transform(rhs)?;
                 self.transform_assign(&lhs, &rhs)?
-            }
-            ir::Value::Scope(box body) => {
-                let body = self.transform(body)?;
-                self.transform_scope(&body)?
             }
             ir::Value::Follow(box lhs, box rhs) => {
                 let lhs = self.transform(lhs)?;
@@ -63,21 +60,23 @@ pub trait Transform {
         Ok(ir::Value::Constant(c.clone()))
     }
 
-    fn transform_bind(
+    fn transform_let(
         &mut self,
         kind: ir::BindingKind,
         ident: &str,
         v: &ir::Value,
+        body: &ir::Value,
     ) -> Result<ir::Value, Error> {
-        Ok(ir::Value::Bind(kind, ident.to_string(), box v.clone()))
+        Ok(ir::Value::Let(
+            kind,
+            ident.to_string(),
+            box v.clone(),
+            box body.clone(),
+        ))
     }
 
     fn transform_assign(&mut self, lhs: &ir::Value, rhs: &ir::Value) -> Result<ir::Value, Error> {
         Ok(ir::Value::Assign(box lhs.clone(), box rhs.clone()))
-    }
-
-    fn transform_scope(&mut self, body: &ir::Value) -> Result<ir::Value, Error> {
-        Ok(ir::Value::Scope(box body.clone()))
     }
 
     fn transform_follow(&mut self, lhs: &ir::Value, rhs: &ir::Value) -> Result<ir::Value, Error> {

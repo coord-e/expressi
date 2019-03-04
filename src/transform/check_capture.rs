@@ -15,9 +15,10 @@ fn collect_vars(
         ir::Value::Typed(ty, _, box value) => match value {
             ir::Value::Variable(ident) => box vec![(ident.clone(), ty.clone())].into_iter(),
             ir::Value::Constant(_) => box vec![].into_iter(),
-            ir::Value::Bind(_, _, box v) => collect_vars(v)?,
+            ir::Value::Let(_, _, box v, box body) => {
+                box collect_vars(v)?.chain(collect_vars(body)?)
+            }
             ir::Value::Assign(box lhs, box rhs) => box collect_vars(lhs)?.chain(collect_vars(rhs)?),
-            ir::Value::Scope(box body) => collect_vars(body)?,
             ir::Value::Follow(box lhs, box rhs) => box collect_vars(lhs)?.chain(collect_vars(rhs)?),
             ir::Value::Apply(box lhs, box rhs) => box collect_vars(lhs)?.chain(collect_vars(rhs)?),
             ir::Value::BinOp(_, box lhs, box rhs) => {

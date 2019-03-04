@@ -38,14 +38,21 @@ pub fn translate_ast(expr: Expression) -> Result<Value, Error> {
             let lhs_value = translate_ast(*lhs)?;
             Value::Apply(Box::new(lhs_value), Box::new(rhs_value))
         }
-        Expression::Follow(lhs, rhs) => {
-            let rhs_value = translate_ast(*rhs)?;
-            let lhs_value = translate_ast(*lhs)?;
-            Value::Follow(Box::new(lhs_value), Box::new(rhs_value))
-        }
-        Expression::Bind(kind, name, rhs) => {
-            let rhs_value = translate_ast(*rhs)?;
-            Value::Bind(kind, name, Box::new(rhs_value))
+        Expression::Follow(box lhs, box rhs) => match lhs {
+            Expression::Bind(kind, name, box bound_value) => {
+                let bound_value = translate_ast(bound_value)?;
+                let body = translate_ast(rhs)?;
+                Value::Let(kind, name, box bound_value, box body)
+            }
+            _ => {
+                let lhs = translate_ast(lhs)?;
+                let rhs = translate_ast(rhs)?;
+                Value::Follow(box lhs, box rhs)
+            }
+        },
+        Expression::Bind(kind, name, box rhs) => {
+            let rhs = translate_ast(rhs)?;
+            Value::Let(kind, name.clone(), box rhs, box Value::Variable(name))
         }
         Expression::Assign(lhs, rhs) => {
             let rhs_value = translate_ast(*rhs)?;
@@ -55,10 +62,7 @@ pub fn translate_ast(expr: Expression) -> Result<Value, Error> {
         Expression::TypeIdentifier(_) => unimplemented!(),
         Expression::Identifier(name) => Value::Variable(name),
         Expression::Cast(_lhs, _rhs) => unimplemented!(),
-        Expression::Scope(expr) => {
-            let content = translate_ast(*expr)?;
-            Value::Scope(Box::new(content))
-        }
+        Expression::Scope(box expr) => translate_ast(expr)?,
         Expression::IfElse(cond_expr, then_expr, else_expr) => {
             let cond_value = translate_ast(*cond_expr)?;
             let then_value = translate_ast(*then_expr)?;

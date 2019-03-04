@@ -39,10 +39,9 @@ pub type Identifier = String;
 
 #[derive(Debug, Clone)]
 pub enum Value {
-    Bind(BindingKind, Identifier, Box<Value>),
-    Assign(Box<Value>, Box<Value>),
-    Scope(Box<Value>),
+    Let(BindingKind, Identifier, Box<Value>, Box<Value>),
     Follow(Box<Value>, Box<Value>),
+    Assign(Box<Value>, Box<Value>),
     Apply(Box<Value>, Box<Value>),
     BinOp(Operator, Box<Value>, Box<Value>),
     IfElse(Box<Value>, Box<Value>, Box<Value>),

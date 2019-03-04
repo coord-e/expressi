@@ -90,23 +90,18 @@ impl TypeInfer {
                     new_node.with_type(tv.apply(&s3))?,
                 ))
             }
-            ir::Value::Bind(kind, ident, box value) => {
+            ir::Value::Let(kind, ident, box value, box body) => {
                 let (s1, v1) = self.transform_with_env(value, env)?;
                 let t1 = v1.type_().unwrap();
 
                 let tp = env.apply(&s1).generalize(&t1);
                 env.insert(ident.clone(), tp);
 
-                let new_node = ir::Value::Bind(*kind, ident.clone(), box v1.clone());
-                Ok((s1, new_node.with_type(t1.clone())?))
-            }
-            ir::Value::Scope(box body) => {
-                let mut new_env = env.clone();
-                let (s1, v1) = self.transform_with_env(body, &mut new_env)?;
-                let t1 = v1.type_().unwrap();
+                let (s2, v2) = self.transform_with_env(&body, &mut env.apply(&s1))?;
+                let t2 = v2.type_().unwrap();
 
-                let new_node = ir::Value::Scope(box v1.clone());
-                Ok((s1, new_node.with_type(t1.clone())?))
+                let new_node = ir::Value::Let(*kind, ident.clone(), box v1.clone(), box v2.clone());
+                Ok((s2.compose(&s1), new_node.with_type(t2.clone())?))
             }
             ir::Value::Follow(box lhs, box rhs) => {
                 let (s1, v1) = self.transform_with_env(lhs, env)?;
@@ -186,14 +181,16 @@ impl TypeInfer {
     fn inner_apply_subst_all(&self, value: &ir::Value, subst: &Subst) -> Result<ir::Value, Error> {
         Ok(match value {
             ir::Value::Constant(..) | ir::Value::Variable(..) => value.clone(),
-            ir::Value::Bind(kind, ident, box body) => {
-                ir::Value::Bind(*kind, ident.clone(), self.apply_subst_all(body, subst)?)
-            }
+            ir::Value::Let(kind, ident, box value, box body) => ir::Value::Let(
+                *kind,
+                ident.clone(),
+                self.apply_subst_all(value, subst)?,
+                self.apply_subst_all(body, subst)?,
+            ),
             ir::Value::Assign(box lhs, box rhs) => ir::Value::Assign(
                 self.apply_subst_all(lhs, subst)?,
                 self.apply_subst_all(rhs, subst)?,
             ),
-            ir::Value::Scope(box body) => ir::Value::Scope(self.apply_subst_all(body, subst)?),
             ir::Value::Follow(box lhs, box rhs) => ir::Value::Follow(
                 self.apply_subst_all(lhs, subst)?,
                 self.apply_subst_all(rhs, subst)?,
