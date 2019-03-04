@@ -1,5 +1,5 @@
 use crate::expression::Expression;
-use crate::ir::{Constant, Type, Value};
+use crate::ir::{Constant, Value};
 
 use failure::Error;
 
@@ -7,21 +7,9 @@ use std::collections::HashMap;
 
 pub fn translate_ast(expr: Expression) -> Result<Value, Error> {
     Ok(match expr {
-        Expression::Number(number) => Value::Typed(
-            Type::Number,
-            HashMap::new(),
-            Box::new(Value::Constant(Constant::Number(number))),
-        ),
-        Expression::Boolean(value) => Value::Typed(
-            Type::Boolean,
-            HashMap::new(),
-            Box::new(Value::Constant(Constant::Boolean(value))),
-        ),
-        Expression::Empty => Value::Typed(
-            Type::Empty,
-            HashMap::new(),
-            Box::new(Value::Constant(Constant::Empty)),
-        ),
+        Expression::Number(number) => Value::Constant(Constant::Number(number)),
+        Expression::Boolean(value) => Value::Constant(Constant::Boolean(value)),
+        Expression::Empty => Value::Constant(Constant::Empty),
         Expression::Function(ident, body) => {
             let body = translate_ast(*body)?;
             Value::Function(ident, Box::new(body), HashMap::new())

@@ -23,6 +23,8 @@ use super::type_var_gen::TypeVarGen;
 
 use failure::Error;
 
+use std::collections::HashMap;
+
 pub struct TypeInfer {
     tvg: TypeVarGen,
     instantiation_table: Vec<(Type, Subst)>,
@@ -43,7 +45,20 @@ impl TypeInfer {
     ) -> Result<(Subst, ir::Value), Error> {
         match eir {
             ir::Value::Typed(..) => Ok((Subst::new(), eir.clone())),
-            ir::Value::Constant(_) => Err(TypeInferError::NotTyped.into()),
+            ir::Value::Constant(c) => Ok((
+                Subst::new(),
+                match c {
+                    ir::Constant::Number(_) => {
+                        ir::Value::Typed(Type::Number, HashMap::new(), box eir.clone())
+                    }
+                    ir::Constant::Boolean(_) => {
+                        ir::Value::Typed(Type::Boolean, HashMap::new(), box eir.clone())
+                    }
+                    ir::Constant::Empty => {
+                        ir::Value::Typed(Type::Empty, HashMap::new(), box eir.clone())
+                    }
+                },
+            )),
             ir::Value::Variable(ident) => match env.get(ident) {
                 Some(s) => {
                     let (subst, instance) = s.instantiate(&mut self.tvg);
