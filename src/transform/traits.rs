@@ -9,7 +9,7 @@ pub trait Transform {
     fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
         Ok(match eir {
             ir::Value::Variable(ident) => self.transform_variable(ident)?,
-            ir::Value::Constant(c) => self.transform_constant(c)?,
+            ir::Value::Literal(c) => self.transform_literal(c)?,
             ir::Value::Let(kind, ident, box value, box body) => {
                 let value = self.transform(value)?;
                 let body = self.transform(body)?;
@@ -56,8 +56,8 @@ pub trait Transform {
         Ok(ir::Value::Variable(ident.to_string()))
     }
 
-    fn transform_constant(&mut self, c: &ir::Constant) -> Result<ir::Value, Error> {
-        Ok(ir::Value::Constant(c.clone()))
+    fn transform_literal(&mut self, c: &ir::Literal) -> Result<ir::Value, Error> {
+        Ok(ir::Value::Literal(c.clone()))
     }
 
     fn transform_let(

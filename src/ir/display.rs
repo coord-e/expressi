@@ -1,14 +1,14 @@
-use super::{Constant, Value};
+use super::{Literal, Value};
 
 use std::fmt;
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Value::Constant(c) => match c {
-                Constant::Number(number) => write!(f, "{}", number),
-                Constant::Boolean(tf) => write!(f, "{}", tf),
-                Constant::Empty => write!(f, "<empty>"),
+            Value::Literal(c) => match c {
+                Literal::Number(number) => write!(f, "{}", number),
+                Literal::Boolean(tf) => write!(f, "{}", tf),
+                Literal::Empty => write!(f, "<empty>"),
             },
             Value::BinOp(op, lhs, rhs) => {
                 lhs.fmt(f)?;

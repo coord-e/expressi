@@ -14,7 +14,7 @@ fn collect_vars(
     Ok(match eir {
         ir::Value::Typed(ty, _, box value) => match value {
             ir::Value::Variable(ident) => box vec![(ident.clone(), ty.clone())].into_iter(),
-            ir::Value::Constant(_) => box vec![].into_iter(),
+            ir::Value::Literal(_) => box vec![].into_iter(),
             ir::Value::Let(_, ident, box v, box body) => {
                 let ident = ident.clone();
                 box collect_vars(v)?

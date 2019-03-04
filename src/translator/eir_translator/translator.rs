@@ -25,10 +25,10 @@ pub fn translate_eir<'a>(
 ) -> Result<Atom<BasicValueEnum>, Error> {
     Ok(match expr {
         ir::Value::Typed(ty, ty_candidates, box value) => match value {
-            ir::Value::Constant(c) => match c {
-                ir::Constant::Number(number) => builder.number_constant(number)?.into(),
-                ir::Constant::Boolean(tf) => builder.boolean_constant(tf)?.into(),
-                ir::Constant::Empty => builder.empty_constant()?.into(),
+            ir::Value::Literal(c) => match c {
+                ir::Literal::Number(number) => builder.number_constant(number)?.into(),
+                ir::Literal::Boolean(tf) => builder.boolean_constant(tf)?.into(),
+                ir::Literal::Empty => builder.empty_constant()?.into(),
             },
             ir::Value::Function(param, box body, capture_list) => {
                 // TODO: Add more sufficient implementation to check whether PolyValue is needed or not

@@ -45,16 +45,16 @@ impl TypeInfer {
     ) -> Result<(Subst, ir::Value), Error> {
         match eir {
             ir::Value::Typed(..) => Ok((Subst::new(), eir.clone())),
-            ir::Value::Constant(c) => Ok((
+            ir::Value::Literal(c) => Ok((
                 Subst::new(),
                 match c {
-                    ir::Constant::Number(_) => {
+                    ir::Literal::Number(_) => {
                         ir::Value::Typed(Type::Number, HashMap::new(), box eir.clone())
                     }
-                    ir::Constant::Boolean(_) => {
+                    ir::Literal::Boolean(_) => {
                         ir::Value::Typed(Type::Boolean, HashMap::new(), box eir.clone())
                     }
-                    ir::Constant::Empty => {
+                    ir::Literal::Empty => {
                         ir::Value::Typed(Type::Empty, HashMap::new(), box eir.clone())
                     }
                 },
@@ -195,7 +195,7 @@ impl TypeInfer {
 
     fn inner_apply_subst_all(&self, value: &ir::Value, subst: &Subst) -> Result<ir::Value, Error> {
         Ok(match value {
-            ir::Value::Constant(..) | ir::Value::Variable(..) => value.clone(),
+            ir::Value::Literal(..) | ir::Value::Variable(..) => value.clone(),
             ir::Value::Let(kind, ident, box value, box body) => ir::Value::Let(
                 *kind,
                 ident.clone(),

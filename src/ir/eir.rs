@@ -29,7 +29,7 @@ impl fmt::Display for BindingKind {
 }
 
 #[derive(Debug, Clone)]
-pub enum Constant {
+pub enum Literal {
     Number(i64),
     Boolean(bool),
     Empty,
@@ -46,7 +46,7 @@ pub enum Value {
     BinOp(Operator, Box<Value>, Box<Value>),
     IfElse(Box<Value>, Box<Value>, Box<Value>),
     Variable(Identifier),
-    Constant(Constant),
+    Literal(Literal),
     Function(Identifier, Box<Value>, HashMap<Identifier, Type>),
     Typed(Type, HashMap<Type, Value>, Box<Value>),
 }
