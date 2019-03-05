@@ -95,7 +95,7 @@ pub fn translate_eir<'a>(
 
         ir::Value::Assign(lhs, rhs) => {
             let new_value = translate_eir(builder, *rhs)?;
-            let name = match lhs.value {
+            let name = match lhs.value() {
                 ir::Value::Variable(name) => name,
                 _ => panic!("Non-variable identifier"),
             };

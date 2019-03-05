@@ -10,7 +10,7 @@ fn collect_vars(
     eir: &ir::Node,
 ) -> Result<Box<dyn Iterator<Item = (ir::Identifier, ir::Type)>>, Error> {
     let ty = eir.type_().ok_or(CheckCaptureError::NotTyped)?;
-    Ok(match &eir.value {
+    Ok(match eir.value() {
         ir::Value::Variable(ident) => box vec![(ident.clone(), ty.clone())].into_iter(),
         ir::Value::Literal(c) => match c {
             ir::Literal::Function(ident, box body, captures) => {

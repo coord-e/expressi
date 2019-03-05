@@ -44,7 +44,7 @@ impl TypeInfer {
             return Ok((Subst::new(), eir.clone()));
         }
 
-        match &eir.value {
+        match eir.value() {
             ir::Value::Literal(c) => match c {
                 ir::Literal::Function(ident, box body, captures) => {
                     let tv = self.tvg.new_variable();
@@ -231,7 +231,7 @@ impl TypeInfer {
 
     fn apply_subst_all(&self, eir: &ir::Node, subst: &Subst) -> Result<Box<ir::Node>, Error> {
         let ty = eir.type_().ok_or(TypeInferError::NotTyped)?;
-        let value = &eir.value;
+        let value = eir.value();
 
         let new_ty = ty.apply(subst);
         let instantiation_table = self
@@ -249,11 +249,7 @@ impl TypeInfer {
             })
             .collect();
         let new_v = self.inner_apply_subst_all(value, subst)?;
-        Ok(box ir::Node {
-            value: new_v,
-            type_: Some(new_ty),
-            instantiation_table,
-        })
+        Ok(box ir::Node::new(new_v, new_ty, instantiation_table))
     }
 }
 

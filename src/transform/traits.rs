@@ -7,12 +7,7 @@ use std::collections::HashMap;
 
 pub trait Transform {
     fn transform(&mut self, eir: &ir::Node) -> Result<ir::Node, Error> {
-        let ir::Node {
-            value,
-            type_,
-            instantiation_table,
-        } = eir;
-        let value = match value {
+        let value = match eir.value() {
             ir::Value::Variable(ident) => self.transform_variable(ident)?,
             ir::Value::Literal(c) => self.transform_literal(c)?,
             ir::Value::Let(kind, ident, box value, box body) => {
@@ -48,14 +43,13 @@ pub trait Transform {
             }
         };
 
-        let instantiation_table = instantiation_table
+        let instantiation_table = eir.ty_table()
             .iter()
-            .map(|(t, v)| Ok((t.clone(), self.transform(&v.clone().untyped_node())?.value)))
+            .map(|(t, v)| Ok((t.clone(), self.transform(&v.clone().untyped_node())?.value().clone())))
             .collect::<Result<HashMap<_, _>, Error>>()?;
-        Ok(ir::Node {
-            value,
-            type_: type_.clone(),
-            instantiation_table,
+        Ok(match eir.type_() {
+            Some(ty) => ir::Node::new(value, ty.clone(), instantiation_table),
+            None => ir::Node::new_untyped(value)  // TODO: Ensure instantiation table is empty
         })
     }
 

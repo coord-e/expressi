@@ -19,18 +19,10 @@ pub enum Value {
 
 impl Value {
     pub fn with_type(self, ty: Type) -> Result<Node, Error> {
-        Ok(Node {
-            value: self,
-            type_: Some(ty),
-            instantiation_table: HashMap::new(),
-        })
+        Ok(Node::new(self, ty, HashMap::new()))
     }
 
     pub fn untyped_node(self) -> Node {
-        Node {
-            value: self,
-            type_: None,
-            instantiation_table: HashMap::new(),
-        }
+        Node::new_untyped(self)
     }
 }

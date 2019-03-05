@@ -22,6 +22,22 @@ impl Deref for Node {
 }
 
 impl Node {
+    pub fn new(value: Value, type_: Type, ty_table: HashMap<Type, Value>) -> Self {
+        Node {
+            value,
+            type_: Some(type_),
+            instantiation_table: ty_table
+        }
+    }
+
+    pub fn new_untyped(value: Value) -> Self {
+        Node {
+            value,
+            type_: None,
+            instantiation_table: HashMap::new()
+        }
+    }
+
     pub fn apply<T>(&self, mut transformer: T) -> Result<Self, Error>
     where
         T: Transform,
@@ -31,6 +47,14 @@ impl Node {
 
     pub fn type_(&self) -> Option<&Type> {
         self.type_.as_ref()
+    }
+
+    pub fn value(&self) -> &Value {
+        &self.value
+    }
+
+    pub fn ty_table(&self) -> &HashMap<Type, Value> {
+        &self.instantiation_table
     }
 
     pub fn with_type(&self, ty: Type) -> Result<Node, Error> {

@@ -62,12 +62,12 @@ impl fmt::Display for Value {
 
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.value.fmt(f)?;
-        if let Some(ty) = &self.type_ {
+        self.value().fmt(f)?;
+        if let Some(ty) = self.type_() {
             write!(f, " :: {}", ty)?;
-            if !self.instantiation_table.is_empty() {
+            if !self.ty_table().is_empty() {
                 write!(f, "[")?;
-                for (t, _) in &self.instantiation_table {
+                for (t, _) in self.ty_table() {
                     write!(f, "{}, ", t)?;
                 }
                 write!(f, "]")?;
