@@ -6,8 +6,13 @@ use failure::Error;
 use std::collections::HashMap;
 
 pub trait Transform {
-    fn transform(&mut self, eir: &ir::Value) -> Result<ir::Value, Error> {
-        Ok(match eir {
+    fn transform(&mut self, eir: &ir::Node) -> Result<ir::Node, Error> {
+        let ir::Node {
+            value,
+            type_,
+            instantiation_table,
+        } = eir;
+        let value = match value {
             ir::Value::Variable(ident) => self.transform_variable(ident)?,
             ir::Value::Literal(c) => self.transform_literal(c)?,
             ir::Value::Let(kind, ident, box value, box body) => {
@@ -41,10 +46,16 @@ pub trait Transform {
                 let else_ = self.transform(else_)?;
                 self.transform_ifelse(&cond, &then_, &else_)?
             }
-            ir::Value::Typed(ty, candidate, box value) => {
-                let value = self.transform(value)?;
-                self.transform_typed(ty, candidate, &value)?
-            }
+        };
+
+        let instantiation_table = instantiation_table
+            .iter()
+            .map(|(t, v)| Ok((t.clone(), self.transform(&v.clone().untyped_node())?.value)))
+            .collect::<Result<HashMap<_, _>, Error>>()?;
+        Ok(ir::Node {
+            value,
+            type_: type_.clone(),
+            instantiation_table,
         })
     }
 
@@ -60,8 +71,8 @@ pub trait Transform {
         &mut self,
         kind: ir::BindingKind,
         ident: &str,
-        v: &ir::Value,
-        body: &ir::Value,
+        v: &ir::Node,
+        body: &ir::Node,
     ) -> Result<ir::Value, Error> {
         Ok(ir::Value::Let(
             kind,
@@ -71,53 +82,37 @@ pub trait Transform {
         ))
     }
 
-    fn transform_assign(&mut self, lhs: &ir::Value, rhs: &ir::Value) -> Result<ir::Value, Error> {
+    fn transform_assign(&mut self, lhs: &ir::Node, rhs: &ir::Node) -> Result<ir::Value, Error> {
         Ok(ir::Value::Assign(box lhs.clone(), box rhs.clone()))
     }
 
-    fn transform_follow(&mut self, lhs: &ir::Value, rhs: &ir::Value) -> Result<ir::Value, Error> {
+    fn transform_follow(&mut self, lhs: &ir::Node, rhs: &ir::Node) -> Result<ir::Value, Error> {
         Ok(ir::Value::Follow(box lhs.clone(), box rhs.clone()))
     }
 
-    fn transform_apply(&mut self, lhs: &ir::Value, rhs: &ir::Value) -> Result<ir::Value, Error> {
+    fn transform_apply(&mut self, lhs: &ir::Node, rhs: &ir::Node) -> Result<ir::Value, Error> {
         Ok(ir::Value::Apply(box lhs.clone(), box rhs.clone()))
     }
 
     fn transform_binop(
         &mut self,
         op: Operator,
-        lhs: &ir::Value,
-        rhs: &ir::Value,
+        lhs: &ir::Node,
+        rhs: &ir::Node,
     ) -> Result<ir::Value, Error> {
         Ok(ir::Value::BinOp(op, box lhs.clone(), box rhs.clone()))
     }
 
     fn transform_ifelse(
         &mut self,
-        cond: &ir::Value,
-        then_: &ir::Value,
-        else_: &ir::Value,
+        cond: &ir::Node,
+        then_: &ir::Node,
+        else_: &ir::Node,
     ) -> Result<ir::Value, Error> {
         Ok(ir::Value::IfElse(
             box cond.clone(),
             box then_.clone(),
             box else_.clone(),
-        ))
-    }
-
-    fn transform_typed(
-        &mut self,
-        type_: &ir::Type,
-        candidates: &HashMap<ir::Type, ir::Value>,
-        value: &ir::Value,
-    ) -> Result<ir::Value, Error> {
-        Ok(ir::Value::Typed(
-            type_.clone(),
-            candidates
-                .iter()
-                .map(|(t, v)| Ok((t.clone(), self.transform(v)?)))
-                .collect::<Result<HashMap<_, _>, Error>>()?,
-            box value.clone(),
         ))
     }
 }

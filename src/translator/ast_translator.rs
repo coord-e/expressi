@@ -1,11 +1,11 @@
 use crate::expression::Expression;
-use crate::ir::{Literal, Value};
+use crate::ir::{Literal, Node, Value};
 
 use failure::Error;
 
 use std::collections::HashMap;
 
-pub fn translate_ast(expr: Expression) -> Result<Value, Error> {
+pub fn translate_ast_value(expr: Expression) -> Result<Value, Error> {
     Ok(match expr {
         Expression::Number(number) => Value::Literal(Literal::Number(number)),
         Expression::Boolean(value) => Value::Literal(Literal::Boolean(value)),
@@ -40,7 +40,12 @@ pub fn translate_ast(expr: Expression) -> Result<Value, Error> {
         },
         Expression::Bind(kind, name, box rhs) => {
             let rhs = translate_ast(rhs)?;
-            Value::Let(kind, name.clone(), box rhs, box Value::Variable(name))
+            Value::Let(
+                kind,
+                name.clone(),
+                box rhs,
+                box Value::Variable(name).untyped_node(),
+            )
         }
         Expression::Assign(lhs, rhs) => {
             let rhs_value = translate_ast(*rhs)?;
@@ -50,7 +55,7 @@ pub fn translate_ast(expr: Expression) -> Result<Value, Error> {
         Expression::TypeIdentifier(_) => unimplemented!(),
         Expression::Identifier(name) => Value::Variable(name),
         Expression::Cast(_lhs, _rhs) => unimplemented!(),
-        Expression::Scope(box expr) => translate_ast(expr)?,
+        Expression::Scope(box expr) => translate_ast_value(expr)?,
         Expression::IfElse(cond_expr, then_expr, else_expr) => {
             let cond_value = translate_ast(*cond_expr)?;
             let then_value = translate_ast(*then_expr)?;
@@ -62,4 +67,8 @@ pub fn translate_ast(expr: Expression) -> Result<Value, Error> {
             )
         }
     })
+}
+
+pub fn translate_ast(expr: Expression) -> Result<Node, Error> {
+    Ok(translate_ast_value(expr)?.untyped_node())
 }

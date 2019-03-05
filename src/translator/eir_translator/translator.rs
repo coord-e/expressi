@@ -10,7 +10,7 @@ fn translate_monotype_function<'a>(
     builder: &mut Builder<'a>,
     param: String,
     ty: &ir::Type,
-    body: ir::Value,
+    body: ir::Node,
     capture_list: &HashMap<ir::Identifier, ir::Type>,
 ) -> Result<BasicValueEnum, Error> {
     let function = builder.function_constant(&ty, param, capture_list, |builder| {
@@ -21,44 +21,46 @@ fn translate_monotype_function<'a>(
 
 pub fn translate_eir<'a>(
     builder: &mut Builder<'a>,
-    expr: ir::Value,
+    eir: ir::Node,
 ) -> Result<Atom<BasicValueEnum>, Error> {
-    Ok(match expr {
-        ir::Value::Typed(ty, ty_candidates, box value) => match value {
-            ir::Value::Literal(c) => match c {
-                ir::Literal::Number(number) => builder.number_constant(number)?.into(),
-                ir::Literal::Boolean(tf) => builder.boolean_constant(tf)?.into(),
-                ir::Literal::Empty => builder.empty_constant()?.into(),
-                ir::Literal::Function(param, box body, capture_list) => {
-                    // TODO: Add more sufficient implementation to check whether PolyValue is needed or not
-                    if ty_candidates.len() <= 1 {
-                        translate_monotype_function(builder, param, &ty, body, &capture_list)?
-                            .into()
-                    } else {
-                        ty_candidates
-                            .into_iter()
-                            .map(|(ty, body)| {
-                                match body {
-                                    ir::Value::Literal(ir::Literal::Function(_, box body, _)) => {
-                                        translate_monotype_function(
-                                            builder,
-                                            param.clone(),
-                                            &ty,
-                                            body,
-                                            &capture_list,
-                                        )
-                                    }
-                                    _ => unreachable!(),
+    let ir::Node {
+        value,
+        type_,
+        instantiation_table,
+    } = eir;
+    let ty = type_.ok_or(TranslationError::NotTyped)?;
+
+    Ok(match value {
+        ir::Value::Literal(c) => match c {
+            ir::Literal::Number(number) => builder.number_constant(number)?.into(),
+            ir::Literal::Boolean(tf) => builder.boolean_constant(tf)?.into(),
+            ir::Literal::Empty => builder.empty_constant()?.into(),
+            ir::Literal::Function(param, box body, capture_list) => {
+                // TODO: Add more sufficient implementation to check whether PolyValue is needed or not
+                if instantiation_table.len() <= 1 {
+                    translate_monotype_function(builder, param, &ty, body, &capture_list)?.into()
+                } else {
+                    instantiation_table
+                        .into_iter()
+                        .map(|(ty, body)| {
+                            match body {
+                                ir::Value::Literal(ir::Literal::Function(_, box body, _)) => {
+                                    translate_monotype_function(
+                                        builder,
+                                        param.clone(),
+                                        &ty,
+                                        body.clone(),
+                                        &capture_list,
+                                    )
                                 }
-                                .map(|v| (ty, v))
-                            })
-                            .collect::<Result<HashMap<_, _>, _>>()?
-                            .into()
-                    }
+                                _ => unreachable!(),
+                            }
+                            .map(|v| (ty.clone(), v))
+                        })
+                        .collect::<Result<HashMap<_, _>, _>>()?
+                        .into()
                 }
-            },
-            ir::Value::Typed(..) => bail!(InternalError::DoubleTyped),
-            _ => translate_eir(builder, value)?,
+            }
         },
         ir::Value::Apply(box func, box arg) => {
             let func_ty = func.type_().ok_or(TranslationError::NotTyped)?;
@@ -93,8 +95,8 @@ pub fn translate_eir<'a>(
 
         ir::Value::Assign(lhs, rhs) => {
             let new_value = translate_eir(builder, *rhs)?;
-            let name = match *lhs {
-                ir::Value::Typed(_, _, box ir::Value::Variable(name)) => name,
+            let name = match lhs.value {
+                ir::Value::Variable(name) => name,
                 _ => panic!("Non-variable identifier"),
             };
             builder.assign_var(&name, &new_value)?;
@@ -136,6 +138,5 @@ pub fn translate_eir<'a>(
             builder.switch_to_block(&merge_block);
             builder.get_var(&var_name)?.unwrap()
         }
-        _ => bail!(TranslationError::NotTyped),
     })
 }

@@ -1,4 +1,4 @@
-use super::{Literal, Value};
+use super::{Literal, Node, Value};
 
 use std::fmt;
 
@@ -56,18 +56,23 @@ impl fmt::Display for Value {
                 arg.fmt(f)?;
                 write!(f, ")")
             }
-            Value::Typed(ty, candidates, val) => {
-                val.fmt(f)?;
-                write!(f, " :: {}", ty)?;
-                if !candidates.is_empty() {
-                    write!(f, "[")?;
-                    for (t, _) in candidates {
-                        write!(f, "{}, ", t)?;
-                    }
-                    write!(f, "]")?;
+        }
+    }
+}
+
+impl fmt::Display for Node {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.value.fmt(f)?;
+        if let Some(ty) = &self.type_ {
+            write!(f, " :: {}", ty)?;
+            if !self.instantiation_table.is_empty() {
+                write!(f, "[")?;
+                for (t, _) in &self.instantiation_table {
+                    write!(f, "{}, ", t)?;
                 }
-                Ok(())
+                write!(f, "]")?;
             }
         }
+        Ok(())
     }
 }
