@@ -8,7 +8,6 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 
-use crate::error::InternalError;
 use crate::expression::Operator;
 use crate::ir;
 use crate::ir::type_::Type;
@@ -22,8 +21,6 @@ use super::type_env::TypeEnv;
 use super::type_var_gen::TypeVarGen;
 
 use failure::Error;
-
-use std::collections::HashMap;
 
 pub struct TypeInfer {
     tvg: TypeVarGen,

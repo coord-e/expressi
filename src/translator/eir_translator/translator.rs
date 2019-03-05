@@ -1,8 +1,8 @@
 use super::{Atom, Builder};
-use crate::error::{InternalError, TranslationError};
+use crate::error::TranslationError;
 use crate::ir;
 
-use failure::{bail, Error};
+use failure::Error;
 use inkwell::values::BasicValueEnum;
 use std::collections::HashMap;
 
