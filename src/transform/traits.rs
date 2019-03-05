@@ -43,13 +43,19 @@ pub trait Transform {
             }
         };
 
-        let instantiation_table = eir.ty_table()
+        let instantiation_table = eir
+            .ty_table()
             .iter()
-            .map(|(t, v)| Ok((t.clone(), self.transform(&v.clone().untyped_node())?.value().clone())))
+            .map(|(t, v)| {
+                Ok((
+                    t.clone(),
+                    self.transform(&v.clone().untyped_node())?.value().clone(),
+                ))
+            })
             .collect::<Result<HashMap<_, _>, Error>>()?;
         Ok(match eir.type_() {
             Some(ty) => ir::Node::new(value, ty.clone(), instantiation_table),
-            None => ir::Node::new_untyped(value)  // TODO: Ensure instantiation table is empty
+            None => ir::Node::new_untyped(value), // TODO: Ensure instantiation table is empty
         })
     }
 

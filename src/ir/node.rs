@@ -26,7 +26,7 @@ impl Node {
         Node {
             value,
             type_: Some(type_),
-            instantiation_table: ty_table
+            instantiation_table: ty_table,
         }
     }
 
@@ -34,7 +34,7 @@ impl Node {
         Node {
             value,
             type_: None,
-            instantiation_table: HashMap::new()
+            instantiation_table: HashMap::new(),
         }
     }
 
@@ -57,12 +57,12 @@ impl Node {
         &self.instantiation_table
     }
 
-    pub fn with_type(&self, ty: Type) -> Result<Node, Error> {
-        match self.type_ {
+    pub fn with_type(self, ty: Type) -> Result<Node, Error> {
+        match self.type_() {
             Some(_) => Err(InternalError::AlreadyTyped.into()),
             None => Ok(Node {
                 type_: Some(ty),
-                ..self.clone()
+                ..self
             }),
         }
     }

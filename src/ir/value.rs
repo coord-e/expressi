@@ -1,8 +1,6 @@
 use super::{BindingKind, Identifier, Literal, Node, Type};
 use crate::expression::Operator;
 
-use failure::Error;
-
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -18,8 +16,8 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn with_type(self, ty: Type) -> Result<Node, Error> {
-        Ok(Node::new(self, ty, HashMap::new()))
+    pub fn typed_node(self, ty: Type) -> Node {
+        Node::new(self, ty, HashMap::new())
     }
 
     pub fn untyped_node(self) -> Node {

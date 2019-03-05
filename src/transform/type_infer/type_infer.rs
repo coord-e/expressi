@@ -63,17 +63,19 @@ impl TypeInfer {
                     let lit =
                         ir::Literal::Function(ident.to_string(), box v.clone(), captures.clone());
                     let new_node = ir::Value::Literal(lit);
-                    Ok((s1.clone(), new_node.with_type(new_type)?))
+                    Ok((s1.clone(), new_node.typed_node(new_type)))
                 }
-                ir::Literal::Number(_) => Ok((Subst::new(), eir.with_type(Type::Number)?)),
-                ir::Literal::Boolean(_) => Ok((Subst::new(), eir.with_type(Type::Boolean)?)),
-                ir::Literal::Empty => Ok((Subst::new(), eir.with_type(Type::Empty)?)),
+                ir::Literal::Number(_) => Ok((Subst::new(), eir.clone().with_type(Type::Number)?)),
+                ir::Literal::Boolean(_) => {
+                    Ok((Subst::new(), eir.clone().with_type(Type::Boolean)?))
+                }
+                ir::Literal::Empty => Ok((Subst::new(), eir.clone().with_type(Type::Empty)?)),
             },
             ir::Value::Variable(ident) => match env.get(ident) {
                 Some(s) => {
                     let (subst, instance) = s.instantiate(&mut self.tvg);
                     self.instantiation_table.push((s.ty.clone(), subst));
-                    Ok((Subst::new(), eir.with_type(instance)?))
+                    Ok((Subst::new(), eir.clone().with_type(instance)?))
                 }
                 None => Err(TypeInferError::UndeclaredIdentifier {
                     ident: ident.clone(),
@@ -94,7 +96,7 @@ impl TypeInfer {
                 let new_node = ir::Value::Apply(box v1.clone(), box v2.clone());
                 Ok((
                     s3.compose(&s2.compose(&s1)),
-                    new_node.with_type(tv.apply(&s3))?,
+                    new_node.typed_node(tv.apply(&s3)),
                 ))
             }
             ir::Value::Let(kind, ident, box value, box body) => {
@@ -108,7 +110,7 @@ impl TypeInfer {
                 let t2 = v2.type_().unwrap();
 
                 let new_node = ir::Value::Let(*kind, ident.clone(), box v1.clone(), box v2.clone());
-                Ok((s2.compose(&s1), new_node.with_type(t2.clone())?))
+                Ok((s2.compose(&s1), new_node.typed_node(t2.clone())))
             }
             ir::Value::Follow(box lhs, box rhs) => {
                 let (s1, v1) = self.transform_with_env(lhs, env)?;
@@ -116,7 +118,7 @@ impl TypeInfer {
                 let t = v2.type_().unwrap();
 
                 let new_node = ir::Value::Follow(box v1.clone(), box v2.clone());
-                Ok((s1.compose(&s2), new_node.with_type(t.clone())?))
+                Ok((s1.compose(&s2), new_node.typed_node(t.clone())))
             }
             ir::Value::BinOp(op, box lhs, box rhs) => {
                 let (s1, lhs) = self.transform_with_env(&lhs, env)?;
@@ -137,7 +139,7 @@ impl TypeInfer {
                         let sr = rhs_ty.mgu(&Type::Number)?;
                         (
                             s1.compose(&s2.compose(&sl.compose(&sr))),
-                            new_node.with_type(Type::Boolean)?,
+                            new_node.typed_node(Type::Boolean),
                         )
                     }
                     _ => {
@@ -145,7 +147,7 @@ impl TypeInfer {
                         let sr = rhs_ty.mgu(&Type::Number)?;
                         (
                             s1.compose(&s2.compose(&sl.compose(&sr))),
-                            new_node.with_type(Type::Number)?,
+                            new_node.typed_node(Type::Number),
                         )
                     }
                 })
@@ -165,7 +167,7 @@ impl TypeInfer {
                     ir::Value::IfElse(box cond_v.clone(), box then_v.clone(), box else_v.clone());
                 Ok((
                     s1.compose(&s2.compose(&s3.compose(&cond_s.compose(&body_s)))),
-                    new_node.with_type(then_ty.clone())?,
+                    new_node.typed_node(then_ty.clone()),
                 ))
             }
             ir::Value::Assign(box lhs, box rhs) => {
@@ -179,7 +181,7 @@ impl TypeInfer {
                 let new_node = ir::Value::Assign(box lhs.clone(), box rhs.clone());
                 Ok((
                     s1.compose(&s2.compose(&subst)),
-                    new_node.with_type(lhs_ty.clone())?,
+                    new_node.typed_node(lhs_ty.clone()),
                 ))
             }
         }
