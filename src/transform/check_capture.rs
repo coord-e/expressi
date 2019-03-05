@@ -48,7 +48,7 @@ impl Transform for CheckCapture {
         Ok(ir::Value::Literal(match lit {
             ir::Literal::Function(ident, box body, _) => ir::Literal::Function(
                 ident.to_string(),
-                box body.clone(),
+                box self.transform(body)?,
                 collect_vars(body)?.filter(|(e, _)| e != ident).collect(),
             ),
             _ => lit.clone(),
