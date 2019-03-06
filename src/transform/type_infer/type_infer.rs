@@ -244,7 +244,8 @@ impl TypeInfer {
                     // TODO: compose v and subst, and call inner_apply_subst_all once
                     let inner = self.inner_apply_subst_all(value, &v).unwrap();
                     let instance_value = self.inner_apply_subst_all(&inner, &subst).unwrap();
-                    Some((ty.apply(&v).apply(&subst), instance_value))
+                    let applied_ty = ty.apply(&v).apply(&subst);
+                    Some((applied_ty.clone(), instance_value.typed_node(applied_ty)))
                 } else {
                     None
                 }

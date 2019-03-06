@@ -11,7 +11,7 @@ use std::ops::Deref;
 pub struct Node {
     pub value: Value,
     pub type_: Option<Type>,
-    pub instantiation_table: HashMap<Type, Value>,
+    pub instantiation_table: HashMap<Type, Node>,
 }
 
 impl Deref for Node {
@@ -22,7 +22,7 @@ impl Deref for Node {
 }
 
 impl Node {
-    pub fn new(value: Value, type_: Type, ty_table: HashMap<Type, Value>) -> Self {
+    pub fn new(value: Value, type_: Type, ty_table: HashMap<Type, Node>) -> Self {
         Node {
             value,
             type_: Some(type_),
@@ -53,7 +53,7 @@ impl Node {
         &self.value
     }
 
-    pub fn ty_table(&self) -> &HashMap<Type, Value> {
+    pub fn ty_table(&self) -> &HashMap<Type, Node> {
         &self.instantiation_table
     }
 

@@ -43,7 +43,8 @@ pub fn translate_eir<'a>(
                     instantiation_table
                         .into_iter()
                         .map(|(ty, body)| {
-                            match body {
+                            assert_eq!(Some(&ty), body.type_());
+                            match body.value() {
                                 ir::Value::Literal(ir::Literal::Function(_, box body, _)) => {
                                     translate_monotype_function(
                                         builder,
