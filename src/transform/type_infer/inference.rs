@@ -41,7 +41,7 @@ impl TypeInfer {
         eir: &ir::Node,
         env: &mut TypeEnv,
     ) -> Result<(Subst, ir::Node), Error> {
-        if let Some(_) = eir.type_() {
+        if eir.type_().is_some() {
             return Ok((Subst::new(), eir.clone()));
         }
 
