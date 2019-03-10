@@ -21,4 +21,11 @@ macro_rules! file_test {
     };
 }
 
+file_test!(add);
+file_test!(shadow);
+file_test!(unscoped);
+file_test!(ifelse);
+file_test!(capture_type);
 file_test!(curry);
+file_test!(arg_order);
+file_test!(infer_poly);

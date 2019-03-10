@@ -1,0 +1,4 @@
+let id = x -> x;
+let t = id(true);
+let n = id(1);
+if t n else (n + 1)
