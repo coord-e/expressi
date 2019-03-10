@@ -11,8 +11,7 @@ addons:
 cache: cargo
 rust: nightly
 
-before_cache:
-  - RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin -f
+before_script:
   - rustup component add clippy-preview rustfmt-preview
 
 script:
@@ -21,6 +20,9 @@ script:
   - cargo fmt --all -- --write-mode=diff
   - cargo clippy
   - cargo test
+
+before_cache:
+  - RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin -f
 
 after_success: |
   cargo tarpaulin --out Xml
