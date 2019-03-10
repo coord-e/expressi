@@ -432,13 +432,11 @@ impl<'a> Builder<'a> {
                     )
                     .into());
             }
-        } else if from_type == bool_type {
-            if to_type == number_type {
-                return Ok(self
-                    .inst_builder
-                    .build_int_z_extend(v.into_int_value(), to_type.into_int_type(), "b2i")
-                    .into());
-            }
+        } else if from_type == bool_type && to_type == number_type {
+            return Ok(self
+                .inst_builder
+                .build_int_z_extend(v.into_int_value(), to_type.into_int_type(), "b2i")
+                .into());
         }
         Err(TranslationError::InvalidCast {
             from: format!("{:?}", from_type),

@@ -16,7 +16,7 @@ use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 
 /// A substitution is a mapping from type variables to types.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Subst(HashMap<TypeVarID, Type>);
 
 impl Deref for Subst {

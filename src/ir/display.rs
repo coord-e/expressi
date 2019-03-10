@@ -65,7 +65,7 @@ impl fmt::Display for Value {
                 write!(f, " :: {}", ty)?;
                 if !candidates.is_empty() {
                     write!(f, "[")?;
-                    for (t, _) in candidates {
+                    for t in candidates.keys() {
                         write!(f, "{}, ", t)?;
                     }
                     write!(f, "]")?;

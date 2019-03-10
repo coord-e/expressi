@@ -1,0 +1,29 @@
+language: rust
+sudo: required
+dist: xenial
+addons:
+  apt:
+    sources:
+      - llvm-toolchain-xenial-7
+    packages:
+      - llvm-7
+
+cache: cargo
+rust: nightly
+
+before_script:
+  - rustup component add clippy rustfmt
+
+script:
+  - cargo clean
+  - cargo build
+  - cargo fmt --all -- --check
+  - cargo clippy --all-targets --all-features -- -D warnings
+  - cargo test
+
+before_cache:
+  - RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin -f
+
+after_success: |
+  cargo tarpaulin --out Xml
+  bash <(curl -s https://codecov.io/bash)

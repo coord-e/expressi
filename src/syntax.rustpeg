@@ -81,7 +81,7 @@ boolean -> Expression
   = n:$("true" / "false") { Expression::Boolean(n.parse().unwrap()) }
 
 array -> Expression
-  = "[" e:(expression ** ',') "]" { Expression::Array(e.into_iter().map(|v| Box::new(v)).collect()) }
+  = "[" e:(expression ** ',') "]" { Expression::Array(e) }
 
 function -> Expression
   = param:identifier _ "->" e:assign { Expression::Function(param.to_string(), Box::new(e)) }

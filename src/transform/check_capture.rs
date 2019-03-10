@@ -6,6 +6,7 @@ use failure::Error;
 
 use std::collections::HashMap;
 
+#[derive(Default)]
 pub struct CheckCapture;
 
 fn collect_vars(
