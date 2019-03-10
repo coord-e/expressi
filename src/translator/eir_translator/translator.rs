@@ -1,7 +1,6 @@
+use super::{Atom, Builder};
 use crate::error::{InternalError, TranslationError};
 use crate::ir;
-use crate::transform::type_infer::Type;
-use crate::translator::eir_translator::{Atom, Builder};
 
 use failure::{bail, Error};
 use inkwell::values::BasicValueEnum;
@@ -10,9 +9,9 @@ use std::collections::HashMap;
 fn translate_monotype_function<'a>(
     builder: &mut Builder<'a>,
     param: String,
-    ty: &Type,
+    ty: &ir::Type,
     body: ir::Value,
-    capture_list: &HashMap<ir::Identifier, Type>,
+    capture_list: &HashMap<ir::Identifier, ir::Type>,
 ) -> Result<BasicValueEnum, Error> {
     let function = builder.function_constant(&ty, param, capture_list, |builder| {
         translate_eir(builder, body)?.expect_value()

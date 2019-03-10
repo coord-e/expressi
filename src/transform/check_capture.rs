@@ -1,7 +1,6 @@
+use super::error::CheckCaptureError;
+use super::Transform;
 use crate::ir;
-use crate::transform::error::CheckCaptureError;
-use crate::transform::type_infer::Type;
-use crate::transform::Transform;
 
 use failure::Error;
 
@@ -11,7 +10,7 @@ pub struct CheckCapture;
 
 fn collect_vars(
     eir: &ir::Value,
-) -> Result<Box<dyn Iterator<Item = (ir::Identifier, Type)>>, Error> {
+) -> Result<Box<dyn Iterator<Item = (ir::Identifier, ir::Type)>>, Error> {
     Ok(match eir {
         ir::Value::Typed(ty, _, box value) => match value {
             ir::Value::Variable(ident) => box vec![(ident.clone(), ty.clone())].into_iter(),
@@ -50,7 +49,7 @@ impl Transform for CheckCapture {
         &mut self,
         ident: &str,
         body: &ir::Value,
-        _: &HashMap<ir::Identifier, Type>,
+        _: &HashMap<ir::Identifier, ir::Type>,
     ) -> Result<ir::Value, Error> {
         Ok(ir::Value::Function(
             ident.to_string(),

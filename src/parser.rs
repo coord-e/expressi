@@ -39,8 +39,8 @@ mod tests {
     }
 
     mod literal {
-        use crate::expression::Expression;
         use super::parse;
+        use crate::expression::Expression;
 
         #[test]
         fn number() {
@@ -76,8 +76,8 @@ mod tests {
     }
 
     mod operator {
-        use crate::expression::{Expression, Operator};
         use super::parse;
+        use crate::expression::{Expression, Operator};
 
         macro_rules! test_binop {
             ($x:expr, $op:expr) => {

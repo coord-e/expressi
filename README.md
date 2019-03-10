@@ -22,7 +22,6 @@ In this example, `x` is evaluated to `11`.
 - Refine EIR
   - Delete `Typed` constructor and provide another way to express typed value
   - Convert `Follow`, `Bind`, `Scope` to let-in expression
-  - Implement `Printer` as an implementation of `fmt::Display`
 - Refine errors
   - Property organize error variants
   - Get rid of `unwrap` completely

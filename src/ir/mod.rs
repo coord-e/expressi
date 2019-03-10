@@ -1,5 +1,6 @@
+pub mod display;
 pub mod eir;
-pub mod printer;
+pub mod type_;
 
-pub use crate::ir::eir::{BindingKind, Constant, Identifier, Value};
-pub use crate::ir::printer::Printer;
+pub use self::eir::{BindingKind, Constant, Identifier, Value};
+pub use self::type_::Type;

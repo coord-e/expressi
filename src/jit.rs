@@ -1,13 +1,11 @@
 use crate::error::{LLVMError, ParseError};
 use crate::expression::Expression;
-use crate::ir::Printer;
 use crate::parser;
 use crate::transform::{CheckCapture, TypeInfer};
 use crate::translator::eir_translator::Builder;
-use crate::translator::{translate_eir, ASTTranslator};
+use crate::translator::{translate_ast, translate_eir};
 
 use failure::Error;
-use std::io;
 use std::rc::Rc;
 
 use inkwell::targets::{InitializationConfig, Target};
@@ -76,14 +74,10 @@ impl JIT {
 
         self.builder.position_at_end(&basic_block);
 
-        let mut a_trans = ASTTranslator {};
-        let eir = a_trans.translate_expr(expr)?;
+        let eir = translate_ast(expr)?;
 
         if self.print_eir {
-            eprintln!("EIR:");
-            let printer = Printer::new();
-            printer.print(&eir, &mut io::stderr())?;
-            eprintln!();
+            eprintln!("EIR:\n{}\n", eir);
         }
 
         let ti = TypeInfer::new();
@@ -91,10 +85,7 @@ impl JIT {
         let transformed = eir.apply(ti)?.apply(cc)?;
 
         if self.print_eir {
-            eprintln!("Transformed EIR:");
-            let printer = Printer::new();
-            printer.print(&transformed, &mut io::stderr())?;
-            eprintln!();
+            eprintln!("Transformed EIR:\n{}\n", transformed);
         }
 
         let mut builder = Builder::new(&mut self.builder, module.clone());
