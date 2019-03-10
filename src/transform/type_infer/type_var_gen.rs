@@ -10,6 +10,7 @@
 
 use crate::ir::type_::{Type, TypeVarID};
 
+#[derive(Default)]
 pub struct TypeVarGen {
     supply: usize,
 }
@@ -18,13 +19,14 @@ impl TypeVarGen {
     pub fn new() -> TypeVarGen {
         TypeVarGen { supply: 0 }
     }
-    pub fn next(&mut self) -> TypeVarID {
+
+    pub fn next_id(&mut self) -> TypeVarID {
         let v = TypeVarID::with_usize(self.supply);
         self.supply += 1;
         v
     }
 
     pub fn new_variable(&mut self) -> Type {
-        Type::Variable(self.next())
+        Type::Variable(self.next_id())
     }
 }
