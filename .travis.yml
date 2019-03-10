@@ -17,7 +17,7 @@ before_script:
 script:
   - cargo clean
   - cargo build
-  - cargo fmt --all -- --write-mode=diff
+  - cargo fmt --all -- --check
   - cargo clippy
   - cargo test
 
