@@ -13,10 +13,13 @@ rust: nightly
 
 before_cache:
   - RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin -f
+  - rustup component add clippy-preview rustfmt-preview
 
 script:
   - cargo clean
   - cargo build
+  - cargo fmt --all -- --write-mode=diff
+  - cargo clippy
   - cargo test
 
 after_success: |
