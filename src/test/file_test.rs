@@ -1,9 +1,9 @@
-use crate::jit::JIT;
-
 macro_rules! file_test {
     ($name: ident) => {
         #[test]
         fn $name() {
+            use crate::jit::JIT;
+
             let mut jit = JIT::new(false, false, false).unwrap();
 
             let contents = include_str!(concat!("test_data/", stringify!($name), ".epi"));
