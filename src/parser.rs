@@ -11,11 +11,31 @@ pub fn parse(x: &str) -> Result<Expression, syntax::ParseError> {
 
 #[cfg(test)]
 mod tests {
-    use super::parser::parse;
+    use super::parse;
 
     #[test]
     fn skip_space() {
         assert_eq!(parse("1 +\n1 "), parse("1+1"))
+    }
+
+    #[test]
+    fn skip_comment() {
+        assert_eq!(parse("1+/* This is a comment */1"), parse("1+1"))
+    }
+
+    #[test]
+    fn skip_comment_multiline() {
+        assert_eq!(parse("1+/* This is \na comment */1"), parse("1+1"))
+    }
+
+    #[test]
+    fn skip_line_comment() {
+        assert_eq!(parse("1+1// This is a comment"), parse("1+1"))
+    }
+
+    #[test]
+    fn skip_line_comment_follow() {
+        assert_eq!(parse("1+1;// This is a comment\n1+1"), parse("1+1;1+1"))
     }
 
     mod literal {
@@ -281,6 +301,20 @@ mod tests {
                     Box::new(Expression::Number(0))
                 ))
             )
+        }
+    }
+
+    mod sugar {
+        use super::parse;
+
+        #[test]
+        fn function_params() {
+            assert_eq!(parse("(a,b,c)->0"), parse("a->b->c->0"))
+        }
+
+        #[test]
+        fn application() {
+            assert_eq!(parse("f(a,b,c)"), parse("f(a)(b)(c)"))
         }
     }
 }

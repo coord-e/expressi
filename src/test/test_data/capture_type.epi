@@ -1,0 +1,7 @@
+let a = 10;
+let f = if false {
+  x -> x
+} else {
+  x -> a + x
+};
+f(2)
