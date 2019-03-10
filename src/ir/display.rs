@@ -1,14 +1,22 @@
-use super::{Constant, Value};
+use super::{Literal, Node, Value};
 
 use std::fmt;
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Value::Constant(c) => match c {
-                Constant::Number(number) => write!(f, "{}", number),
-                Constant::Boolean(tf) => write!(f, "{}", tf),
-                Constant::Empty => write!(f, "<empty>"),
+            Value::Literal(c) => match c {
+                Literal::Number(number) => write!(f, "{}", number),
+                Literal::Boolean(tf) => write!(f, "{}", tf),
+                Literal::Function(param, body, captures) => {
+                    write!(f, "{}", param)?;
+                    if !captures.is_empty() {
+                        write!(f, "({:?})", captures)?;
+                    }
+                    write!(f, " -> ")?;
+                    body.fmt(f)
+                }
+                Literal::Empty => write!(f, "<empty>"),
             },
             Value::BinOp(op, lhs, rhs) => {
                 lhs.fmt(f)?;
@@ -22,9 +30,10 @@ impl fmt::Display for Value {
                 rhs.fmt(f)
             }
 
-            Value::Bind(kind, name, rhs) => {
+            Value::Let(kind, name, value, body) => {
                 write!(f, "let {} {} = ", kind, name)?;
-                rhs.fmt(f)
+                value.fmt(f)?;
+                write!(f, " in {}", body)
             }
 
             Value::Assign(lhs, rhs) => {
@@ -34,11 +43,6 @@ impl fmt::Display for Value {
             }
 
             Value::Variable(name) => write!(f, "{}", name),
-            Value::Scope(expr) => {
-                writeln!(f, "{{")?;
-                expr.fmt(f)?;
-                write!(f, "\n}}")
-            }
             Value::IfElse(cond, then_expr, else_expr) => {
                 cond.fmt(f)?;
                 write!(f, " ? ")?;
@@ -52,26 +56,23 @@ impl fmt::Display for Value {
                 arg.fmt(f)?;
                 write!(f, ")")
             }
-            Value::Function(param, body, captures) => {
-                write!(f, "{}", param)?;
-                if !captures.is_empty() {
-                    write!(f, "({:?})", captures)?;
+        }
+    }
+}
+
+impl fmt::Display for Node {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.value().fmt(f)?;
+        if let Some(ty) = self.type_() {
+            write!(f, " :: {}", ty)?;
+            if !self.ty_table().is_empty() {
+                write!(f, "[")?;
+                for t in self.ty_table().keys() {
+                    write!(f, "{}, ", t)?;
                 }
-                write!(f, " -> ")?;
-                body.fmt(f)
-            }
-            Value::Typed(ty, candidates, val) => {
-                val.fmt(f)?;
-                write!(f, " :: {}", ty)?;
-                if !candidates.is_empty() {
-                    write!(f, "[")?;
-                    for t in candidates.keys() {
-                        write!(f, "{}, ", t)?;
-                    }
-                    write!(f, "]")?;
-                }
-                Ok(())
+                write!(f, "]")?;
             }
         }
+        Ok(())
     }
 }

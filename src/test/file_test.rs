@@ -29,3 +29,4 @@ file_test!(capture_type);
 file_test!(curry);
 file_test!(arg_order);
 file_test!(infer_poly);
+file_test!(capture_list_let);
