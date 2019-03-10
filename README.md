@@ -1,5 +1,8 @@
 # expressi
 
+[![Build Status](https://travis-ci.com/coord-e/expressi.svg?branch=develop)](https://travis-ci.com/coord-e/expressi)
+[![codecov](https://codecov.io/gh/coord-e/expressi/branch/develop/graph/badge.svg)](https://codecov.io/gh/coord-e/expressi)
+
 Expression-oriented toy programming language written in Rust
 
 ```
