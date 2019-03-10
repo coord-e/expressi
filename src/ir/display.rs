@@ -67,7 +67,7 @@ impl fmt::Display for Node {
             write!(f, " :: {}", ty)?;
             if !self.ty_table().is_empty() {
                 write!(f, "[")?;
-                for (t, _) in self.ty_table() {
+                for t in self.ty_table().keys() {
                     write!(f, "{}, ", t)?;
                 }
                 write!(f, "]")?;

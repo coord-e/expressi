@@ -4,6 +4,7 @@ use crate::ir;
 
 use failure::Error;
 
+#[derive(Default)]
 pub struct CheckCapture;
 
 fn collect_vars(

@@ -22,6 +22,7 @@ use super::type_var_gen::TypeVarGen;
 
 use failure::Error;
 
+#[derive(Default)]
 pub struct TypeInfer {
     tvg: TypeVarGen,
     instantiation_table: Vec<(Type, Subst)>,

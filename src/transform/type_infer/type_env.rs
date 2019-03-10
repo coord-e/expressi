@@ -17,7 +17,7 @@ use super::traits::Types;
 use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct TypeEnv(HashMap<String, PolyType>);
 
 impl Deref for TypeEnv {

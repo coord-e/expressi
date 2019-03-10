@@ -14,6 +14,7 @@ use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 
+#[cfg_attr(tarpaulin, skip)]
 fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
     let mut f = File::open(path).map_err(|_| CLIError::NotFound {
         path: path.to_owned(),
@@ -27,6 +28,7 @@ fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
     Ok(())
 }
 
+#[cfg_attr(tarpaulin, skip)]
 fn repl(jit: &mut jit::JIT, line_count: u32) -> Result<(), Error> {
     print!("{}: > ", line_count);
     io::stdout()
@@ -47,6 +49,7 @@ fn repl(jit: &mut jit::JIT, line_count: u32) -> Result<(), Error> {
     Ok(())
 }
 
+#[cfg_attr(tarpaulin, skip)]
 fn main() {
     let matches = App::new("expressi")
         .version("0.1")

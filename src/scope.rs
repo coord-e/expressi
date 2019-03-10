@@ -12,6 +12,7 @@ pub trait Scope {
     fn get(&self, key: &str) -> Option<Self::V>;
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct Env<T>(HashMap<String, T>);
 
 impl<T> Env<T> {
@@ -39,6 +40,7 @@ where
     }
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct ScopedEnv<T>(Vec<Env<T>>);
 
 impl<T> ScopedEnv<T> {
