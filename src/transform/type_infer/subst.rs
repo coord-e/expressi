@@ -66,7 +66,7 @@ impl Subst {
         let keys = self.keys().cloned().collect();
         Subst(
             self.iter()
-                .map(|(k, v)| (k.clone(), self.remove_indirection_ty(&keys, v)))
+                .map(|(k, v)| (*k, self.remove_indirection_ty(&keys, v)))
                 .collect(),
         )
     }
