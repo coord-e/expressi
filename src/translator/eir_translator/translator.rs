@@ -13,10 +13,15 @@ fn translate_monotype_function<'a>(
     body: ir::Node,
     capture_list: &HashMap<ir::Identifier, ir::Type>,
 ) -> Result<BasicValueEnum, Error> {
-    let function = builder.function_constant(&ty, param, capture_list, |builder| {
-        translate_eir(builder, body)?.expect_value()
-    })?;
-    Ok(function)
+    assert_eq!(Some(ty), body.type_());
+    match body.value() {
+        ir::Value::Literal(ir::Literal::Function(_, box body, _)) => {
+            builder.function_constant(&ty, param, capture_list, |builder| {
+                translate_eir(builder, body.clone())?.expect_value()
+            })
+        }
+        _ => unreachable!(),
+    }
 }
 
 pub fn translate_eir<'a>(
@@ -38,40 +43,26 @@ pub fn translate_eir<'a>(
             ir::Literal::Function(param, box body, capture_list) => {
                 // TODO: Add more sufficient implementation to check whether PolyValue is needed or not
                 if instantiation_table.is_empty() {
-                    translate_monotype_function(builder, param, &ty, body, &capture_list)?.into()
+                    builder
+                        .function_constant(&ty, param, &capture_list, |builder| {
+                            translate_eir(builder, body.clone())?.expect_value()
+                        })?
+                        .into()
                 } else if instantiation_table.len() == 1 {
                     let (ty, body) = instantiation_table.iter().next().unwrap();
-                    assert_eq!(Some(ty), body.type_());
-                    match body.value() {
-                        ir::Value::Literal(ir::Literal::Function(_, box body, _)) => {
-                            translate_monotype_function(
-                                builder,
-                                param,
-                                &ty,
-                                body.clone(),
-                                &capture_list,
-                            )?
-                            .into()
-                        }
-                        _ => unreachable!(),
-                    }
+                    translate_monotype_function(builder, param, &ty, body.clone(), &capture_list)?
+                        .into()
                 } else {
                     instantiation_table
                         .into_iter()
                         .map(|(ty, body)| {
-                            assert_eq!(Some(&ty), body.type_());
-                            match body.value() {
-                                ir::Value::Literal(ir::Literal::Function(_, box body, _)) => {
-                                    translate_monotype_function(
-                                        builder,
-                                        param.clone(),
-                                        &ty,
-                                        body.clone(),
-                                        &capture_list,
-                                    )
-                                }
-                                _ => unreachable!(),
-                            }
+                            translate_monotype_function(
+                                builder,
+                                param.clone(),
+                                &ty,
+                                body.clone(),
+                                &capture_list,
+                            )
                             .map(|v| (ty.clone(), v))
                         })
                         .collect::<Result<HashMap<_, _>, _>>()?
