@@ -9,7 +9,7 @@ addons:
       - llvm-7
 
 cache: cargo
-rust: nightly
+rust: nightly-2019-03-09
 
 before_script:
   - rustup component add clippy rustfmt
