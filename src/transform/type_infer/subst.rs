@@ -55,17 +55,17 @@ impl Subst {
         res
     }
 
-    fn normalize_ty(&self, ty: &Type) -> Type {
+    fn remove_indirection_ty(&self, ty: &Type) -> Type {
         if ty.ftv().is_disjoint(&self.keys().cloned().collect()) {
             return ty.clone();
         }
-        self.normalize_ty(&ty.apply(self))
+        self.remove_indirection_ty(&ty.apply(self))
     }
 
-    pub fn normalize(&self) -> Subst {
+    pub fn remove_indirection(&self) -> Subst {
         Subst(
             self.iter()
-                .map(|(k, v)| (k.clone(), self.normalize_ty(v)))
+                .map(|(k, v)| (k.clone(), self.remove_indirection_ty(v)))
                 .collect(),
         )
     }

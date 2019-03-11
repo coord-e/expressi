@@ -242,7 +242,7 @@ impl TypeInfer {
             .iter()
             .filter_map(|(k, v)| {
                 if k == &new_ty {
-                    let c = subst.compose(v).normalize();
+                    let c = subst.compose(v).remove_indirection();
                     let instance_value = self.inner_apply_subst_all(value, &c).unwrap();
                     let applied_ty = ty.apply(&c);
                     Some((applied_ty.clone(), instance_value.typed_node(applied_ty)))
