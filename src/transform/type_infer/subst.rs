@@ -54,4 +54,19 @@ impl Subst {
         }
         res
     }
+
+    fn normalize_ty(&self, ty: &Type) -> Type {
+        if ty.ftv().is_disjoint(&self.keys().cloned().collect()) {
+            return ty.clone();
+        }
+        self.normalize_ty(&ty.apply(self))
+    }
+
+    pub fn normalize(&self) -> Subst {
+        Subst(
+            self.iter()
+                .map(|(k, v)| (k.clone(), self.normalize_ty(v)))
+                .collect(),
+        )
+    }
 }
