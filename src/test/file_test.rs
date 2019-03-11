@@ -31,3 +31,4 @@ file_test!(arg_order);
 file_test!(infer_poly);
 file_test!(capture_list_let);
 file_test!(complex_subst_apply);
+file_test!(translate_polyfunc_one_candidate);
