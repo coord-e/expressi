@@ -37,8 +37,24 @@ pub fn translate_eir<'a>(
             ir::Literal::Empty => builder.empty_constant()?.into(),
             ir::Literal::Function(param, box body, capture_list) => {
                 // TODO: Add more sufficient implementation to check whether PolyValue is needed or not
-                if instantiation_table.len() <= 1 {
+                if instantiation_table.is_empty() {
                     translate_monotype_function(builder, param, &ty, body, &capture_list)?.into()
+                } else if instantiation_table.len() == 1 {
+                    let (ty, body) = instantiation_table.iter().next().unwrap();
+                    assert_eq!(Some(ty), body.type_());
+                    match body.value() {
+                        ir::Value::Literal(ir::Literal::Function(_, box body, _)) => {
+                            translate_monotype_function(
+                                builder,
+                                param,
+                                &ty,
+                                body.clone(),
+                                &capture_list,
+                            )?
+                            .into()
+                        }
+                        _ => unreachable!(),
+                    }
                 } else {
                     instantiation_table
                         .into_iter()
