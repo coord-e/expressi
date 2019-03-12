@@ -11,7 +11,8 @@ inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "llvm7-0" }
 clap = "2.32.0"
 failure = "0.1.2"
 ansi_term = "0.11.0"
-scopeguard = "0.3.3"
+rustyline = "3.0.0"
+dirs = "1.0.5"
 
 [build-dependencies]
 peg = "0.5"

@@ -5,6 +5,7 @@ pub mod ir;
 pub mod jit;
 pub mod parser;
 pub mod scope;
+pub mod shell;
 pub mod test;
 pub mod transform;
 pub mod translator;

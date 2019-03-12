@@ -9,9 +9,10 @@ use failure::Error;
 
 use expressi::error::CLIError;
 use expressi::jit;
+use expressi::shell::Shell;
 
+use std::env;
 use std::fs::File;
-use std::io;
 use std::io::prelude::*;
 
 #[cfg_attr(tarpaulin, skip)]
@@ -29,18 +30,8 @@ fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-fn repl(jit: &mut jit::JIT, line_count: u32) -> Result<(), Error> {
-    print!("{}: > ", line_count);
-    io::stdout()
-        .flush()
-        .map_err(|error| CLIError::IOError { error })?;
-
-    let mut buffer = String::new();
-    io::stdin()
-        .read_line(&mut buffer)
-        .map_err(|error| CLIError::IOError { error })?;
-
-    let func = jit.compile(&format!("repl_{}", line_count), &buffer.trim())?;
+fn repl(jit: &mut jit::JIT, buffer: &str) -> Result<(), Error> {
+    let func = jit.compile("repl", buffer.trim())?;
     println!(
         "{}{}",
         Blue.paint("-> "),
@@ -88,12 +79,20 @@ fn main() {
             eprintln!("{}: {}", Red.paint("Error"), e);
         }
     } else {
-        let mut line_count = 0;
+        let home = dirs::home_dir().unwrap_or_else(|| env::current_dir().unwrap());
+        let mut shell = Shell::new(home.join(".expressi_history"));
         loop {
-            if let Err(e) = repl(&mut jit, line_count) {
-                eprintln!("{}: {}", Red.paint("Error"), e);
+            match shell.get_next_line() {
+                Ok(line) => {
+                    if let Err(e) = repl(&mut jit, &line) {
+                        eprintln!("{}: {}", Red.paint("Error"), e);
+                    }
+                }
+                Err(err) => {
+                    eprintln!("{}: {}", Red.paint("Input Error"), err);
+                    break;
+                }
             }
-            line_count += 1;
         }
     }
 }
