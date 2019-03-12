@@ -1,6 +1,15 @@
 use failure::Error;
 use rustyline::Editor;
 
+
+fn count_bracket_pair(buffer: &str) -> i32 {
+    buffer.chars().map(|c| match c {
+        '(' | '{' | '[' => 1,
+        ')' | '}' | ']' => -1,
+        _ => 0
+    }).sum()
+}
+
 pub struct Shell {
     line_count: i32,
     editor: Editor<()>,
@@ -20,8 +29,8 @@ impl Shell {
         }
     }
 
-    pub fn get_next_line(&mut self) -> Result<String, Error> {
-        let prompt = format!("{}: > ", self.line_count);
+    fn get_next_single_line(&mut self, level: usize) -> Result<String, Error> {
+        let prompt = format!("{1}: > {0}", " ".repeat(level * 2), self.line_count);
         self.editor.readline(&prompt)
             .map(|line| {
                 self.editor.add_history_entry(line.as_ref());
@@ -29,6 +38,18 @@ impl Shell {
                 line
             })
             .map_err(Into::into)
+    }
+
+    pub fn get_next_line(&mut self) -> Result<String, Error> {
+        let mut level = i32::from(0);
+        let mut buffer = String::new();
+        loop {
+            let line = self.get_next_single_line(level as usize)?;
+            buffer += &line;
+            level = count_bracket_pair(&buffer);
+            if level <= 0 { break; }
+        }
+        Ok(buffer)
     }
 
     pub fn save_history(&mut self) -> Result<(), Error> {
