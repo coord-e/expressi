@@ -59,3 +59,38 @@ impl Shell {
             .map_err(Into::into)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::count_bracket_pair;
+
+    #[test]
+    fn bracket_pair_simple() {
+        assert_eq!(count_bracket_pair("()"), 0);
+    }
+
+    #[test]
+    fn bracket_pair_nothing() {
+        assert_eq!(count_bracket_pair("string"), 0);
+    }
+
+    #[test]
+    fn bracket_pair_opening() {
+        assert_eq!(count_bracket_pair("(("), 2);
+    }
+
+    #[test]
+    fn bracket_pair_closing() {
+        assert_eq!(count_bracket_pair("))"), -2);
+    }
+
+    #[test]
+    fn bracket_pair_mixed() {
+        assert_eq!(count_bracket_pair("(a(a)"), 1);
+    }
+
+    #[test]
+    fn bracket_pair_mixed_type() {
+        assert_eq!(count_bracket_pair("(a[(a{a})"), 2);
+    }
+}
