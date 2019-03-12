@@ -20,6 +20,7 @@ pub struct Shell {
     history_file: PathBuf,
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Shell {
     pub fn new<T: AsRef<Path>>(history_file: T) -> Shell {
         let mut editor = Editor::<()>::new();
