@@ -30,7 +30,7 @@ impl Shell {
     }
 
     fn get_next_single_line(&mut self, level: usize) -> Result<String, Error> {
-        let prompt = format!("{1}: > {0}", " ".repeat(level * 2), self.line_count);
+        let prompt = format!("{1}: > {0} ", ".".repeat(level * 2), self.line_count);
         self.editor.readline(&prompt)
             .map_err(Into::into)
     }
