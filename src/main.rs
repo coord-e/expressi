@@ -14,6 +14,7 @@ use expressi::shell::Shell;
 
 use std::fs::File;
 use std::io::prelude::*;
+use std::env;
 
 #[cfg_attr(tarpaulin, skip)]
 fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
@@ -79,7 +80,8 @@ fn main() {
             eprintln!("{}: {}", Red.paint("Error"), e);
         }
     } else {
-        let mut shell = Shell::new("history.txt");
+        let home = dirs::home_dir().unwrap_or(env::current_dir().unwrap());
+        let mut shell = Shell::new(home.join(".expressi_history"));
         loop {
             match shell.get_next_line() {
                 Ok(line) => {

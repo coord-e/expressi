@@ -1,6 +1,8 @@
 use failure::Error;
 use rustyline::Editor;
 
+use std::path::{Path, PathBuf};
+
 fn count_bracket_pair(buffer: &str) -> i32 {
     buffer
         .chars()
@@ -15,19 +17,19 @@ fn count_bracket_pair(buffer: &str) -> i32 {
 pub struct Shell {
     line_count: i32,
     editor: Editor<()>,
-    history_file: String,
+    history_file: PathBuf,
 }
 
 impl Shell {
-    pub fn new(history_file: &str) -> Shell {
+    pub fn new<T: AsRef<Path>>(history_file: T) -> Shell {
         let mut editor = Editor::<()>::new();
-        if editor.load_history(history_file).is_err() {
+        if editor.load_history(&history_file).is_err() {
             eprintln!("No previous history.");
         }
         Shell {
             line_count: 0,
             editor: editor,
-            history_file: history_file.to_string(),
+            history_file: history_file.as_ref().into(),
         }
     }
 
