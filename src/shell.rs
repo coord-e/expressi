@@ -36,13 +36,12 @@ impl Shell {
     }
 
     pub fn get_next_line(&mut self) -> Result<String, Error> {
-        let mut level = i32::from(0);
+        let mut level = None;
         let mut buffer = String::new();
-        loop {
-            let line = self.get_next_single_line(level as usize)?;
+        while level != Some(0) {
+            let line = self.get_next_single_line(level.unwrap_or(0) as usize)?;
             buffer += &line;
-            level = count_bracket_pair(&buffer);
-            if level <= 0 { break; }
+            level = Some(count_bracket_pair(&buffer));
         }
         self.editor.add_history_entry(buffer.as_ref());
         self.line_count += 1;
