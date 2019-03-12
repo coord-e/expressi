@@ -23,9 +23,8 @@ pub struct Shell {
 impl Shell {
     pub fn new<T: AsRef<Path>>(history_file: T) -> Shell {
         let mut editor = Editor::<()>::new();
-        if editor.load_history(&history_file).is_err() {
-            eprintln!("No previous history.");
-        }
+        let _ = editor.load_history(&history_file); // ignore error
+
         Shell {
             line_count: 0,
             editor: editor,

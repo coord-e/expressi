@@ -12,9 +12,9 @@ use expressi::error::CLIError;
 use expressi::jit;
 use expressi::shell::Shell;
 
+use std::env;
 use std::fs::File;
 use std::io::prelude::*;
-use std::env;
 
 #[cfg_attr(tarpaulin, skip)]
 fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
