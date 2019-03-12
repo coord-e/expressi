@@ -31,19 +31,20 @@ impl Shell {
         }
     }
 
-    fn get_next_single_line(&mut self, level: usize) -> Result<String, Error> {
-        let prompt = format!("{1}: > {0} ", ".".repeat(level * 2), self.line_count);
-        self.editor.readline(&prompt).map_err(Into::into)
+    fn get_next_single_line(&mut self, cont: &str, level: usize) -> Result<String, Error> {
+        let prompt = format!("{1}: > {0} ", "..".repeat(level), self.line_count);
+        let line = self.editor.readline(&prompt)?;
+        let buffer = cont.to_string() + &line;
+        let level = count_bracket_pair(&buffer);
+        if level > 0 {
+            self.get_next_single_line(&buffer, level as usize)
+        } else {
+            Ok(buffer)
+        }
     }
 
     pub fn get_next_line(&mut self) -> Result<String, Error> {
-        let mut level = None;
-        let mut buffer = String::new();
-        while level != Some(0) {
-            let line = self.get_next_single_line(level.unwrap_or(0) as usize)?;
-            buffer += &line;
-            level = Some(count_bracket_pair(&buffer));
-        }
+        let buffer = self.get_next_single_line("", 0)?;
         self.editor.add_history_entry(buffer.as_ref());
         self.save_history()?;
 
