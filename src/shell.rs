@@ -32,11 +32,6 @@ impl Shell {
     fn get_next_single_line(&mut self, level: usize) -> Result<String, Error> {
         let prompt = format!("{1}: > {0}", " ".repeat(level * 2), self.line_count);
         self.editor.readline(&prompt)
-            .map(|line| {
-                self.editor.add_history_entry(line.as_ref());
-                self.line_count += 1;
-                line
-            })
             .map_err(Into::into)
     }
 
@@ -49,6 +44,8 @@ impl Shell {
             level = count_bracket_pair(&buffer);
             if level <= 0 { break; }
         }
+        self.editor.add_history_entry(buffer.as_ref());
+        self.line_count += 1;
         Ok(buffer)
     }
 
