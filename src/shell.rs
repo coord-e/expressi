@@ -27,8 +27,8 @@ impl Shell {
 
         Shell {
             line_count: 0,
-            editor: editor,
             history_file: history_file.as_ref().into(),
+            editor,
         }
     }
 

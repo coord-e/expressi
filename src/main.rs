@@ -6,7 +6,6 @@ extern crate failure;
 use ansi_term::Colour::{Blue, Red};
 use clap::{App, Arg};
 use failure::Error;
-use rustyline::Editor;
 
 use expressi::error::CLIError;
 use expressi::jit;
@@ -80,7 +79,7 @@ fn main() {
             eprintln!("{}: {}", Red.paint("Error"), e);
         }
     } else {
-        let home = dirs::home_dir().unwrap_or(env::current_dir().unwrap());
+        let home = dirs::home_dir().unwrap_or_else(|| env::current_dir().unwrap());
         let mut shell = Shell::new(home.join(".expressi_history"));
         loop {
             match shell.get_next_line() {
