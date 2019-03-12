@@ -6,12 +6,12 @@ extern crate failure;
 use ansi_term::Colour::{Blue, Red};
 use clap::{App, Arg};
 use failure::Error;
+use rustyline::Editor;
 
 use expressi::error::CLIError;
 use expressi::jit;
 
 use std::fs::File;
-use std::io;
 use std::io::prelude::*;
 
 #[cfg_attr(tarpaulin, skip)]
@@ -29,18 +29,8 @@ fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-fn repl(jit: &mut jit::JIT, line_count: u32) -> Result<(), Error> {
-    print!("{}: > ", line_count);
-    io::stdout()
-        .flush()
-        .map_err(|error| CLIError::IOError { error })?;
-
-    let mut buffer = String::new();
-    io::stdin()
-        .read_line(&mut buffer)
-        .map_err(|error| CLIError::IOError { error })?;
-
-    let func = jit.compile(&format!("repl_{}", line_count), &buffer.trim())?;
+fn repl(jit: &mut jit::JIT, buffer: &str, line_count: u32) -> Result<(), Error> {
+    let func = jit.compile(&format!("repl_{}", line_count), buffer.trim())?;
     println!(
         "{}{}",
         Blue.paint("-> "),
@@ -89,11 +79,25 @@ fn main() {
         }
     } else {
         let mut line_count = 0;
+        let mut rl = Editor::<()>::new();
+        if rl.load_history("history.txt").is_err() {
+            eprintln!("No previous history.");
+        }
         loop {
-            if let Err(e) = repl(&mut jit, line_count) {
-                eprintln!("{}: {}", Red.paint("Error"), e);
+            match rl.readline(&format!("{}: > ", line_count)) {
+                Ok(line) => {
+                    rl.add_history_entry(line.as_ref());
+                    if let Err(e) = repl(&mut jit, &line, line_count) {
+                        eprintln!("{}: {}", Red.paint("Error"), e);
+                    }
+                }
+                Err(err) => {
+                    eprintln!("{}: {}", Red.paint("Input Error"), err);
+                    break;
+                }
             }
             line_count += 1;
         }
+        rl.save_history("history.txt").unwrap();
     }
 }
