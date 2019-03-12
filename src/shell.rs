@@ -45,6 +45,8 @@ impl Shell {
             level = Some(count_bracket_pair(&buffer));
         }
         self.editor.add_history_entry(buffer.as_ref());
+        self.save_history()?;
+
         self.line_count += 1;
         Ok(buffer)
     }

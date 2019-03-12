@@ -93,6 +93,5 @@ fn main() {
                 }
             }
         }
-        shell.save_history();
     }
 }
