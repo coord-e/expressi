@@ -12,7 +12,7 @@ use crate::ir::type_::{Type, TypeVarID};
 
 use super::traits::Types;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
 
 /// A substitution is a mapping from type variables to types.
@@ -53,5 +53,21 @@ impl Subst {
             res.entry(key.clone()).or_insert_with(|| value.clone());
         }
         res
+    }
+
+    fn remove_indirection_ty(&self, keys: &HashSet<TypeVarID>, ty: &Type) -> Type {
+        if ty.ftv().is_disjoint(keys) {
+            return ty.clone();
+        }
+        self.remove_indirection_ty(keys, &ty.apply(self))
+    }
+
+    pub fn remove_indirection(&self) -> Subst {
+        let keys = self.keys().cloned().collect();
+        Subst(
+            self.iter()
+                .map(|(k, v)| (*k, self.remove_indirection_ty(&keys, v)))
+                .collect(),
+        )
     }
 }

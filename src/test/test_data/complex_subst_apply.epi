@@ -1,0 +1,3 @@
+let flip = f -> (a, b) -> f(b, a);
+let f = (a, b) -> a + b * 2;
+flip(f)(2, 3)
