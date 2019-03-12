@@ -8,5 +8,6 @@ pub mod scope;
 pub mod test;
 pub mod transform;
 pub mod translator;
+pub mod shell;
 
 pub mod error;

@@ -10,6 +10,7 @@ use rustyline::Editor;
 
 use expressi::error::CLIError;
 use expressi::jit;
+use expressi::shell::Shell;
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -29,8 +30,8 @@ fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-fn repl(jit: &mut jit::JIT, buffer: &str, line_count: u32) -> Result<(), Error> {
-    let func = jit.compile(&format!("repl_{}", line_count), buffer.trim())?;
+fn repl(jit: &mut jit::JIT, buffer: &str) -> Result<(), Error> {
+    let func = jit.compile("repl", buffer.trim())?;
     println!(
         "{}{}",
         Blue.paint("-> "),
@@ -78,26 +79,18 @@ fn main() {
             eprintln!("{}: {}", Red.paint("Error"), e);
         }
     } else {
-        let mut line_count = 0;
-        let mut rl = Editor::<()>::new();
-        if rl.load_history("history.txt").is_err() {
-            eprintln!("No previous history.");
-        }
+       let mut shell = Shell::new("history.txt");
         loop {
-            match rl.readline(&format!("{}: > ", line_count)) {
-                Ok(line) => {
-                    rl.add_history_entry(line.as_ref());
-                    if let Err(e) = repl(&mut jit, &line, line_count) {
+            match shell.get_next_line() {
+                Ok(line) => if let Err(e) = repl(&mut jit, &line) {
                         eprintln!("{}: {}", Red.paint("Error"), e);
                     }
-                }
                 Err(err) => {
                     eprintln!("{}: {}", Red.paint("Input Error"), err);
                     break;
                 }
             }
-            line_count += 1;
         }
-        rl.save_history("history.txt").unwrap();
+        shell.save_history();
     }
 }
