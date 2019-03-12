@@ -1,19 +1,21 @@
 use failure::Error;
 use rustyline::Editor;
 
-
 fn count_bracket_pair(buffer: &str) -> i32 {
-    buffer.chars().map(|c| match c {
-        '(' | '{' | '[' => 1,
-        ')' | '}' | ']' => -1,
-        _ => 0
-    }).sum()
+    buffer
+        .chars()
+        .map(|c| match c {
+            '(' | '{' | '[' => 1,
+            ')' | '}' | ']' => -1,
+            _ => 0,
+        })
+        .sum()
 }
 
 pub struct Shell {
     line_count: i32,
     editor: Editor<()>,
-    history_file: String
+    history_file: String,
 }
 
 impl Shell {
@@ -25,14 +27,13 @@ impl Shell {
         Shell {
             line_count: 0,
             editor: editor,
-            history_file: history_file.to_string()
+            history_file: history_file.to_string(),
         }
     }
 
     fn get_next_single_line(&mut self, level: usize) -> Result<String, Error> {
         let prompt = format!("{1}: > {0} ", ".".repeat(level * 2), self.line_count);
-        self.editor.readline(&prompt)
-            .map_err(Into::into)
+        self.editor.readline(&prompt).map_err(Into::into)
     }
 
     pub fn get_next_line(&mut self) -> Result<String, Error> {
@@ -49,7 +50,8 @@ impl Shell {
     }
 
     pub fn save_history(&mut self) -> Result<(), Error> {
-        self.editor.save_history(&self.history_file)
+        self.editor
+            .save_history(&self.history_file)
             .map_err(Into::into)
     }
 }

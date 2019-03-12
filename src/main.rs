@@ -79,12 +79,14 @@ fn main() {
             eprintln!("{}: {}", Red.paint("Error"), e);
         }
     } else {
-       let mut shell = Shell::new("history.txt");
+        let mut shell = Shell::new("history.txt");
         loop {
             match shell.get_next_line() {
-                Ok(line) => if let Err(e) = repl(&mut jit, &line) {
+                Ok(line) => {
+                    if let Err(e) = repl(&mut jit, &line) {
                         eprintln!("{}: {}", Red.paint("Error"), e);
                     }
+                }
                 Err(err) => {
                     eprintln!("{}: {}", Red.paint("Input Error"), err);
                     break;
