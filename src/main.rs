@@ -1,11 +1,6 @@
-extern crate ansi_term;
-extern crate clap;
-extern crate expressi;
-extern crate failure;
-
 use ansi_term::Colour::{Blue, Red};
-use clap::{App, Arg};
 use failure::Error;
+use structopt::StructOpt;
 
 use expressi::error::CLIError;
 use expressi::jit;
@@ -14,11 +9,28 @@ use expressi::shell::Shell;
 use std::env;
 use std::fs::File;
 use std::io::prelude::*;
+use std::path::PathBuf;
+
+#[derive(StructOpt, Debug)]
+#[structopt(name = "expressi")]
+struct Opt {
+    #[structopt(name = "FILE", parse(from_os_str))]
+    input: Option<PathBuf>,
+
+    #[structopt(long = "print-ast")]
+    print_ast: bool,
+
+    #[structopt(long = "print-eir")]
+    print_eir: bool,
+
+    #[structopt(long = "print-ir")]
+    print_ir: bool,
+}
 
 #[cfg_attr(tarpaulin, skip)]
-fn compile_from_file(jit: &mut jit::JIT, path: &str) -> Result<(), Error> {
+fn compile_from_file(jit: &mut jit::JIT, path: &PathBuf) -> Result<(), Error> {
     let mut f = File::open(path).map_err(|_| CLIError::NotFound {
-        path: path.to_owned(),
+        path: path.clone(),
     })?;
     let mut contents = String::new();
     f.read_to_string(&mut contents)
@@ -42,40 +54,12 @@ fn repl(jit: &mut jit::JIT, buffer: &str) -> Result<(), Error> {
 
 #[cfg_attr(tarpaulin, skip)]
 fn main() {
-    let matches = App::new("expressi")
-        .version("0.1")
-        .author("coord.e <me@coord-e.com>")
-        .arg(
-            Arg::with_name("INPUT")
-                .help("Sets the input file to use")
-                .index(1),
-        )
-        .arg(
-            Arg::with_name("print-ast")
-                .long("print-ast")
-                .help("Print ast"),
-        )
-        .arg(
-            Arg::with_name("print-eir")
-                .long("print-eir")
-                .help("Print eir"),
-        )
-        .arg(
-            Arg::with_name("print-ir")
-                .long("print-ir")
-                .help("Print llvm ir"),
-        )
-        .get_matches();
+    let opt = Opt::from_args();
 
-    let mut jit = jit::JIT::new(
-        matches.is_present("print-ast"),
-        matches.is_present("print-eir"),
-        matches.is_present("print-ir"),
-    )
-    .unwrap();
+    let mut jit = jit::JIT::new(opt.print_ast, opt.print_eir, opt.print_ir).unwrap();
 
-    if matches.is_present("INPUT") {
-        if let Err(e) = compile_from_file(&mut jit, matches.value_of("INPUT").unwrap()) {
+    if let Some(file) = opt.input {
+        if let Err(e) = compile_from_file(&mut jit, &file) {
             eprintln!("{}: {}", Red.paint("Error"), e);
         }
     } else {

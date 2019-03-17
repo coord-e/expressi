@@ -1,4 +1,5 @@
 use std::io;
+use std::path::PathBuf;
 
 use failure::Fail;
 
@@ -92,8 +93,8 @@ pub enum CLIError {
     #[fail(display = "IO Error: {}", error)]
     IOError { error: io::Error },
 
-    #[fail(display = "File not found: {}", path)]
-    NotFound { path: String },
+    #[fail(display = "File not found: {:?}", path)]
+    NotFound { path: PathBuf },
 }
 
 #[derive(Fail, Debug)]
