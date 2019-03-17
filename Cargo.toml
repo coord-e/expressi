@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "llvm7-0" }
-clap = "2.32.0"
+structopt = "0.2.15"
 failure = "0.1.2"
 ansi_term = "0.11.0"
 rustyline = "3.0.0"
