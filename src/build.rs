@@ -28,6 +28,18 @@ arg_enum! {
 }
 
 #[derive(StructOpt)]
+pub struct CodegenOpt {
+    #[structopt(long = "triple" ])]
+    target_triple: Option<String>,
+
+    #[structopt(long = "cpu" ])]
+    target_cpu: Option<String>,
+
+    #[structopt(long = "cpu-features" ])]
+    target_cpu_features: Option<String>,
+}
+
+#[derive(StructOpt)]
 pub struct BuildOpt {
     #[structopt(name = "FILE", parse(from_os_str))]
     input: PathBuf,
@@ -38,6 +50,9 @@ pub struct BuildOpt {
     #[structopt(short = "t", long = "output-type", default_value = "object")]
     #[structopt(raw(possible_values = "&OutputType::variants()", case_insensitive = "true"))]
     output_type: OutputType,
+
+    #[structopt(flatten)]
+    codegen_opt: CodegenOpt,
 }
 
 pub fn build(opt: BuildOpt) -> Result<(), Error> {
@@ -45,6 +60,7 @@ pub fn build(opt: BuildOpt) -> Result<(), Error> {
         input,
         output,
         output_type,
+        codegen_opt,
     } = opt;
 
     Target::initialize_all(&InitializationConfig::default());
@@ -69,7 +85,20 @@ pub fn build(opt: BuildOpt) -> Result<(), Error> {
         }
         OutputType::Assembly | OutputType::Object => {
             let result = compile::compile_string(contents, "main")?;
-            let triple = TargetMachine::get_default_triple().to_string();
+
+            let (triple, default_cpu, default_features) =
+                if let Some(triple) = codegen_opt.target_triple {
+                    (triple, String::new(), String::new())
+                } else {
+                    (
+                        TargetMachine::get_default_triple().to_string(),
+                        TargetMachine::get_host_cpu_name().to_string(),
+                        TargetMachine::get_host_cpu_features().to_string(),
+                    )
+                };
+
+            let cpu = codegen_opt.target_cpu.unwrap_or(default_cpu);
+            let cpu_features = codegen_opt.target_cpu_features.unwrap_or(default_features);
             let target = Target::from_triple(&triple).map_err(|message| {
                 LLVMError::TargetInitializationFailed {
                     message: message.to_string(),
@@ -78,8 +107,8 @@ pub fn build(opt: BuildOpt) -> Result<(), Error> {
             let target_machine = target
                 .create_target_machine(
                     &triple,
-                    &TargetMachine::get_host_cpu_name().to_string(),
-                    &TargetMachine::get_host_cpu_features().to_string(),
+                    &cpu,
+                    &cpu_features,
                     OptimizationLevel::None,
                     RelocMode::PIC,
                     CodeModel::Default,
