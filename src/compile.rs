@@ -1,7 +1,10 @@
-use crate::error::LLVMError;
+use crate::error::{LLVMError, ParseError};
 use crate::ir;
 use crate::translator::eir_translator::Builder;
-use crate::translator::translate_eir;
+use crate::translator::{translate_ast, translate_eir};
+use crate::transform::{TypeInfer, CheckCapture};
+use crate::parser;
+use crate::expression::Expression;
 
 use failure::Error;
 
@@ -55,4 +58,19 @@ pub fn compile_eir(eir: ir::Node, module_name: &str) -> Result<CompilationResult
     builder.ret_int(evaluated_value)?;
 
     return Ok(CompilationResult::new(builder.take_module()));
+}
+
+pub fn compile_ast(ast: Expression, module_name: &str) -> Result<CompilationResult, Error> {
+    let eir = translate_ast(ast)?;
+
+    let ti = TypeInfer::new();
+    let cc = CheckCapture::new();
+    compile_eir(eir.apply(ti)?.apply(cc)?, module_name)
+}
+
+pub fn compile_string(source: &str, module_name: &str) -> Result<CompilationResult, Error> {
+    let ast = parser::parse(&source).map_err(|e| ParseError {
+        message: e.to_string(),
+    })?;
+    compile_ast(ast, module_name)
 }
