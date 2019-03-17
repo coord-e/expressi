@@ -1,7 +1,7 @@
 use crate::compile;
 use crate::error::LLVMError;
 use crate::parser;
-use crate::transform::{CheckCapture, TypeInfer};
+use crate::transform::TransformManager;
 use crate::translator::translate_ast;
 
 use failure::Error;
@@ -49,9 +49,7 @@ impl JIT {
             eprintln!("EIR:\n{}\n", eir);
         }
 
-        let ti = TypeInfer::new();
-        let cc = CheckCapture::new();
-        let transformed = eir.apply(ti)?.apply(cc)?;
+        let transformed = TransformManager::default().apply(eir)?;
 
         if self.print_eir {
             eprintln!("Transformed EIR:\n{}\n", transformed);

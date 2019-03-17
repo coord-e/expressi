@@ -2,7 +2,7 @@ use crate::error::LLVMError;
 use crate::expression::Expression;
 use crate::ir;
 use crate::parser;
-use crate::transform::{CheckCapture, TypeInfer};
+use crate::transform::TransformManager;
 use crate::translator::eir_translator::Builder;
 use crate::translator::{translate_ast, translate_eir};
 
@@ -63,9 +63,7 @@ pub fn compile_eir(eir: ir::Node, module_name: &str) -> Result<CompilationResult
 pub fn compile_ast(ast: Expression, module_name: &str) -> Result<CompilationResult, Error> {
     let eir = translate_ast(ast)?;
 
-    let ti = TypeInfer::new();
-    let cc = CheckCapture::new();
-    compile_eir(eir.apply(ti)?.apply(cc)?, module_name)
+    compile_eir(TransformManager::default().apply(eir)?, module_name)
 }
 
 pub fn compile_string(source: &str, module_name: &str) -> Result<CompilationResult, Error> {
