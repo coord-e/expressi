@@ -27,16 +27,70 @@ arg_enum! {
     }
 }
 
+arg_enum! {
+    enum OptimizationLevelOpt {
+        None,
+        Less,
+        Default,
+        Aggressive,
+    }
+}
+
+impl Into<OptimizationLevel> for OptimizationLevelOpt {
+    fn into(self) -> OptimizationLevel {
+        match self {
+            OptimizationLevelOpt::None => OptimizationLevel::None,
+            OptimizationLevelOpt::Less => OptimizationLevel::Less,
+            OptimizationLevelOpt::Default => OptimizationLevel::Default,
+            OptimizationLevelOpt::Aggressive => OptimizationLevel::Aggressive,
+        }
+    }
+}
+
+arg_enum! {
+    enum RelocModeOpt {
+        Default,
+        Static,
+        PIC,
+        DynamicNoPIC,
+    }
+}
+
+impl Into<RelocMode> for RelocModeOpt {
+    fn into(self) -> RelocMode {
+        match self {
+            RelocModeOpt::Default => RelocMode::Default,
+            RelocModeOpt::Static => RelocMode::Static,
+            RelocModeOpt::PIC => RelocMode::PIC,
+            RelocModeOpt::DynamicNoPIC => RelocMode::DynamicNoPic,
+        }
+    }
+}
+
 #[derive(StructOpt)]
 pub struct CodegenOpt {
-    #[structopt(long = "triple" ])]
+    #[structopt(long = "triple")]
     target_triple: Option<String>,
 
-    #[structopt(long = "cpu" ])]
+    #[structopt(long = "cpu")]
     target_cpu: Option<String>,
 
-    #[structopt(long = "cpu-features" ])]
+    #[structopt(long = "cpu-features")]
     target_cpu_features: Option<String>,
+
+    #[structopt(short = "O", long = "optimize", default_value = "default")]
+    #[structopt(raw(
+        possible_values = "&OptimizationLevelOpt::variants()",
+        case_insensitive = "true"
+    ))]
+    optimization_level: OptimizationLevelOpt,
+
+    #[structopt(long = "reloc", default_value = "default")]
+    #[structopt(raw(
+        possible_values = "&RelocModeOpt::variants()",
+        case_insensitive = "true"
+    ))]
+    reloc_mode: RelocModeOpt,
 }
 
 #[derive(StructOpt)]
@@ -109,8 +163,8 @@ pub fn build(opt: BuildOpt) -> Result<(), Error> {
                     &triple,
                     &cpu,
                     &cpu_features,
-                    OptimizationLevel::None,
-                    RelocMode::PIC,
+                    codegen_opt.optimization_level.into(),
+                    codegen_opt.reloc_mode.into(),
                     CodeModel::Default,
                 )
                 .ok_or_else(|| LLVMError::TargetInitializationFailed {
