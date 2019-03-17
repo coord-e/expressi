@@ -1,4 +1,4 @@
-use crate::error::{LLVMError, ParseError};
+use crate::error::LLVMError;
 use crate::expression::Expression;
 use crate::ir;
 use crate::parser;
@@ -69,8 +69,6 @@ pub fn compile_ast(ast: Expression, module_name: &str) -> Result<CompilationResu
 }
 
 pub fn compile_string(source: &str, module_name: &str) -> Result<CompilationResult, Error> {
-    let ast = parser::parse(&source).map_err(|e| ParseError {
-        message: e.to_string(),
-    })?;
+    let ast = parser::parse(&source)?;
     compile_ast(ast, module_name)
 }

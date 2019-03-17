@@ -1,12 +1,20 @@
+use crate::error::ParseError;
 use crate::expression::Expression;
+
+use failure::Error;
 
 #[allow(clippy::all)]
 pub mod syntax {
     include!(concat!(env!("OUT_DIR"), "/syntax.rs"));
 }
 
-pub fn parse(x: &str) -> Result<Expression, syntax::ParseError> {
-    syntax::expression(x)
+pub fn parse(x: &str) -> Result<Expression, Error> {
+    syntax::expression(x).map_err(|e| {
+        ParseError {
+            message: e.to_string(),
+        }
+        .into()
+    })
 }
 
 #[cfg(test)]

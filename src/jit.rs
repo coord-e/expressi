@@ -1,5 +1,5 @@
 use crate::compile;
-use crate::error::{LLVMError, ParseError};
+use crate::error::LLVMError;
 use crate::parser;
 use crate::transform::{CheckCapture, TypeInfer};
 use crate::translator::translate_ast;
@@ -37,9 +37,7 @@ impl JIT {
         input: &str,
     ) -> Result<execution_engine::JitFunction<CompiledFunc>, Error> {
         // Parse the string, producing AST nodes.
-        let ast = parser::parse(&input).map_err(|e| ParseError {
-            message: e.to_string(),
-        })?;
+        let ast = parser::parse(&input)?;
 
         if self.print_ast {
             eprintln!("AST:\n{:#?}", ast);
