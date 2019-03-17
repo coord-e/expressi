@@ -1,10 +1,10 @@
 use crate::error::{LLVMError, ParseError};
+use crate::expression::Expression;
 use crate::ir;
+use crate::parser;
+use crate::transform::{CheckCapture, TypeInfer};
 use crate::translator::eir_translator::Builder;
 use crate::translator::{translate_ast, translate_eir};
-use crate::transform::{TypeInfer, CheckCapture};
-use crate::parser;
-use crate::expression::Expression;
 
 use failure::Error;
 

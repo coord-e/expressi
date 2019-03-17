@@ -1,5 +1,6 @@
 #![feature(box_syntax, box_patterns)]
 
+pub mod build;
 pub mod compile;
 pub mod expression;
 pub mod ir;
