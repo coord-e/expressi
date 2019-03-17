@@ -91,6 +91,9 @@ pub struct CodegenOpt {
         case_insensitive = "true"
     ))]
     reloc_mode: RelocModeOpt,
+
+    #[structopt(long = "emit-func-name", default_value = "main")]
+    emit_func_name: String,
 }
 
 #[derive(StructOpt)]
@@ -134,11 +137,11 @@ pub fn build(opt: BuildOpt) -> Result<(), Error> {
             format!("{}", eir).into()
         }
         OutputType::IR => {
-            let result = compile::compile_string(contents, "main")?;
+            let result = compile::compile_string(contents, &codegen_opt.emit_func_name)?;
             result.llvm_ir().into()
         }
         OutputType::Assembly | OutputType::Object => {
-            let result = compile::compile_string(contents, "main")?;
+            let result = compile::compile_string(contents, &codegen_opt.emit_func_name)?;
 
             let (triple, default_cpu, default_features) =
                 if let Some(triple) = codegen_opt.target_triple {
