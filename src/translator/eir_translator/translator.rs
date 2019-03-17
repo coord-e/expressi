@@ -6,8 +6,8 @@ use failure::Error;
 use inkwell::values::BasicValueEnum;
 use std::collections::HashMap;
 
-fn translate_monotype_function<'a>(
-    builder: &mut Builder<'a>,
+fn translate_monotype_function(
+    builder: &mut Builder,
     param: String,
     ty: &ir::Type,
     body: ir::Node,
@@ -24,10 +24,7 @@ fn translate_monotype_function<'a>(
     }
 }
 
-pub fn translate_eir<'a>(
-    builder: &mut Builder<'a>,
-    eir: ir::Node,
-) -> Result<Atom<BasicValueEnum>, Error> {
+pub fn translate_eir(builder: &mut Builder, eir: ir::Node) -> Result<Atom<BasicValueEnum>, Error> {
     let ir::Node {
         value,
         type_,
