@@ -7,7 +7,7 @@ use inkwell::OptimizationLevel;
 use structopt::clap::{_clap_count_exprs, arg_enum};
 use structopt::StructOpt;
 
-use crate::compile;
+use super::llvm;
 use crate::error::{CLIError, LLVMError};
 use crate::parser;
 use crate::transform::TransformManager;
@@ -137,11 +137,11 @@ pub fn build(opt: BuildOpt) -> Result<(), Error> {
             format!("{}", eir).into()
         }
         OutputType::IR => {
-            let result = compile::compile_string(contents, &codegen_opt.emit_func_name)?;
+            let result = llvm::compile_string(contents, &codegen_opt.emit_func_name)?;
             result.llvm_ir().into()
         }
         OutputType::Assembly | OutputType::Object => {
-            let result = compile::compile_string(contents, &codegen_opt.emit_func_name)?;
+            let result = llvm::compile_string(contents, &codegen_opt.emit_func_name)?;
 
             let (triple, default_cpu, default_features) =
                 if let Some(triple) = codegen_opt.target_triple {

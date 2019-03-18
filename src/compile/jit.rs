@@ -1,4 +1,4 @@
-use crate::compile;
+use super::llvm;
 use crate::error::LLVMError;
 use crate::parser;
 use crate::transform::TransformManager;
@@ -55,7 +55,7 @@ impl JIT {
             eprintln!("Transformed EIR:\n{}\n", transformed);
         }
 
-        let result = compile::compile_eir(transformed, name)?;
+        let result = llvm::compile_eir(transformed, name)?;
 
         if self.print_ir {
             eprintln!("LLVM IR: \n{}", result.llvm_ir());

@@ -1,10 +1,8 @@
 #![feature(box_syntax, box_patterns)]
 
-pub mod build;
 pub mod compile;
 pub mod expression;
 pub mod ir;
-pub mod jit;
 pub mod parser;
 pub mod scope;
 pub mod shell;

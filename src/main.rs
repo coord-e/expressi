@@ -2,9 +2,9 @@ use ansi_term::Colour::{Blue, Red};
 use failure::Error;
 use structopt::StructOpt;
 
-use expressi::build::{self, BuildOpt};
+use expressi::compile::build::{self, BuildOpt};
+use expressi::compile::jit;
 use expressi::error::CLIError;
-use expressi::jit;
 use expressi::shell::Shell;
 
 use std::env;
