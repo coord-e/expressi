@@ -3,7 +3,7 @@ use failure::Error;
 
 use super::error::CLIError;
 use super::opts::{BuildOpt, OutputType};
-use crate::compile::{codegen, target_machine};
+use crate::codegen::{compile, target_machine};
 use crate::parser;
 use crate::transform::TransformManager;
 use crate::translator::translate_ast;
@@ -19,7 +19,7 @@ pub fn build(opt: &BuildOpt) -> Result<(), Error> {
         codegen_opt,
     } = opt;
 
-    codegen::initialize_all()?;
+    compile::initialize_all()?;
     let mut f = File::open(&input).map_err(|_| CLIError::NotFound {
         path: input.clone(),
     })?;
@@ -36,11 +36,11 @@ pub fn build(opt: &BuildOpt) -> Result<(), Error> {
             format!("{}", eir).into()
         }
         OutputType::IR => {
-            let result = codegen::compile_string(contents, &codegen_opt.emit_func_name)?;
+            let result = compile::compile_string(contents, &codegen_opt.emit_func_name)?;
             result.llvm_ir().into()
         }
         OutputType::Assembly | OutputType::Object => {
-            let result = codegen::compile_string(contents, &codegen_opt.emit_func_name)?;
+            let result = compile::compile_string(contents, &codegen_opt.emit_func_name)?;
 
             let target_machine = target_machine::create_target_machine(
                 codegen_opt.target_triple.as_ref(),

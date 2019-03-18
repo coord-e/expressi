@@ -1,7 +1,7 @@
 #![feature(box_syntax, box_patterns, never_type)]
 
 pub mod cli;
-pub mod compile;
+pub mod codegen;
 pub mod expression;
 pub mod ir;
 pub mod parser;
