@@ -83,7 +83,9 @@ pub fn build(opt: &BuildOpt) -> Result<(), Error> {
             };
             let memory_buffer = target_machine
                 .write_to_memory_buffer(result.module(), filetype)
-                .unwrap();
+                .map_err(|message| LLVMError::MemoryBufferError {
+                    message: message.to_string(),
+                })?;
             memory_buffer.as_slice().into()
         }
     };

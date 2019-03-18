@@ -86,6 +86,9 @@ pub enum LLVMError {
 
     #[fail(display = "Failed to create JIT execution engine")]
     FailedToCreateJIT,
+
+    #[fail(display = "Failed to write the module to a buffer: {}", message)]
+    MemoryBufferError { message: String },
 }
 
 #[derive(Fail, Debug)]
