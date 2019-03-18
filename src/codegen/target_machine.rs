@@ -32,8 +32,8 @@ pub fn create_target_machine(
             &triple,
             &cpu,
             &cpu_features,
-            optimization_level.into(),
-            reloc_mode.into(),
+            optimization_level,
+            reloc_mode,
             CodeModel::Default,
         )
         .ok_or_else(|| {

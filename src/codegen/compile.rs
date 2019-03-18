@@ -29,7 +29,7 @@ pub fn compile_eir(eir: ir::Node, module_name: &str) -> Result<CompilationResult
     let evaluated_value = translate_eir(&mut builder, eir)?.expect_value()?;
     builder.ret_int(evaluated_value)?;
 
-    return Ok(CompilationResult::new(builder.take_module()));
+    Ok(CompilationResult::new(builder.take_module()))
 }
 
 pub fn compile_ast(ast: Expression, module_name: &str) -> Result<CompilationResult, Error> {
