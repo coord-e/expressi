@@ -4,7 +4,7 @@ use inkwell::targets::{InitializationConfig, Target};
 
 use super::error::CLIError;
 use super::opts::{BuildOpt, OutputType};
-use crate::compile::{codegen, llvm};
+use crate::compile::{codegen, target_machine};
 use crate::parser;
 use crate::transform::TransformManager;
 use crate::translator::translate_ast;
@@ -37,13 +37,13 @@ pub fn build(opt: &BuildOpt) -> Result<(), Error> {
             format!("{}", eir).into()
         }
         OutputType::IR => {
-            let result = llvm::compile_string(contents, &codegen_opt.emit_func_name)?;
+            let result = codegen::compile_string(contents, &codegen_opt.emit_func_name)?;
             result.llvm_ir().into()
         }
         OutputType::Assembly | OutputType::Object => {
-            let result = llvm::compile_string(contents, &codegen_opt.emit_func_name)?;
+            let result = codegen::compile_string(contents, &codegen_opt.emit_func_name)?;
 
-            let target_machine = codegen::create_target_machine(
+            let target_machine = target_machine::create_target_machine(
                 codegen_opt.target_triple.as_ref(),
                 codegen_opt.target_cpu.as_ref(),
                 codegen_opt.target_cpu_features.as_ref(),

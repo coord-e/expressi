@@ -1,8 +1,8 @@
 use super::error::CLIError;
 use super::opts::RunOpt;
 use super::shell::Shell;
+use crate::compile::codegen;
 use crate::compile::error::LLVMError;
-use crate::compile::llvm;
 use crate::parser;
 use crate::transform::TransformManager;
 use crate::translator::translate_ast;
@@ -76,7 +76,7 @@ pub fn compile_jit(
         eprintln!("Transformed EIR:\n{}\n", transformed);
     }
 
-    let result = llvm::compile_eir(transformed, module_name)?;
+    let result = codegen::compile_eir(transformed, module_name)?;
 
     if opt.print_ir {
         eprintln!("LLVM IR: \n{}", result.llvm_ir());
