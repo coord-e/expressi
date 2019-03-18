@@ -1,7 +1,7 @@
 use super::error::CLIError;
 use super::opts::RunOpt;
 use super::shell::Shell;
-use crate::codegen::compile;
+use crate::codegen::{compile, initialization};
 use crate::parser;
 use crate::transform::TransformManager;
 use crate::translator::translate_ast;
@@ -17,7 +17,7 @@ use std::io::prelude::*;
 use std::process;
 
 pub fn run(opt: &RunOpt) -> Result<!, Error> {
-    compile::initialize_native()?;
+    initialization::initialize_native()?;
 
     if let Some(path) = &opt.input {
         let mut f = File::open(path).map_err(|_| CLIError::NotFound { path: path.clone() })?;

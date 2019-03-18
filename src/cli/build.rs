@@ -3,7 +3,7 @@ use failure::Error;
 
 use super::error::CLIError;
 use super::opts::{BuildOpt, OutputType};
-use crate::codegen::{compile, target_machine};
+use crate::codegen::{compile, initialization, target_machine};
 use crate::parser;
 use crate::transform::TransformManager;
 use crate::translator::translate_ast;
@@ -19,7 +19,7 @@ pub fn build(opt: &BuildOpt) -> Result<(), Error> {
         codegen_opt,
     } = opt;
 
-    compile::initialize_all()?;
+    initialization::initialize_all()?;
     let mut f = File::open(&input).map_err(|_| CLIError::NotFound {
         path: input.clone(),
     })?;
