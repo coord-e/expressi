@@ -23,27 +23,39 @@ mod tests {
 
     #[test]
     fn skip_space() {
-        assert_eq!(parse("1 +\n1 "), parse("1+1"))
+        assert_eq!(parse("1 +\n1 ").unwrap(), parse("1+1").unwrap())
     }
 
     #[test]
     fn skip_comment() {
-        assert_eq!(parse("1+/* This is a comment */1"), parse("1+1"))
+        assert_eq!(
+            parse("1+/* This is a comment */1").unwrap(),
+            parse("1+1").unwrap()
+        )
     }
 
     #[test]
     fn skip_comment_multiline() {
-        assert_eq!(parse("1+/* This is \na comment */1"), parse("1+1"))
+        assert_eq!(
+            parse("1+/* This is \na comment */1").unwrap(),
+            parse("1+1").unwrap()
+        )
     }
 
     #[test]
     fn skip_line_comment() {
-        assert_eq!(parse("1+1// This is a comment"), parse("1+1"))
+        assert_eq!(
+            parse("1+1// This is a comment").unwrap(),
+            parse("1+1").unwrap()
+        )
     }
 
     #[test]
     fn skip_line_comment_follow() {
-        assert_eq!(parse("1+1;// This is a comment\n1+1"), parse("1+1;1+1"))
+        assert_eq!(
+            parse("1+1;// This is a comment\n1+1").unwrap(),
+            parse("1+1;1+1").unwrap()
+        )
     }
 
     mod literal {
@@ -52,28 +64,31 @@ mod tests {
 
         #[test]
         fn number() {
-            assert_eq!(parse("0"), Ok(Expression::Number(0)))
+            assert_eq!(parse("0").unwrap(), Expression::Number(0))
         }
 
         #[test]
         fn boolean() {
-            assert_eq!(parse("true"), Ok(Expression::Boolean(true)));
-            assert_eq!(parse("false"), Ok(Expression::Boolean(false)));
+            assert_eq!(parse("true").unwrap(), Expression::Boolean(true));
+            assert_eq!(parse("false").unwrap(), Expression::Boolean(false));
         }
 
         #[test]
         fn multidigit_number() {
-            assert_eq!(parse("10"), Ok(Expression::Number(10)))
+            assert_eq!(parse("10").unwrap(), Expression::Number(10))
         }
 
         #[test]
         fn identifier() {
-            assert_eq!(parse("abc"), Ok(Expression::Identifier("abc".to_string())))
+            assert_eq!(
+                parse("abc").unwrap(),
+                Expression::Identifier("abc".to_string())
+            )
         }
 
         #[test]
         fn onechar_identifier() {
-            assert_eq!(parse("a"), Ok(Expression::Identifier("a".to_string())))
+            assert_eq!(parse("a").unwrap(), Expression::Identifier("a".to_string()))
         }
 
         #[test]
@@ -90,12 +105,12 @@ mod tests {
         macro_rules! test_binop {
             ($x:expr, $op:expr) => {
                 assert_eq!(
-                    parse($x),
-                    Ok(Expression::BinOp(
+                    parse($x).unwrap(),
+                    Expression::BinOp(
                         $op,
                         Box::new(Expression::Number(0)),
                         Box::new(Expression::Number(0))
-                    ))
+                    )
                 )
             };
         }
@@ -142,8 +157,8 @@ mod tests {
         #[test]
         fn operator_index_multi() {
             assert_eq!(
-                parse("a[0][0]"),
-                Ok(Expression::BinOp(
+                parse("a[0][0]").unwrap(),
+                Expression::BinOp(
                     Operator::Index,
                     Box::new(Expression::BinOp(
                         Operator::Index,
@@ -151,96 +166,96 @@ mod tests {
                         Box::new(Expression::Number(0))
                     )),
                     Box::new(Expression::Number(0))
-                ))
+                )
             )
         }
 
         #[test]
         fn apply() {
             assert_eq!(
-                parse("a(0)"),
-                Ok(Expression::Apply(
+                parse("a(0)").unwrap(),
+                Expression::Apply(
                     Box::new(Expression::Identifier("a".to_owned())),
                     Box::new(Expression::Number(0))
-                ))
+                )
             )
         }
 
         #[test]
         fn apply_spaced() {
             assert_eq!(
-                parse("a (0)"),
-                Ok(Expression::Apply(
+                parse("a (0)").unwrap(),
+                Expression::Apply(
                     Box::new(Expression::Identifier("a".to_owned())),
                     Box::new(Expression::Number(0))
-                ))
+                )
             )
         }
 
         #[test]
         fn apply_with_outer_bracket() {
             assert_eq!(
-                parse("( a(0) )"),
-                Ok(Expression::Apply(
+                parse("( a(0) )").unwrap(),
+                Expression::Apply(
                     Box::new(Expression::Identifier("a".to_owned())),
                     Box::new(Expression::Number(0))
-                ))
+                )
             )
         }
 
         #[test]
         fn apply_multi() {
             assert_eq!(
-                parse("a(0)(0)"),
-                Ok(Expression::Apply(
+                parse("a(0)(0)").unwrap(),
+                Expression::Apply(
                     Box::new(Expression::Apply(
                         Box::new(Expression::Identifier("a".to_owned())),
                         Box::new(Expression::Number(0))
                     )),
                     Box::new(Expression::Number(0))
-                ))
+                )
             )
         }
 
         #[test]
         fn assign() {
             assert_eq!(
-                parse("a=0"),
-                Ok(Expression::Assign(
+                parse("a=0").unwrap(),
+                Expression::Assign(
                     Box::new(Expression::Identifier("a".to_owned())),
                     Box::new(Expression::Number(0))
-                ))
+                )
             )
         }
 
         #[test]
         fn follow() {
             assert_eq!(
-                parse("0;0"),
-                Ok(Expression::Follow(
+                parse("0;0").unwrap(),
+                Expression::Follow(
                     Box::new(Expression::Number(0)),
                     Box::new(Expression::Number(0))
-                ))
+                )
             )
         }
 
         #[test]
         fn ifelse() {
             assert_eq!(
-                parse("if true 0 else 0"),
-                Ok(Expression::IfElse(
+                parse("if true 0 else 0").unwrap(),
+                Expression::IfElse(
                     Box::new(Expression::Boolean(true)),
                     Box::new(Expression::Number(0)),
                     Box::new(Expression::Number(0))
-                ))
+                )
             )
         }
 
         #[test]
         fn precedence_arith() {
             assert_eq!(
-                parse("0+0*0"),
-                Ok(Expression::BinOp(
+                parse("0+0*0").unwrap(),
+                Expression::BinOp(
                     Operator::Add,
                     Box::new(Expression::Number(0)),
                     Box::new(Expression::BinOp(
@@ -248,15 +263,15 @@ mod tests {
                         Box::new(Expression::Number(0)),
                         Box::new(Expression::Number(0))
                     ))
-                ))
+                )
             )
         }
 
         #[test]
         fn precedence_arith_bracket() {
             assert_eq!(
-                parse("(0+0)*0"),
-                Ok(Expression::BinOp(
+                parse("(0+0)*0").unwrap(),
+                Expression::BinOp(
                     Operator::Mul,
                     Box::new(Expression::BinOp(
                         Operator::Add,
@@ -264,50 +279,50 @@ mod tests {
                         Box::new(Expression::Number(0))
                     )),
                     Box::new(Expression::Number(0))
-                ))
+                )
             )
         }
 
         #[test]
         fn precedence_assign_follow() {
             assert_eq!(
-                parse("a=0;0"),
-                Ok(Expression::Follow(
+                parse("a=0;0").unwrap(),
+                Expression::Follow(
                     Box::new(Expression::Assign(
                         Box::new(Expression::Identifier("a".to_owned())),
                         Box::new(Expression::Number(0))
                     )),
                     Box::new(Expression::Number(0))
-                ))
+                )
             )
         }
 
         #[test]
         fn precedence_ifelse_follow() {
             assert_eq!(
-                parse("if true 0 else 0;0"),
-                Ok(Expression::Follow(
+                parse("if true 0 else 0;0").unwrap(),
+                Expression::Follow(
                     Box::new(Expression::IfElse(
                         Box::new(Expression::Boolean(true)),
                         Box::new(Expression::Number(0)),
                         Box::new(Expression::Number(0))
                     )),
                     Box::new(Expression::Number(0))
-                ))
+                )
             )
         }
 
         #[test]
         fn precedence_function_follow() {
             assert_eq!(
-                parse("a -> a; 0"),
-                Ok(Expression::Follow(
+                parse("a -> a; 0").unwrap(),
+                Expression::Follow(
                     Box::new(Expression::Function(
                         "a".to_string(),
                         Box::new(Expression::Identifier("a".to_string()))
                     )),
                     Box::new(Expression::Number(0))
-                ))
+                )
             )
         }
     }
@@ -317,12 +332,12 @@ mod tests {
 
         #[test]
         fn function_params() {
-            assert_eq!(parse("(a,b,c)->0"), parse("a->b->c->0"))
+            assert_eq!(parse("(a,b,c)->0").unwrap(), parse("a->b->c->0").unwrap())
         }
 
         #[test]
         fn application() {
-            assert_eq!(parse("f(a,b,c)"), parse("f(a)(b)(c)"))
+            assert_eq!(parse("f(a,b,c)").unwrap(), parse("f(a)(b)(c)").unwrap())
         }
     }
 }

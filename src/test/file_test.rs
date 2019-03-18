@@ -2,16 +2,15 @@ macro_rules! file_test {
     ($name: ident) => {
         #[test]
         fn $name() {
-            use crate::jit::JIT;
-
-            let mut jit = JIT::new(false, false, false).unwrap();
+            use crate::codegen::compile;
+            use inkwell::OptimizationLevel;
 
             let contents = include_str!(concat!("test_data/", stringify!($name), ".epi"));
-            match jit.compile("test_input", &contents.trim()) {
-                Ok(func) => {
-                    let result = unsafe { func.call() };
+            match compile::compile_string(&contents.trim(), "test_input") {
+                Ok(result) => {
+                    let func = result.emit_function(OptimizationLevel::None).unwrap();
                     assert_eq!(
-                        result,
+                        unsafe { func.call() },
                         include!(concat!("test_data/", stringify!($name), ".ans"))
                     );
                 }
