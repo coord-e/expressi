@@ -2,8 +2,10 @@ macro_rules! file_test {
     ($name: ident) => {
         #[test]
         fn $name() {
-            use crate::codegen::compile;
+            use crate::codegen::{compile, initialization};
             use inkwell::OptimizationLevel;
+
+            initialization::initialize_native().unwrap();
 
             let contents = include_str!(concat!("test_data/", stringify!($name), ".epi"));
             match compile::compile_string(&contents.trim(), "test_input") {
