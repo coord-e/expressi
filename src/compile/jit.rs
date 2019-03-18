@@ -11,7 +11,6 @@ use failure::Error;
 use ansi_term::Colour::{Blue, Red};
 use inkwell::execution_engine;
 use inkwell::targets::{InitializationConfig, Target};
-use inkwell::OptimizationLevel;
 
 use std::env;
 use std::fs::File;
@@ -86,7 +85,7 @@ pub fn compile_jit(
 
     let execution_engine = result
         .module()
-        .create_jit_execution_engine(OptimizationLevel::None)
+        .create_jit_execution_engine(opt.optimization_level.into())
         .map_err(|_| LLVMError::FailedToCreateJIT)?;
 
     unsafe { execution_engine.get_function(module_name) }.map_err(Into::into)

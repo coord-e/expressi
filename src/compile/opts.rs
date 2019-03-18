@@ -18,6 +18,13 @@ pub struct RunOpt {
 
     #[structopt(long = "print-ir")]
     pub print_ir: bool,
+
+    #[structopt(short = "O", long = "optimize", default_value = "default")]
+    #[structopt(raw(
+        possible_values = "&OptimizationLevelOpt::variants()",
+        case_insensitive = "true"
+    ))]
+    pub optimization_level: OptimizationLevelOpt,
 }
 
 arg_enum! {
