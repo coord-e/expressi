@@ -1,4 +1,4 @@
-use crate::error::LLVMError;
+use super::error::LLVMError;
 use crate::expression::Expression;
 use crate::ir;
 use crate::parser;
@@ -8,7 +8,9 @@ use crate::translator::{translate_ast, translate_eir};
 
 use failure::Error;
 
-use inkwell::{context, module};
+use inkwell::execution_engine::JitFunction;
+use inkwell::targets::{FileType, TargetMachine};
+use inkwell::{context, module, OptimizationLevel};
 
 pub struct CompilationResult {
     module: module::Module,
@@ -35,6 +37,43 @@ impl CompilationResult {
             .into());
         }
         Ok(())
+    }
+
+    pub fn emit_assembly(&self, target_machine: &TargetMachine) -> Result<String, Error> {
+        target_machine
+            .write_to_memory_buffer(self.module(), FileType::Assembly)
+            .map_err(|message| {
+                LLVMError::MemoryBufferError {
+                    message: message.to_string(),
+                }
+                .into()
+            })
+            .and_then(|buffer| String::from_utf8(buffer.as_slice().to_vec()).map_err(Into::into))
+    }
+
+    pub fn emit_object(&self, target_machine: &TargetMachine) -> Result<Vec<u8>, Error> {
+        target_machine
+            .write_to_memory_buffer(self.module(), FileType::Object)
+            .map_err(|message| {
+                LLVMError::MemoryBufferError {
+                    message: message.to_string(),
+                }
+                .into()
+            })
+            .map(|buffer| buffer.as_slice().to_vec())
+    }
+
+    pub fn emit_function(
+        &self,
+        opt: OptimizationLevel,
+    ) -> Result<JitFunction<unsafe extern "C" fn() -> u64>, Error> {
+        let execution_engine = self
+            .module()
+            .create_jit_execution_engine(opt)
+            .map_err(|_| LLVMError::FailedToCreateJIT)?;
+
+        unsafe { execution_engine.get_function(self.module().get_name().to_str()?) }
+            .map_err(Into::into)
     }
 }
 

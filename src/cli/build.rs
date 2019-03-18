@@ -1,11 +1,10 @@
 use bytes::Bytes;
 use failure::Error;
-use inkwell::targets::{CodeModel, FileType, InitializationConfig, Target, TargetMachine};
+use inkwell::targets::{InitializationConfig, Target};
 
 use super::error::CLIError;
 use super::opts::{BuildOpt, OutputType};
-use crate::compile::llvm;
-use crate::error::LLVMError;
+use crate::compile::{codegen, llvm};
 use crate::parser;
 use crate::transform::TransformManager;
 use crate::translator::translate_ast;
@@ -44,50 +43,19 @@ pub fn build(opt: &BuildOpt) -> Result<(), Error> {
         OutputType::Assembly | OutputType::Object => {
             let result = llvm::compile_string(contents, &codegen_opt.emit_func_name)?;
 
-            let (triple, default_cpu, default_features) =
-                if let Some(triple) = &codegen_opt.target_triple {
-                    (triple.clone(), String::new(), String::new())
-                } else {
-                    (
-                        TargetMachine::get_default_triple().to_string(),
-                        TargetMachine::get_host_cpu_name().to_string(),
-                        TargetMachine::get_host_cpu_features().to_string(),
-                    )
-                };
+            let target_machine = codegen::create_target_machine(
+                codegen_opt.target_triple.as_ref(),
+                codegen_opt.target_cpu.as_ref(),
+                codegen_opt.target_cpu_features.as_ref(),
+                codegen_opt.optimization_level.into(),
+                codegen_opt.reloc_mode.into(),
+            )?;
 
-            let cpu = codegen_opt.target_cpu.as_ref().unwrap_or(&default_cpu);
-            let cpu_features = codegen_opt
-                .target_cpu_features
-                .as_ref()
-                .unwrap_or(&default_features);
-            let target = Target::from_triple(&triple).map_err(|message| {
-                LLVMError::TargetInitializationFailed {
-                    message: message.to_string(),
-                }
-            })?;
-            let target_machine = target
-                .create_target_machine(
-                    &triple,
-                    &cpu,
-                    &cpu_features,
-                    codegen_opt.optimization_level.into(),
-                    codegen_opt.reloc_mode.into(),
-                    CodeModel::Default,
-                )
-                .ok_or_else(|| LLVMError::TargetInitializationFailed {
-                    message: "Failed to create TargetMachine'".to_string(),
-                })?;
-            let filetype = match output_type {
-                OutputType::Assembly => FileType::Assembly,
-                OutputType::Object => FileType::Object,
+            match output_type {
+                OutputType::Assembly => result.emit_assembly(&target_machine)?.into(),
+                OutputType::Object => result.emit_object(&target_machine)?.into(),
                 _ => unreachable!(),
-            };
-            let memory_buffer = target_machine
-                .write_to_memory_buffer(result.module(), filetype)
-                .map_err(|message| LLVMError::MemoryBufferError {
-                    message: message.to_string(),
-                })?;
-            memory_buffer.as_slice().into()
+            }
         }
     };
     let mut f = File::create(output)?;

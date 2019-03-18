@@ -1,8 +1,8 @@
 use super::error::CLIError;
 use super::opts::RunOpt;
 use super::shell::Shell;
+use crate::compile::error::LLVMError;
 use crate::compile::llvm;
-use crate::error::LLVMError;
 use crate::parser;
 use crate::transform::TransformManager;
 use crate::translator::translate_ast;
@@ -84,10 +84,5 @@ pub fn compile_jit(
 
     result.verify()?;
 
-    let execution_engine = result
-        .module()
-        .create_jit_execution_engine(opt.optimization_level.into())
-        .map_err(|_| LLVMError::FailedToCreateJIT)?;
-
-    unsafe { execution_engine.get_function(module_name) }.map_err(Into::into)
+    result.emit_function(opt.optimization_level.into())
 }
