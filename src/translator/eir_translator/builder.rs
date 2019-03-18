@@ -12,7 +12,6 @@ use inkwell::{basic_block, builder, module, types, values, AddressSpace, IntPred
 
 use std::collections::{BTreeMap, HashMap};
 use std::mem;
-use std::rc::Rc;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum CondCode {
@@ -34,14 +33,14 @@ impl Block {
     }
 }
 
-pub struct Builder<'a> {
-    inst_builder: &'a mut builder::Builder,
-    module: Rc<module::Module>,
+pub struct Builder {
+    inst_builder: builder::Builder,
+    module: module::Module,
     env: ScopedEnv<BoundPointer>,
 }
 
-impl<'a> Builder<'a> {
-    pub fn new(inst_builder: &'a mut builder::Builder, module: Rc<module::Module>) -> Self {
+impl Builder {
+    pub fn new(inst_builder: builder::Builder, module: module::Module) -> Self {
         Builder {
             inst_builder,
             module,
@@ -50,11 +49,15 @@ impl<'a> Builder<'a> {
     }
 
     pub fn inst_builder(&mut self) -> &mut builder::Builder {
-        self.inst_builder
+        &mut self.inst_builder
     }
 
     pub fn env(&mut self) -> &mut ScopedEnv<BoundPointer> {
         &mut self.env
+    }
+
+    pub fn take_module(self) -> module::Module {
+        self.module
     }
 
     pub fn type_of(&self, v: values::BasicValueEnum) -> types::BasicTypeEnum {
