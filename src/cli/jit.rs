@@ -1,8 +1,9 @@
-use super::llvm;
+use super::error::CLIError;
 use super::opts::RunOpt;
-use crate::error::{CLIError, LLVMError};
+use super::shell::Shell;
+use crate::compile::llvm;
+use crate::error::LLVMError;
 use crate::parser;
-use crate::shell::Shell;
 use crate::transform::TransformManager;
 use crate::translator::translate_ast;
 

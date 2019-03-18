@@ -1,6 +1,3 @@
-use std::io;
-use std::path::PathBuf;
-
 use failure::Fail;
 
 #[derive(Debug, Fail)]
@@ -89,15 +86,6 @@ pub enum LLVMError {
 
     #[fail(display = "Failed to write the module to a buffer: {}", message)]
     MemoryBufferError { message: String },
-}
-
-#[derive(Fail, Debug)]
-pub enum CLIError {
-    #[fail(display = "IO Error: {}", error)]
-    IOError { error: io::Error },
-
-    #[fail(display = "File not found: {:?}", path)]
-    NotFound { path: PathBuf },
 }
 
 #[derive(Fail, Debug)]

@@ -2,9 +2,10 @@ use bytes::Bytes;
 use failure::Error;
 use inkwell::targets::{CodeModel, FileType, InitializationConfig, Target, TargetMachine};
 
-use super::llvm;
+use super::error::CLIError;
 use super::opts::{BuildOpt, OutputType};
-use crate::error::{CLIError, LLVMError};
+use crate::compile::llvm;
+use crate::error::LLVMError;
 use crate::parser;
 use crate::transform::TransformManager;
 use crate::translator::translate_ast;
