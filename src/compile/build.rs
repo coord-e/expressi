@@ -12,7 +12,7 @@ use crate::translator::translate_ast;
 use std::fs::File;
 use std::io::{Read, Write};
 
-pub fn build(opt: BuildOpt) -> Result<(), Error> {
+pub fn build(opt: &BuildOpt) -> Result<(), Error> {
     let BuildOpt {
         input,
         output,
@@ -44,8 +44,8 @@ pub fn build(opt: BuildOpt) -> Result<(), Error> {
             let result = llvm::compile_string(contents, &codegen_opt.emit_func_name)?;
 
             let (triple, default_cpu, default_features) =
-                if let Some(triple) = codegen_opt.target_triple {
-                    (triple, String::new(), String::new())
+                if let Some(triple) = &codegen_opt.target_triple {
+                    (triple.clone(), String::new(), String::new())
                 } else {
                     (
                         TargetMachine::get_default_triple().to_string(),
@@ -54,8 +54,11 @@ pub fn build(opt: BuildOpt) -> Result<(), Error> {
                     )
                 };
 
-            let cpu = codegen_opt.target_cpu.unwrap_or(default_cpu);
-            let cpu_features = codegen_opt.target_cpu_features.unwrap_or(default_features);
+            let cpu = codegen_opt.target_cpu.as_ref().unwrap_or(&default_cpu);
+            let cpu_features = codegen_opt
+                .target_cpu_features
+                .as_ref()
+                .unwrap_or(&default_features);
             let target = Target::from_triple(&triple).map_err(|message| {
                 LLVMError::TargetInitializationFailed {
                     message: message.to_string(),

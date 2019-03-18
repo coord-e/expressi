@@ -21,6 +21,7 @@ pub struct RunOpt {
 }
 
 arg_enum! {
+    #[derive(Copy, Clone)]
     pub enum OutputType {
         Object,
         Assembly,
@@ -31,6 +32,7 @@ arg_enum! {
 }
 
 arg_enum! {
+    #[derive(Copy, Clone)]
     pub enum OptimizationLevelOpt {
         None,
         Less,
@@ -51,6 +53,7 @@ impl Into<OptimizationLevel> for OptimizationLevelOpt {
 }
 
 arg_enum! {
+    #[derive(Copy, Clone)]
     pub enum RelocModeOpt {
         Default,
         Static,
