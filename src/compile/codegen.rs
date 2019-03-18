@@ -1,4 +1,5 @@
 use super::compilation_result::CompilationResult;
+use super::error::LLVMError;
 use crate::expression::Expression;
 use crate::ir;
 use crate::parser;
@@ -9,6 +10,17 @@ use crate::translator::{translate_ast, translate_eir};
 use failure::Error;
 
 use inkwell::context;
+use inkwell::targets::{InitializationConfig, Target};
+
+pub fn initialize_native() -> Result<(), Error> {
+    Target::initialize_native(&InitializationConfig::default())
+        .map_err(|message| LLVMError::TargetInitializationFailed { message }.into())
+}
+
+pub fn initialize_all() -> Result<(), Error> {
+    Target::initialize_all(&InitializationConfig::default());
+    Ok(())
+}
 
 pub fn compile_eir(eir: ir::Node, module_name: &str) -> Result<CompilationResult, Error> {
     let context = context::Context::get_global();

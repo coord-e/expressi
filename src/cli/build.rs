@@ -1,6 +1,5 @@
 use bytes::Bytes;
 use failure::Error;
-use inkwell::targets::{InitializationConfig, Target};
 
 use super::error::CLIError;
 use super::opts::{BuildOpt, OutputType};
@@ -20,7 +19,7 @@ pub fn build(opt: &BuildOpt) -> Result<(), Error> {
         codegen_opt,
     } = opt;
 
-    Target::initialize_all(&InitializationConfig::default());
+    codegen::initialize_all()?;
     let mut f = File::open(&input).map_err(|_| CLIError::NotFound {
         path: input.clone(),
     })?;

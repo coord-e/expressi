@@ -2,7 +2,6 @@ use super::error::CLIError;
 use super::opts::RunOpt;
 use super::shell::Shell;
 use crate::compile::codegen;
-use crate::compile::error::LLVMError;
 use crate::parser;
 use crate::transform::TransformManager;
 use crate::translator::translate_ast;
@@ -11,7 +10,6 @@ use failure::Error;
 
 use ansi_term::Colour::{Blue, Red};
 use inkwell::execution_engine;
-use inkwell::targets::{InitializationConfig, Target};
 
 use std::env;
 use std::fs::File;
@@ -19,8 +17,7 @@ use std::io::prelude::*;
 use std::process;
 
 pub fn run(opt: &RunOpt) -> Result<!, Error> {
-    Target::initialize_native(&InitializationConfig::default())
-        .map_err(|message| LLVMError::TargetInitializationFailed { message })?;
+    codegen::initialize_native()?;
 
     if let Some(path) = &opt.input {
         let mut f = File::open(path).map_err(|_| CLIError::NotFound { path: path.clone() })?;
