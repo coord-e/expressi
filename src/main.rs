@@ -2,8 +2,9 @@ use ansi_term::Colour::{Blue, Red};
 use failure::Error;
 use structopt::StructOpt;
 
-use expressi::compile::build::{self, BuildOpt};
+use expressi::compile::build;
 use expressi::compile::jit;
+use expressi::compile::opts::{BuildOpt, RunOpt};
 use expressi::error::CLIError;
 use expressi::shell::Shell;
 
@@ -11,21 +12,6 @@ use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
-
-#[derive(StructOpt)]
-struct RunOpt {
-    #[structopt(name = "FILE", parse(from_os_str))]
-    input: Option<PathBuf>,
-
-    #[structopt(long = "print-ast")]
-    print_ast: bool,
-
-    #[structopt(long = "print-eir")]
-    print_eir: bool,
-
-    #[structopt(long = "print-ir")]
-    print_ir: bool,
-}
 
 #[derive(StructOpt)]
 enum Opt {
