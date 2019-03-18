@@ -1,16 +1,56 @@
 use super::llvm;
-use crate::error::LLVMError;
+use super::opts::RunOpt;
+use crate::error::{CLIError, LLVMError};
 use crate::parser;
+use crate::shell::Shell;
 use crate::transform::TransformManager;
 use crate::translator::translate_ast;
 
 use failure::Error;
 
+use ansi_term::Colour::{Blue, Red};
 use inkwell::execution_engine;
 use inkwell::targets::{InitializationConfig, Target};
 use inkwell::OptimizationLevel;
 
+use std::env;
+use std::fs::File;
+use std::io::prelude::*;
+use std::process;
+
 type CompiledFunc = unsafe extern "C" fn() -> u64;
+
+pub fn run(opt: &RunOpt) -> Result<!, Error> {
+    let mut jit = JIT::new(opt.print_ast, opt.print_eir, opt.print_ir)?;
+
+    if let Some(path) = &opt.input {
+        let mut f = File::open(path).map_err(|_| CLIError::NotFound { path: path.clone() })?;
+        let mut contents = String::new();
+        f.read_to_string(&mut contents)
+            .map_err(|error| CLIError::IOError { error })?;
+
+        let func = jit.compile("file_input", &contents.trim())?;
+        process::exit(unsafe { func.call() } as i32)
+    } else {
+        let home = dirs::home_dir().unwrap_or_else(|| env::current_dir().unwrap());
+        let mut shell = Shell::new(home.join(".expressi_history"));
+        loop {
+            let line = shell.get_next_line()?;
+            match jit.compile("repl", line.trim()) {
+                Ok(func) => {
+                    println!(
+                        "{}{}",
+                        Blue.paint("-> "),
+                        Blue.paint(unsafe { func.call() }.to_string())
+                    );
+                }
+                Err(e) => {
+                    eprintln!("{}: {}", Red.paint("Error"), e);
+                }
+            }
+        }
+    }
+}
 
 pub struct JIT {
     print_ast: bool,

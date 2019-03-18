@@ -1,4 +1,4 @@
-#![feature(box_syntax, box_patterns)]
+#![feature(box_syntax, box_patterns, never_type)]
 
 pub mod compile;
 pub mod expression;
