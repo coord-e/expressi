@@ -52,3 +52,21 @@ fn emit_object() {
     let code = link_and_exec(&obj, ".o");
     assert_eq!(code, 42);
 }
+
+#[test]
+fn emit_llvm() {
+    let result = compile::compile_string("2 * 3 * 7", "main").unwrap();
+    let mut f = tempfile::Builder::new().suffix(".ll").tempfile().unwrap();
+    f.write_all(result.llvm_ir().as_bytes()).unwrap();
+    let path = f.into_temp_path();
+    let out = Command::new("llc")
+        .arg(&path)
+        .arg("-o")
+        .arg("-")
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+
+    let code = link_and_exec(&out.stdout, ".s");
+    assert_eq!(code, 42);
+}
